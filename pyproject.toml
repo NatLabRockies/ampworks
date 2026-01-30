@@ -13,11 +13,11 @@ license = "BSD-3-Clause"
 license-files = ["LICENSE"]
 authors = [
     { name = "Corey R. Randall" },
-    { email = "corey.randall@nrel.gov" },
+    { email = "corey.r.randall@gmail.com" },
 ]
 maintainers = [
     { name = "Corey R. Randall" },
-    { email = "corey.randall@nrel.gov" },
+    { email = "corey.r.randall@gmail.com" },
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",

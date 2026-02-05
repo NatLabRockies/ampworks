@@ -20,11 +20,13 @@ def run_cleanup(_) -> None:
 
 
 @nox.session(name='linter', python=False)
-def run_flake8(session: nox.Session) -> None:
+def run_ruff(session: nox.Session) -> None:
     """
-    Run flake8 with the github config file.
+    Run ruff to check for linting errors.
 
-    Use the optional 'format' argument to run autopep8 prior to the linter.
+    Use the optional 'format' or 'format-unsafe' arguments to run ruff with the
+    --fix or --unsafe-fixes option prior to the linter. You can also use 'stats'
+    to show a summary of the found errors rather than a full report.
 
     """
     session.run('pip', 'install', '--upgrade', '--quiet', 'ruff')
@@ -97,6 +99,8 @@ def run_pytest(session: nox.Session) -> None:
             'tests/',
         ]
     else:
+        os.makedirs('reports', exist_ok=True)
+        
         command = [
             'pytest',
             '--cov=src/ampworks',
@@ -167,11 +171,11 @@ def run_pre_commit(session: nox.Session) -> None:
     """
     Run all linters/tests and make new badges.
 
-    Order of sessions: flake8, spellcheck, pytest, genbadge. Using 'format' for
+    Order of sessions: ruff, spellcheck, pytest, genbadge. Using 'format' for
     linter, 'write' for spellcheck, and/or 'parallel' for pytest is permitted.
 
     """
-    run_flake8(session)
+    run_ruff(session)
     run_spellcheck(session)
 
     run_pytest(session)

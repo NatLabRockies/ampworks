@@ -3,6 +3,7 @@
 [![CI][ci-b]][ci-l] &nbsp;
 ![tests][test-b] &nbsp;
 ![coverage][cov-b] &nbsp;
+[![ruff][ruff-b]][ruff-l] &nbsp;
 [![pep8][pep-b]][pep-l]
 
 [ci-b]: https://github.com/NatLabRockies/ampworks/actions/workflows/ci.yml/badge.svg
@@ -10,6 +11,9 @@
 
 [test-b]: https://github.com/NatLabRockies/ampworks/blob/main/images/tests.svg?raw=true
 [cov-b]: https://github.com/NatLabRockies/ampworks/blob/main/images/coverage.svg?raw=true
+
+[ruff-b]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
+[ruff-l]: https://github.com/astral-sh/ruff
 
 [pep-b]: https://img.shields.io/badge/code%20style-pep8-orange.svg
 [pep-l]: https://www.python.org/dev/peps/pep-0008

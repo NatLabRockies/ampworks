@@ -45,7 +45,6 @@ def run_gui(jupyter_mode: str = 'external', jupyter_height: int = 650) -> None:
     Notebooks, you can use the `ampworks --app` command from your terminal.
 
     """
-
     from ampworks.dqdv.gui_files import _gui
     from ampworks import _in_interactive, _in_notebook
 

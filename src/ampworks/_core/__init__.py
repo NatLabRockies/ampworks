@@ -1,8 +1,6 @@
 """
-Core Subpackage
----------------
-This subpackage hosts all of the functions, classes, etc. that should be made
-available at the base-level of the package.
+The `_core` subpackage hosts all of the functions, classes, etc. that should be
+made available at the base-level of the package.
 
 """
 

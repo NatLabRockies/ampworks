@@ -1,6 +1,4 @@
 """
-Mathutils
----------
 General-purpose mathematical utilities for array and numerical computations.
 Provides reusable functions to simplify common tasks in data analysis and math.
 
@@ -31,7 +29,6 @@ def combinations(values: list[ndarray], names: list[str] = None) -> list[dict]:
         Dictionaries for each possible combination of values.
 
     """
-
     import itertools
 
     if names is None:

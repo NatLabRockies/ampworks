@@ -36,7 +36,6 @@ def _plot_pulses(data: Dataset, **fig_kw) -> None:
         None, a temporary file is still created and is opened in the browser.
 
     """
-
     from ampworks.plotutils._style import PLOTLY_TEMPLATE
     from ampworks.plotutils._render import _render_plotly
 
@@ -166,7 +165,6 @@ def _detect_pulses(
         'Ah', 'SOC', 'Segment', 'StepTime', 'DisPulse', 'ChgPulse'.
 
     """
-
     df = data.copy()
     df = df.reset_index(drop=True)
 
@@ -364,7 +362,6 @@ def extract_impedance(
     >>> print(impedance)
 
     """
-
     # Validate required columns
     required = ['Seconds', 'Amps', 'Volts']
     if not all(col in data.columns for col in required):

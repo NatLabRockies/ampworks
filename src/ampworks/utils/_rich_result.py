@@ -19,7 +19,7 @@ class RichResult(dict):
 
     def __init__(self, **kwargs) -> None:
         """
-        This class is a based off the `_RichResult` class in the `scipy`
+        A container class based off the `_RichResult` class in the `scipy`
         library. It combines a series of formatting functions to make the
         printed 'repr' easy to read. Use this class directly by passing in
         any number of keyword arguments, or use it as a base class to have
@@ -96,7 +96,6 @@ class RichResult(dict):
 
     def __repr__(self) -> str:
         """Return a nicely formatted string representation of the instance."""
-
         order_keys = getattr(self, '_order_keys')
 
         def key(item):
@@ -151,7 +150,6 @@ def _format_float_10(x):
 
 def _format_dict(d, n=0, mplus=1, sorter=None):
     """Pretty printer for dictionaries."""
-
     if isinstance(d, dict):
         m = max(map(len, list(d.keys()))) + mplus  # width to print keys
 

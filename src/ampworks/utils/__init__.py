@@ -34,6 +34,7 @@ class _ExitHandler:
     forgets to explicitly call it.
 
     """
+
     _registered = []
 
     @classmethod

@@ -1,5 +1,5 @@
 """
-This module provides access to example datasets bundled with `ampworks`. The
+The `datasets` module provides example datasets bundled with `ampworks`. The
 available functions allow users to list, download, or load in example datasets.
 The datasets are used in tutorials and tests. They provide a convenient intro
 to package functions without the overhead of requiring users to perform their

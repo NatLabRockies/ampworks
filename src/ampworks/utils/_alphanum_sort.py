@@ -24,7 +24,6 @@ def alphanum_sort(unsorted: list[str], reverse: bool = False) -> list[str]:
         An alphanumerically sorted list of strings.
 
     """
-
     unsorted = list(unsorted)
 
     def convert(txt): return int(txt) if txt.isdigit() else txt

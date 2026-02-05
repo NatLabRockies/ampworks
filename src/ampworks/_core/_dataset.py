@@ -116,7 +116,6 @@ class Dataset(pd.DataFrame):
             The modified Dataset if 'inplace' is False.
 
         """
-
         df = self.copy()
         mask = df[column].abs() < abs(threshold)
         df.loc[mask, column] = 0.0

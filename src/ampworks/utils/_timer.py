@@ -4,10 +4,7 @@ import time
 
 
 class Timer:
-    """
-    Timer utility.
-
-    """
+    """Timer utility."""
 
     __slots__ = ('name', '_units', '_converter', '_start', '_stop',)
 
@@ -42,7 +39,6 @@ class Timer:
                 function(2.)
 
         """
-
         valid = ['s', 'min', 'h']
         if units not in valid:
             raise ValueError(f"{units=} is invalid; valid values are {valid}.")

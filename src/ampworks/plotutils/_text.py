@@ -28,5 +28,4 @@ def add_text(ax: Axes, xloc: float, yloc: float, text: str,
         'bottom', 'center', 'center_baseline', 'top'}. By default 'center'.
 
     """
-
     ax.text(xloc, yloc, text, ha=ha, va=va, transform=ax.transAxes)

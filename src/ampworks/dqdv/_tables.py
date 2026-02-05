@@ -57,7 +57,6 @@ class DqdvFitTable(RichTable):
             'extra_cols' must be type list[str].
 
         """
-
         if extra_cols is None:
             extra_cols = []
 

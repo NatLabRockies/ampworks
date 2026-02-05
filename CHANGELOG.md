@@ -26,6 +26,7 @@
 - Complete overhaul to `plotutils` for shorter, modular use ([#2](https://github.com/NatLabRockies/ampworks/pull/2))
 
 ### Chores
+- Remove `flake8` and `autopep8` and use `ruff` for linting/formatting instead ([#18](https://github.com/NatLabRockies/ampworks/pull/18))
 - Make GitHub hyperlinks reference new org name `NREL` -> `NatLabRockies` ([#17](https://github.com/NatLabRockies/ampworks/pull/17))
 - Add project overview page to development section in documentation ([#16](https://github.com/NatLabRockies/ampworks/pull/16)) 
 - Rebrand NREL to NLR, and include name change for Alliance as well ([#15](https://github.com/NatLabRockies/ampworks/pull/15))

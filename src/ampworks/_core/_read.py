@@ -167,7 +167,6 @@ def standardize_headers(data: pd.DataFrame) -> Dataset:
 
 def read_table(filepath: PathLike) -> Dataset:
     """Read tab-delimited file."""
-
     from ampworks import Dataset
 
     with open(filepath, encoding='utf-8') as datafile:
@@ -191,7 +190,6 @@ def read_table(filepath: PathLike) -> Dataset:
 def read_excel(filepath: PathLike, sheet_name: str | int | list = 'first',
                stack_sheets: bool = False) -> Dataset:
     """Read excel file."""
-
     from ampworks import Dataset
 
     workbook = pd.ExcelFile(filepath)
@@ -268,7 +266,6 @@ def read_excel(filepath: PathLike, sheet_name: str | int | list = 'first',
 
 def read_csv(filepath: PathLike) -> Dataset:
     """Read csv file."""
-
     from ampworks import Dataset
 
     with open(filepath, encoding='utf-8') as datafile:

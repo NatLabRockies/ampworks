@@ -15,7 +15,7 @@ if TYPE_CHECKING:  # pragma: no cover
 def extract_params(data: Dataset, radius: float, tmin: float = 1,
                    tmax: float = 60, return_all: bool = False) -> pd.DataFrame:
     """
-    Extracts parameters from GITT data
+    Extracts parameters from GITT data.
 
     GITT, or galvanostatic intermittent titration technique, is an experiment
     that applies intermittent low-rate charge or discharge pulses separated by
@@ -111,7 +111,6 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
     >>> print(stats)
 
     """
-
     required = ['Seconds', 'Amps', 'Volts']
     if not all(col in data.columns for col in required):
         raise ValueError(f"'data' is missing columns, {required=}.")

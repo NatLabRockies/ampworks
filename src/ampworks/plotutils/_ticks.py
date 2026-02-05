@@ -26,7 +26,6 @@ def minor_ticks(ax: Axes, xdiv: int = None, ydiv: int = None) -> None:
     This function ignores axes with logarithmic scaling.
 
     """
-
     axs = atleast_1d(ax)
 
     for ax in axs.flatten():
@@ -56,7 +55,6 @@ def tick_direction(ax: Axes, xdir: str = 'in', ydir: str = 'in',
         Mirror the y ticks along the top of Axis, by default True.
 
     """
-
     axs = atleast_1d(ax)
 
     for ax in axs.flatten():
@@ -92,6 +90,5 @@ def format_ticks(
         Mirror the y ticks along the top of Axis, by default True.
 
     """
-
     minor_ticks(ax, xdiv=xdiv, ydiv=ydiv)
     tick_direction(ax, xdir=xdir, ydir=ydir, top=top, right=right)

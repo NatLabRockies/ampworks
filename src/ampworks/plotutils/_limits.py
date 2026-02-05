@@ -35,7 +35,6 @@ def focused_limits(
         Suggested axis limits for plotting.
 
     """
-
     y = np.asarray(y)
     Q1, Q3 = np.percentile(y, [25, 75])
     IQR = Q3 - Q1

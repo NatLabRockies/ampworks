@@ -118,7 +118,7 @@ def test_RichResult():
     # copy
     copy = ordered.copy()
     assert isinstance(copy, amp.utils.RichResult)
-    assert (copy == ordered) and not (copy is ordered)
+    assert (copy == ordered) and (copy is not ordered)
 
 
 def test_format_float_10():
@@ -191,7 +191,7 @@ def test_RichTable():
     copy = new_table.copy()
     assert isinstance(copy, NewTable)
     assert isinstance(copy, amp.utils.RichTable)
-    assert (copy.df.equals(new_table.df)) and not (copy is new_table)
+    assert (copy.df.equals(new_table.df)) and (copy is not new_table)
 
     # to/from csv
     with NamedTemporaryFile(suffix='.csv') as tmp:

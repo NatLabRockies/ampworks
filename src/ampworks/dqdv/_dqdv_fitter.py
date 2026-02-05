@@ -68,7 +68,6 @@ class DqdvFitter:
           via its property.
 
         """
-
         self._initialized = {}
 
         self.neg = neg
@@ -202,7 +201,6 @@ class DqdvFitter:
             'df' is missing columns, required={'Ah', 'Volts'}.
 
         """
-
         self._initialized[which] = False
 
         required = {'soc', 'voltage'}
@@ -232,7 +230,6 @@ class DqdvFitter:
             Spline interpolations for ocv and dvdq.
 
         """
-
         if df is None:
             return None, None
 
@@ -263,7 +260,6 @@ class DqdvFitter:
             Can't run any functions until all data is available.
 
         """
-
         missing = [d for d, flag in self._initialized.items() if not flag]
         if missing:
             raise RuntimeError(f"Can't run '{func_name}' until all data is"
@@ -284,7 +280,6 @@ class DqdvFitter:
             Total error based on a combination of cost_terms.
 
         """
-
         errs = self.err_terms(params)
 
         err_total = 0.  # faster when MAPE is fractional, so use (*1e-2) below
@@ -340,7 +335,6 @@ class DqdvFitter:
         electrode.
 
         """
-
         if which not in ['neg', 'pos', 'cell']:
             raise ValueError("'which' must be in ['neg', 'pos', 'cell'].")
 
@@ -382,7 +376,6 @@ class DqdvFitter:
         information to ensure you are evaluating each in the correct directions.
 
         """
-
         if which not in ['neg', 'pos', 'cell']:
             raise ValueError("'which' must be in ['neg', 'pos', 'cell'].")
 

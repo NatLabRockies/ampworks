@@ -15,7 +15,7 @@ if TYPE_CHECKING:  # pragma: no cover
 def extract_params(data: Dataset, radius: float, tmin: float = 1,
                    tmax: float = 10, return_all: bool = False) -> pd.DataFrame:
     """
-    Extracts parameters from ICI data
+    Extracts parameters from ICI data.
 
     ICI, or incrememtal current interruption, is an experiment that interrupts
     low-rate charge or discharge experiments with short rests. The experiments
@@ -108,7 +108,6 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
     >>> print(stats)
 
     """
-
     required = ['Seconds', 'Amps', 'Volts']
     if not all(col in data.columns for col in required):
         raise ValueError(f"'data' is missing columns, {required=}.")

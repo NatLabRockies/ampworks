@@ -32,7 +32,6 @@ class ColorMap:
             'norm[0]' must be strictly less than 'norm[1]'.
 
         """
-
         if len(norm) != 2:
             raise ValueError("'norm' must be length 2.")
         elif norm[0] >= norm[1]:
@@ -65,7 +64,6 @@ class ColorMap:
             'scalar' is not in bounds set by 'norm'.
 
         """
-
         if self._vmin <= scalar <= self._vmax:
             return self._sm.to_rgba(scalar)
         else:
@@ -89,7 +87,6 @@ def colors_from_size(size: int, cmap: str = 'jet') -> list:
         List of RGBA color tuples.
 
     """
-
     colormap = ColorMap(cmap)
     data = np.linspace(colormap._vmin, colormap._vmax, size)
 
@@ -113,7 +110,6 @@ def colors_from_data(data: ndarray, cmap: str = 'jet') -> ndarray:
         Array of RGBA color tuples with the same shape as 'data'.
 
     """
-
     colormap = ColorMap(cmap, norm=(data.min(), data.max()))
     colors = [colormap.get_color(x) for x in data.flatten()]
 

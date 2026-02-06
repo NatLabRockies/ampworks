@@ -1,22 +1,10 @@
 # ampworks
 
-[![CI][ci-b]][ci-l] &nbsp;
-![tests][test-b] &nbsp;
-![coverage][cov-b] &nbsp;
-[![ruff][ruff-b]][ruff-l] &nbsp;
-[![pep8][pep-b]][pep-l]
-
-[ci-b]: https://github.com/NatLabRockies/ampworks/actions/workflows/ci.yml/badge.svg
-[ci-l]: https://github.com/NatLabRockies/ampworks/actions/workflows/ci.yml
-
-[test-b]: https://github.com/NatLabRockies/ampworks/blob/main/images/tests.svg?raw=true
-[cov-b]: https://github.com/NatLabRockies/ampworks/blob/main/images/coverage.svg?raw=true
-
-[ruff-b]: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
-[ruff-l]: https://github.com/astral-sh/ruff
-
-[pep-b]: https://img.shields.io/badge/code%20style-pep8-orange.svg
-[pep-l]: https://www.python.org/dev/peps/pep-0008
+[![ci-tests](https://github.com/NatLabRockies/ampworks/actions/workflows/ci.yml/badge.svg)](https://github.com/NatLabRockies/ampworks/actions/workflows/ci.yml) &nbsp;
+![coverage](https://github.com/NatLabRockies/ampworks/blob/main/images/coverage.svg?raw=true) &nbsp;
+[![license](https://img.shields.io/badge/License-BSD--3--Clause-blue.svg)](https://github.com/NatLabRockies/ampworks/blob/main/LICENSE) &nbsp;
+[![downloads](https://static.pepy.tech/personalized-badge/ampworks?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/ampworks) &nbsp;
+[![ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) &nbsp;
 
 ## Summary
 `ampworks` is a collection of tools designed to visualize and process experimental battery data. It provides routines for degradation mode analysis, parameter extraction from common protocols (e.g., GITT, ICI, etc.), and more. These routines provide key properties for life and physics-based models (e.g., SPM and P2D). Graphical user interfaces (GUIs) are available for some of the analyses. See a full list of the GUI-based applications by running `ampworks -h` in your terminal after installation. 

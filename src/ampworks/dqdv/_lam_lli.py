@@ -73,6 +73,7 @@ def calc_lam_lli(fit_table: DqdvFitTable) -> pd.DataFrame:
     from ampworks.dqdv._tables import DegModeTable
 
     df = fit_table.df.copy()
+    extra_cols = fit_table._extra_cols
 
     Ah = df.Ah.to_numpy()
 
@@ -111,16 +112,20 @@ def calc_lam_lli(fit_table: DqdvFitTable) -> pd.DataFrame:
     aging = pd.DataFrame({
         'Qn': Qn, 'Qn_std': Qn_std,
         'Qp': Qp, 'Qp_std': Qp_std,
+        'Qc': Ah,
         'LAMn': LAMn, 'LAMn_std': LAMn_std,
         'LAMp': LAMp, 'LAMp_std': LAMp_std,
         'LLI': LLI, 'LLI_std': LLI_std,
     })
 
+    for col in extra_cols:
+        aging[col] = df[col]
+
     return DegModeTable(aging)
 
 
-def plot_lam_lli(deg_table: DegModeTable, fit_table: DqdvFitTable,
-                 x_col: str | None = None, std: bool = True) -> None:
+def plot_lam_lli(deg_table: DegModeTable, x_col: str | None = None,
+                 std: bool = False) -> None:
     """
     Plot degradation modes.
 
@@ -128,28 +133,24 @@ def plot_lam_lli(deg_table: DegModeTable, fit_table: DqdvFitTable,
     ----------
     deg_table : DegModeTable
         Container holding calculated degradation modes (LAM and LLI).
-    fit_table : DqdvFitTable
-        Container holding results from corresponding dQdV fits. Used to get
-        full cell capacity, and access to optional `extra_cols`.
     x_col : str | None, optional
         A column name from 'fit_table` to use for the x-axis. If None (default)
         then the row indices are used.
     std : bool, optional
-        If True (default), includes estimated error bands for +/- one standard
-        deviation. NaN values will result in missing bands at those points.
+        Include shaded regions for estimated standard deviations of the LAM and
+        LLI values when True. Default is False.
 
     See Also
     --------
     ~ampworks.dqdv.DqdvFitter : Access to the fitting routines.
     ~ampworks.dqdv.DegModeTable : Table of calculated degradation modes.
-    ~ampworks.dqdv.DqdvFitTable : Required container to store multiple fits.
     ~ampworks.dqdv.calc_lam_lli : Calculate degradation modes before plottting.
 
     """
     from ampworks.utils import _ExitHandler
     from ampworks.plotutils import format_ticks
 
-    df = pd.concat([deg_table.df, fit_table.df], axis=1)
+    df = deg_table.df.copy()
 
     if x_col is None:
         xplt, xlabel = df.index, 'Index'
@@ -163,11 +164,11 @@ def plot_lam_lli(deg_table: DegModeTable, fit_table: DqdvFitTable,
     )
 
     df.plot(
-        x_col, ['Qn', 'Qp', 'Ah', 'LAMn', 'LAMp', 'LLI'], subplots=True,
+        x_col, ['Qn', 'Qp', 'Qc', 'LAMn', 'LAMp', 'LLI'], subplots=True,
         color='C0', legend=False, xlabel=xlabel, ax=axs.flatten(),
     )
 
-    # first row: Qn, Qp, Q
+    # first row: Qn, Qp, Qc
     if std:
         Qn, Qn_std = df[['Qn', 'Qn_std']].T.to_numpy()
         axs[0, 0].fill_between(xplt, Qn - Qn_std, Qn + Qn_std, **shaded)

@@ -45,6 +45,7 @@ def update_terminal(summary):
             'nfev': None,
             'niter': None,
             'fun': None,
+            'Ah': None,
             'x': None,
             'x_std': None,
             'x_map': ['xn0', 'xn1', 'xp0', 'xp1', 'iR'],
@@ -80,7 +81,7 @@ def log_new_row(_, current_data, summary, filename):
 
     row = {}
     row['filename'] = filename.removesuffix('.csv')
-    row['Ah'] = 'TODO'  # TODO
+    row['Ah'] = summary['Ah']
 
     for name, x, std in zip(summary['x_map'], summary['x'], summary['x_std']):
         row[name] = x

@@ -21,6 +21,7 @@ class DqdvFitResult(RichResult):
         nfev      int       number of function evaluations
         niter     int       number of optimization iterations
         fun       float     value of objective function at `x`
+        Ah        float     max capacity (Ah) of the fitted `cell` dataset
         x         1D array  the solution of the optimization
         x_std     1D array  approximate standard deviation for each `x`
         x_map     list[str] names/order of values store in `x`
@@ -63,7 +64,8 @@ class DqdvFitTable(RichTable):
         if not isinstance(extra_cols, list):
             raise TypeError("'extra_cols' must be type list[str].")
 
-        data = {col: [] for col in self._required_cols + extra_cols}
+        self._extra_cols = extra_cols
+        data = {col: [] for col in self._required_cols + self._extra_cols}
 
         df = pd.DataFrame(data)
 
@@ -121,14 +123,18 @@ class DegModeTable(RichTable):
     """Degradation modes table."""
 
     _required_cols = [
-        'Qn', 'Qn_std', 'Qp', 'Qp_std', 'LAMn', 'LAMn_std', 'LAMp', 'LAMp_std',
-        'LLI', 'LLI_std',
+        'Qn', 'Qn_std', 'Qp', 'Qp_std', 'Qc', 'LAMn', 'LAMn_std',
+        'LAMp', 'LAMp_std', 'LLI', 'LLI_std',
     ]
 
     def __init__(self, df: pd.DataFrame) -> None:
         """
-        An output container for `calc_lam_lli`. Stores electrode capacities,
-        loss of active material (LAM), and loss of lithium inventory (LLI).
+        Output container for `calc_lam_lli`. Stores capacities (Ah), loss of
+        active material (LAM), loss of lithium inventory (LLI), and standard
+        deviations (std). 'n', 'p', and 'c' in the column names to refer to the
+        negative electrode, positive electrode, and full cell, respectively.
+        May also include extra columns inherited from the `DqdvFitTable`, if
+        present.
 
         Parameters
         ----------

@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 
 from numbers import Real
-from typing import Callable, Iterable, TYPE_CHECKING
+from typing import Callable, Iterable, Sequence, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
@@ -163,8 +163,8 @@ class DqdvFitter:
         elif isinstance(value, str):
             value = [value]
 
-        if not isinstance(value, Iterable):
-            raise TypeError("cost_terms must be an iterable.")
+        if not isinstance(value, Sequence):
+            raise TypeError("cost_terms must be a Sequence.")
 
         if len(value) == 0:
             raise ValueError("cost_terms is empty. Set to either 'all' or a"
@@ -198,12 +198,15 @@ class DqdvFitter:
         TypeError
             The 'df' input must be type pd.DataFrame.
         ValueError
-            'df' is missing columns, required={'Ah', 'Volts'}.
+            'df' is missing columns, required={'Ah', 'SOC', 'Volts'}.
 
         """
         self._initialized[which] = False
 
-        required = {'soc', 'voltage'}
+        required = {'SOC', 'Volts'}
+        if which == 'cell':
+            required.add('Ah')
+
         if df is None:
             pass
         elif not isinstance(df, pd.DataFrame):
@@ -220,7 +223,7 @@ class DqdvFitter:
         Parameters
         ----------
         df : pd.DataFrame
-            Data with 'soc' and 'voltage' columns.
+            Data with 'SOC' and 'Volts' columns.
         which : {'neg', 'pos', 'cell'}
             Which splines to build. Used to track initialization.
 
@@ -233,11 +236,28 @@ class DqdvFitter:
         if df is None:
             return None, None
 
-        _, mask = np.unique(df.soc, return_index=True)
+        _, mask = np.unique(df.SOC, return_index=True)
 
         df = df.iloc[mask].reset_index(drop=True)
+        df = df.sort_values('SOC').reset_index(drop=True)
 
-        ocv = interp.make_splrep(df.soc, df.voltage)
+        # make sure neg has decreasing voltage with increasing SOC and pos/cell
+        # have increasing so all splines are in reference to full-cell SOC.
+        flip_soc = {
+            'neg': lambda v0, v1: v0 < v1,
+            'pos': lambda v0, v1: v0 > v1,
+            'cell': lambda v0, v1: v0 > v1,
+        }
+
+        v0, v1 = df.Volts.iloc[0], df.Volts.iloc[-1]
+
+        if flip_soc[which](v0, v1):
+            df['SOC'] = 1.0 - df['SOC']
+
+        df = df.sort_values('SOC').reset_index(drop=True)
+
+        # build splines
+        ocv = interp.make_splrep(df.SOC, df.Volts)
         dvdq = ocv.derivative()
 
         self._initialized[which] = True
@@ -544,6 +564,7 @@ class DqdvFitter:
             nfev=len(errs),
             niter=None,
             fun=errs[index],
+            Ah=self.cell.Ah.max(),
             x=np.hstack([x_opt, 0.]),
             x_std=np.repeat(np.nan, 5),
             x_map=names,
@@ -725,6 +746,7 @@ class DqdvFitter:
             nfev=opt_result.nfev,
             niter=opt_result.niter,
             fun=opt_result.fun,
+            Ah=self.cell.Ah.max(),
             x=opt_result.x,
             x_std=std,
             x_map=['xn0', 'xn1', 'xp0', 'xp1', 'iR'],

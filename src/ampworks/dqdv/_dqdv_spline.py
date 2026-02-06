@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import Self, Literal, TYPE_CHECKING
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,16 +8,16 @@ from scipy.interpolate import make_splrep
 from scipy.integrate import cumulative_trapezoid
 
 if TYPE_CHECKING:  # pragma: no cover
-    from typing import Self
-
     import ampworks as amp
     import numpy.typing as npt
+
+CapacityMethod = Literal['auto', 'provided', 'integrated']
 
 
 class DqdvSpline:
     """Smoothing spline for dQdV curves."""
 
-    def __init__(self) -> None:
+    def __init__(self, capacity_method: CapacityMethod = 'auto') -> None:
         r"""
         A class for fitting and evaluating smoothing splines for dQdV data. Use
         the `fit` method to fit splines to datasets. The API takes inspiration
@@ -32,6 +32,14 @@ class DqdvSpline:
         voltage spline at the desired SOC values, then evaluate the dQdV spline
         at the same SOC values.
 
+        Parameters
+        ----------
+        capacity_method : {'auto', 'provided', 'integrated'}, optional
+            How capacity is determined. 'auto' (default) uses the 'Ah' column if
+            present, otherwise integrates current over time. 'provided' requires
+            and uses 'Ah', throwing errors if missing. 'integrated' forces the
+            integration of current and ignores 'Ah'.
+
         Attributes
         ----------
         Ah\_ : 1D np.array
@@ -45,7 +53,14 @@ class DqdvSpline:
             Root mean square error between smoothed and raw voltages.
 
         """
-        pass
+        options = ['auto', 'provided', 'integrated']
+        if capacity_method not in options:
+            raise ValueError(
+                f"'capacity_method' expected a value in {options} but received"
+                f" {capacity_method}."
+            )
+
+        self._capacity_method = capacity_method
 
     def fit(self, data: amp.Dataset, s: float = 0.) -> Self:
         """
@@ -55,9 +70,9 @@ class DqdvSpline:
         Parameters
         ----------
         data : amp.Dataset
-            Sliced charge or discharge data to fit a spline to. Must contain, at
-            a minimum, columns for `{'Seconds', 'Amps', 'Volts'}`. See notes for
-            more information.
+            Sliced charge or discharge data to fit a spline to. Must contain,
+            columns for `{'Ah', 'Volts'}` or `{'Seconds', 'Amps', 'Volts'}`
+            depending on `capacity_method`. See notes for more information.
         s : float, optional
             The smoothing condition passed to SciPy's `make_splrep`. Controls
             the trade-off between closeness to the data and smoothness of fit
@@ -79,8 +94,13 @@ class DqdvSpline:
         Raises
         ------
         ValueError
-            Expected positive/negative current for charge/discharge data,
-            respectively.
+            Missing required columns in 'data'.
+        ValueError
+            Charge and discharge data must have positive and negative current,
+            respectively. See notes for more information.
+        ValueError
+            Invalid 'Ah' column: minimum value is not zero and/or values are not
+            monotonically increasing.
 
         Notes
         -----
@@ -93,22 +113,63 @@ class DqdvSpline:
         voltage is increasing (charging) and negative current when voltage is
         decreasing (discharging).
 
+        The `capacity_method` parameter controls how capacity is determined and
+        which required columns are expected in `data`. Capacity can either be
+        taken directly from an 'Ah' column, or calculated by integrating current
+        over time. If `capacity_method='provided'`, then the minimum required
+        columns are {'Ah', 'Volts'}. If `capacity_method='integrated'`, then
+        the minimum required columns are {'Seconds', 'Amps', 'Volts'}. Using the
+        default `capacity_method='auto'` will accept either of these options,
+        preferring the 'Ah' column if it is present, and integrating otherwise.
+
+        In cases where an 'Ah' column is provided and used, the values will be
+        checked to ensure they are valid. The minimum value must be zero and
+        values must be monotonically increasing. Make sure your capacity column
+        meets these requirements if you choose to use it.
+
         """
         data = data.reset_index(drop=True)
 
-        # add Ah and SOC columns
+        # flag how to determine capacity
+        if self._capacity_method == 'auto':
+            use_Ah = 'Ah' in data.columns
+        else:
+            use_Ah = self._capacity_method == 'provided'
+
+        required = {'Ah', 'Volts'} if use_Ah else {'Seconds', 'Amps', 'Volts'}
+        if not required.issubset(data.columns):
+            raise ValueError(
+                f"Missing columns in 'data'. Expected at least {required} but"
+                f" received {set(data.columns)}."
+            )
+
+        # integrate to get Ah column, if needed or requested
         is_net_charge = data['Volts'].iloc[0] < data['Volts'].iloc[-1]
-        sign = +1 if is_net_charge else -1
 
-        if is_net_charge and data['Amps'].mean() <= 0.:
-            raise ValueError("Expected positive current for charge data.")
-        if not is_net_charge and data['Amps'].mean() >= 0.:
-            raise ValueError("Expected negative current for discharge data.")
+        if not use_Ah:
+            sign = +1 if is_net_charge else -1
 
-        data['Ah'] = cumulative_trapezoid(
-            sign*data['Amps'], x=data['Seconds'] / 3600., initial=0.,
-        )
+            if is_net_charge and any(data['Amps'] <= 0.):
+                raise ValueError("Charge data must have positive current.")
+            if not is_net_charge and any(data['Amps'] >= 0.):
+                raise ValueError("Discharge data must have negative current.")
 
+            data['Ah'] = cumulative_trapezoid(
+                sign*data['Amps'], x=data['Seconds'] / 3600., initial=0.,
+            )
+
+        # check Ah column for validity
+        errors = []
+        if not np.isclose(data['Ah'].min(), 0.0, atol=1e-12):
+            errors.append("minimum value is not zero")
+
+        if not data['Ah'].is_monotonic_increasing:
+            errors.append("values are not monotonically increasing")
+
+        if errors:
+            raise ValueError("Invalid 'Ah' column: " + "; ".join(errors) + ".")
+
+        # add SOC column, ensure increasing voltage with increasing SOC
         if is_net_charge:
             data['SOC'] = data['Ah'] / data['Ah'].max()
         else:

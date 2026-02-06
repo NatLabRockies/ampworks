@@ -178,12 +178,13 @@ class DqdvFitter:
 
     def _check_dataframe(self, df: pd.DataFrame, which: str) -> pd.DataFrame:
         """
-        Verify that input dataframes have 'Ah' and 'Volts' columns.
+        Verify that input dataframes have 'SOC' and 'Volts' columns. The full
+        cell dataset also requires an 'Ah' column.
 
         Parameters
         ----------
         df : pd.DataFrame
-            Data to check for required 'Ah' and 'Volts' columns.
+            Data to check for required columns.
         which : {'neg', 'pos', 'cell'}
             Which splines to build. Used to track initialization.
 
@@ -198,7 +199,8 @@ class DqdvFitter:
         TypeError
             The 'df' input must be type pd.DataFrame.
         ValueError
-            'df' is missing columns, required={'Ah', 'SOC', 'Volts'}.
+            'df' is missing columns, required={'SOC', 'Volts'} for electrode
+            datasets and {'Ah', 'SOC', 'Volts'} for full cell datasets.
 
         """
         self._initialized[which] = False

@@ -131,7 +131,7 @@ class DegModeTable(RichTable):
         """
         Output container for `calc_lam_lli`. Stores capacities (Ah), loss of
         active material (LAM), loss of lithium inventory (LLI), and standard
-        deviations (std). 'n', 'p', and 'c' in the column names to refer to the
+        deviations (std). 'n', 'p', and 'c' in the column names refer to the
         negative electrode, positive electrode, and full cell, respectively.
         May also include extra columns inherited from the `DqdvFitTable`, if
         present.

@@ -3,6 +3,7 @@ import pandas as pd
 import ampworks as amp
 import matplotlib.pyplot as plt
 
+
 # %% Import the data
 # ==================
 # Calculating LAM and LLI by fitting dQdV curves requires low-rate data from
@@ -105,6 +106,7 @@ plt.show()
 
 fitter = amp.dqdv.DqdvFitter(neg, pos, cell_BOL)
 fitter.cost_terms = ['voltage', 'dqdv', 'dvdq']
+
 
 # %% Grid searches
 # ================
@@ -218,23 +220,20 @@ pos_vlims = fitter.get_ocv('pos', fitres2.x[2:4])
 print(f"neg voltage limits: {neg_vlims.min():.3f}--{neg_vlims.max():.3f} V")
 print(f"pos voltage limits: {pos_vlims.min():.3f}--{pos_vlims.max():.3f} V")
 
-# You can also use the fitted stoichiometries to plot the electrode voltage
-# curves vs. their own SOC rather than in reference to the full-cell SOC, but
-# this requires a small linear transformation (and flipping SOC for the negative
-# electrode). You can see how we perform the flip below, by changing the order
-# of the linspace for the negative electrode, i.e., using fitres.x[1] for the
-# "min" and fitres.x[0] for the "max". We do not have to do this flip for the
-# positive electrode because the positive electrode SOC is already in the same
-# reference frame as the full cell SOC, just with different limits.
+# If you'd prefer to plot the full voltage windows of each electrode, you can
+# do that as well, as shown below. Note that when we plot the negative elctrode
+# voltage window we use `1.0 - neg_soc` to flip the reference frame back to the
+# negative electrode's perspective. This only needs to get done when plotting,
+# since the `get_ocv()` method evaluates in the full-cell reference frame so it
+# it compatible with the `fitres.x` values without adjustments.
 
-soc = np.linspace(0, 1, 201)
-neg_soc = np.linspace(fitres2.x[1], fitres2.x[0], soc.size)
-pos_soc = np.linspace(fitres2.x[2], fitres2.x[3], soc.size)
+neg_soc = np.linspace(fitres2.x[0], fitres2.x[1], 101)
+pos_soc = np.linspace(fitres2.x[2], fitres2.x[3], 101)
 
 fig, axs = plt.subplots(1, 2, figsize=[8, 3])
 
-axs[0].plot(soc, fitter.get_ocv('neg', neg_soc))
-axs[1].plot(soc, fitter.get_ocv('pos', pos_soc))
+axs[0].plot(1.0 - neg_soc, fitter.get_ocv('neg', neg_soc))
+axs[1].plot(pos_soc, fitter.get_ocv('pos', pos_soc))
 
 for ax in axs:
     ax.set_xlabel('SOC [-]')

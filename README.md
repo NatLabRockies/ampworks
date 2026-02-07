@@ -1,10 +1,10 @@
 # ampworks
 
-[![ci-tests](https://github.com/NatLabRockies/ampworks/actions/workflows/ci.yml/badge.svg)](https://github.com/NatLabRockies/ampworks/actions/workflows/ci.yml) &nbsp;
-![coverage](https://github.com/NatLabRockies/ampworks/blob/main/images/coverage.svg?raw=true) &nbsp;
-[![license](https://img.shields.io/badge/License-BSD--3--Clause-blue.svg)](https://github.com/NatLabRockies/ampworks/blob/main/LICENSE) &nbsp;
+[![ci](https://github.com/NatLabRockies/ampworks/actions/workflows/ci.yml/badge.svg)](https://github.com/NatLabRockies/ampworks/actions/workflows/ci.yml) &nbsp;
+[![codecov](https://codecov.io/gh/NatLabRockies/ampworks/graph/badge.svg?token=O6PP2KXSEV)](https://codecov.io/gh/NatLabRockies/ampworks) &nbsp;
+[![license](https://img.shields.io/badge/license-BSD--3-blue.svg)](https://github.com/NatLabRockies/ampworks/blob/main/LICENSE) &nbsp;
 [![downloads](https://static.pepy.tech/personalized-badge/ampworks?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/ampworks) &nbsp;
-[![ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) &nbsp;
+[![pypi](https://img.shields.io/pypi/v/ampworks)](https://pypi.org/project/ampworks)
 
 ## Summary
 `ampworks` is a collection of tools designed to visualize and process experimental battery data. It provides routines for degradation mode analysis, parameter extraction from common protocols (e.g., GITT, ICI, etc.), and more. These routines provide key properties for life and physics-based models (e.g., SPM and P2D). Graphical user interfaces (GUIs) are available for some of the analyses. See a full list of the GUI-based applications by running `ampworks -h` in your terminal after installation. 

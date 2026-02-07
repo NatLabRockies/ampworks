@@ -19,7 +19,7 @@ on:
       - ".github/ISSUE_TEMPLATE/**"
 
 jobs:
-  test:
+  tests:
     name: Collect and upload coverage
     runs-on: ubuntu-latest
 
@@ -39,7 +39,7 @@ jobs:
           pip install .[tests]
 
       - name: Pytest with coverage
-        run: pytest --cov --cov-branch --cov-report=xml
+        run: pytest --cov=src/ampworks --cov-branch --cov-report=xml
 
       - name: Upload to codecov
         uses: codecov/codecov-action@v5

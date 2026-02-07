@@ -39,7 +39,7 @@ jobs:
           pip install .[tests]
 
       - name: Pytest with coverage
-        run: pytest --cov=src/ampworks --cov-branch --cov-report=xml
+        run: pytest --cov=ampworks --cov-branch --cov-report=xml tests/
 
       - name: Upload to codecov
         uses: codecov/codecov-action@v5

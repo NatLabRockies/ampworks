@@ -354,7 +354,7 @@ def extract_impedance(
     Examples
     --------
     >>> import seaborn as sns
-    >>> data = amp.datasets.load_datasets('hppc_discharge')
+    >>> data = amp.datasets.load_datasets('hppc/hppc_discharge')
     >>> impedance = amp.hppc.extract_impedance(data, tmax=31, sample_times=[5])
     >>> ax = sns.scatterplot(data=impedance, x='SOC_0', y='Ohms_2', hue='State')
     >>> ax.set_xlabel('SOC [-]')

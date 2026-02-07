@@ -100,7 +100,7 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
 
     Examples
     --------
-    >>> data = amp.datasets.load_datasets('ici_discharge')
+    >>> data = amp.datasets.load_datasets('ici/ici_discharge')
     >>> params, stats = amp.ici.extract_params(data, 1.8e-6, return_all=True)
     >>> params.plot('SOC', 'Eeq')
     >>> params.plot('SOC', 'Ds', logy=True)

@@ -6,7 +6,7 @@ import ampworks as amp
 
 @pytest.fixture(scope='module')
 def raw_data():
-    return amp.datasets.load_datasets('ici_discharge')
+    return amp.datasets.load_datasets('ici/ici_discharge')
 
 
 @pytest.fixture
@@ -48,7 +48,7 @@ def test_extract_params_basic(data):
     assert np.all((params['Eeq'] >= 3.0) & (params['Eeq'] <= 4.1))
 
     # test with charge data - overwrite "data" fixture
-    data = amp.datasets.load_datasets('ici_charge')
+    data = amp.datasets.load_datasets('ici/ici_charge')
 
     params = amp.ici.extract_params(data, 1.8e-6)
 

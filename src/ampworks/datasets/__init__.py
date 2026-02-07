@@ -5,14 +5,20 @@ The datasets are used in tutorials and tests. They provide a convenient intro
 to package functions without the overhead of requiring users to perform their
 own experiments.
 
-Most datasets were created using physics-based models like the pseudo-2D model.
+Most datasets were created using physics-based models, like the pseudo-2D model.
+Datasets are organized into subfolders by module, e.g., `ici` for ICI datasets.
 A brief description of each dataset is given below:
 
-1. `gitt_charge` - example GITT data (using charge/rest sequences)
-2. `gitt_discharge` - example GITT data (using discharge/rest sequences)
-3. `ici_charge` - example ICI data (using charge/rest sequences)
-4. `ici_discharge` - example ICI data (using discharge/rest sequences)
-5. `hppc_discharge` - example HPPC data (using discharge sequences)
+GITT datasets:
+    1. `gitt_charge` - example GITT data (using charge/rest sequences)
+    2. `gitt_discharge` - example GITT data (using discharge/rest sequences)
+
+HPPC datasets:
+    1. `hppc_discharge` - example HPPC data (using discharge sequences)
+
+ICI datasets:
+    1. `ici_charge` - example ICI data (using charge/rest sequences)
+    2. `ici_discharge` - example ICI data (using discharge/rest sequences)
 
 """
 
@@ -35,18 +41,50 @@ __all__ = [
 ]
 
 
-def list_datasets() -> list[str]:
+def list_datasets(*modules: str) -> list[str]:
     """
     List names of available example datasets.
+
+    Parameters
+    ----------
+    modules : str, optional
+        If given, only list datasets related to the given module(s) ('gitt',
+        'ici', etc.). Leaving empty (default) lists all datasets.
 
     Returns
     -------
     names : list[str]
         A list of example file names from an internal `resources` folder.
 
+    Examples
+    --------
+    >>> names = list_datasets()
+    >>> print(names)
+
+    >>> names = list_datasets('gitt')
+    >>> print(names)
+
+    >>> names = list_datasets('gitt', 'ici')
+    >>> print(names)
+
     """
     resources = pathlib.Path(os.path.dirname(__file__), 'resources')
-    return os.listdir(resources)
+    subfolders = os.listdir(resources)
+
+    if not modules:
+        modules = subfolders
+
+    missing = set(modules) - set(subfolders)
+    if missing:
+        raise ValueError(f"Requested module(s) not found: {missing}. Available"
+                         f" modules are {subfolders}.")
+
+    names = []
+    for m in modules:
+        files = [m + '/' + f for f in os.listdir(resources.joinpath(m))]
+        names.extend(files)
+
+    return names
 
 
 def download_all(path: str | os.PathLike | None = None) -> None:
@@ -66,11 +104,7 @@ def download_all(path: str | os.PathLike | None = None) -> None:
     path = pathlib.Path(path or '.').joinpath('ampworks_datasets')
     path.mkdir(parents=True, exist_ok=True)
 
-    for name in list_datasets():
-        orig = os.path.join(resources, name)
-        new = os.path.join(path, name)
-
-        shutil.copy(orig, new)
+    shutil.copytree(resources, path, dirs_exist_ok=True)
 
 
 def load_datasets(*names: str) -> Dataset:
@@ -80,7 +114,8 @@ def load_datasets(*names: str) -> Dataset:
     Parameters
     ----------
     *names : str
-        One or more dataset names to load.
+        One or more dataset names to load. Check `list_datasets()` for available
+        filenames. Note that including the '.csv' extension is optional.
 
     Returns
     -------
@@ -93,21 +128,32 @@ def load_datasets(*names: str) -> Dataset:
     ValueError
         Requested dataset is not available.
 
+    Examples
+    --------
+    >>> hppc_data = load_datasets('hppc/hppc_discharge.csv')
+    >>> print(hppc_data)
+
+    >>> ici_c, ici_d = load_datasets('ici/ici_charge', 'ici/ici_discharge')
+    >>> print(ici_c)
+    >>> print(ici_d)
+
     """
     from ampworks import read_csv
 
     available = list_datasets()
     resources = pathlib.Path(os.path.dirname(__file__), 'resources')
 
+    if len(names) == 0:
+        raise ValueError("At least one dataset name must be given.")
+
+    names = [n + '.csv' if not n.endswith('.csv') else n for n in names]
+
+    not_available = [n for n in names if n not in available]
+    if not_available:
+        raise ValueError(f"Requested dataset(s) not found: {not_available}.")
+
     datasets = []
     for name in names:
-
-        if not name.endswith('.csv'):
-            name += '.csv'
-
-        if name not in available:
-            raise ValueError(f"{name} is not an available dataset.")
-
         with catch_warnings():
             filterwarnings('ignore', message='.*No valid headers.*')
             data = read_csv(resources.joinpath(name))

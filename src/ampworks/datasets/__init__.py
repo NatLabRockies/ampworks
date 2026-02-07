@@ -41,29 +41,38 @@ __all__ = [
 ]
 
 
-def list_datasets(modules: str | list[str] | None = None) -> list[str]:
+def list_datasets(*modules: str) -> list[str]:
     """
     List names of available example datasets.
 
     Parameters
     ----------
-    modules : str or list[str] or None, optional
+    modules : str, optional
         If given, only list datasets related to the given module(s) ('gitt',
-        'ici', etc.). If None (default), list all available datasets.
+        'ici', etc.). Leaving empty (default) lists all datasets.
 
     Returns
     -------
     names : list[str]
         A list of example file names from an internal `resources` folder.
 
+    Examples
+    --------
+    >>> names = list_datasets()
+    >>> print(names)
+
+    >>> names = list_datasets('gitt')
+    >>> print(names)
+
+    >>> names = list_datasets('gitt', 'ici')
+    >>> print(names)
+
     """
     resources = pathlib.Path(os.path.dirname(__file__), 'resources')
     subfolders = os.listdir(resources)
 
-    if modules is None:
+    if not modules:
         modules = subfolders
-    elif isinstance(modules, str):
-        modules = [modules]
 
     missing = set(modules) - set(subfolders)
     if missing:
@@ -133,6 +142,9 @@ def load_datasets(*names: str) -> Dataset:
 
     available = list_datasets()
     resources = pathlib.Path(os.path.dirname(__file__), 'resources')
+
+    if len(names) == 0:
+        raise ValueError("At least one dataset name must be given.")
 
     names = [n + '.csv' if not n.endswith('.csv') else n for n in names]
 

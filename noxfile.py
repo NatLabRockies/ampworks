@@ -104,7 +104,6 @@ def run_pytest(session: nox.Session) -> None:
         command = [
             'pytest',
             '--cov=src/ampworks',
-            '--cov-branch',
             '--cov-report=html:reports/htmlcov',
             '--cov-report=xml:reports/coverage.xml',
             '--junitxml=reports/junit.xml',

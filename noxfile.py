@@ -1,6 +1,5 @@
 import os
 import shutil
-import importlib
 
 import nox
 
@@ -89,13 +88,10 @@ def run_pytest(session: nox.Session) -> None:
     you can specify the number of workers using an int, e.g., parallel=4.
 
     """
-    package = importlib.util.find_spec('ampworks')
-    coverage_folder = os.path.dirname(package.origin)
-
     if 'no-reports' in session.posargs:
         command = [
             'pytest',
-            f'--cov={coverage_folder}',  # for editable or site-packages
+            '--cov=ampworks',
             'tests/',
         ]
     else:
@@ -103,7 +99,7 @@ def run_pytest(session: nox.Session) -> None:
 
         command = [
             'pytest',
-            '--cov=src/ampworks',
+            '--cov=ampworks',
             '--cov-report=html:reports/htmlcov',
             '--cov-report=xml:reports/coverage.xml',
             '--junitxml=reports/junit.xml',

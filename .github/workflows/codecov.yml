@@ -39,7 +39,7 @@ jobs:
           pip install .[tests]
 
       - name: Collect coverage
-        run: nox -s tests
+        run: nox -s tests -- codecov
 
       - name: Upload to codecov
         uses: codecov/codecov-action@v5
@@ -48,6 +48,6 @@ jobs:
           verbose: true
           flags: unittests
           env_vars: OS,PYTHON
+          files: ./coverage.xml
           name: codecov-umbrella
           fail_ci_if_error: false
-          files: ./reports/coverage.xml

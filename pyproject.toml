@@ -79,6 +79,9 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*" = ["D"]
 
+[tool.coverage.run]
+relative_files = true
+
 [project.optional-dependencies]
 gui = [
     "dash",

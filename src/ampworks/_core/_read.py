@@ -198,11 +198,11 @@ def read_excel(
     workbook = pd.ExcelFile(filepath)
     all_sheets = workbook.sheet_names
     num_sheets = len(all_sheets)
-    
+
     # warn if 'all' matches a sheet name
-    if sheet_name == 'all' and 'all' in all_sheets: 
+    if sheet_name == 'all' and 'all' in all_sheets:
         warn()
-    
+
     # Set which sheets to iterate through
     if sheet_name is None or sheet_name == 'all':
         iter_sheets = all_sheets
@@ -215,7 +215,7 @@ def read_excel(
             "'sheet_name' expected a str, int, list[str, int], or None, but"
             f" got {type(sheet_name)}."
         )
-        
+
     # Raise errors if invalid indices/names
     indices = [v for v in iter_sheets if isinstance(v, int)]
     strings = [v for v in iter_sheets if isinstance(v, str)]

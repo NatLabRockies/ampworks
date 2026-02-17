@@ -19,6 +19,7 @@
 - Added tests for `ici.extract_params` ([#5](https://github.com/NatLabRockies/ampworks/pull/5))
 
 ### Bug Fixes
+- Catch when `NaN` is present when parsing for headers in excel files ([#23](https://github.com/NatLabRockies/ampworks/pull/23))
 - Force the `cell` dataset of the `DqdvFitter` to require an Ah column ([#19](https://github.com/NatLabRockies/ampworks/pull/19))
 - Update patching policy for releases, use `spellcheck` in nox pre-commit ([#13](https://github.com/NatLabRockies/ampworks/pull/13))
 - Readers missing name-only columns, e.g., `testtime` ([#8](https://github.com/NatLabRockies/ampworks/pull/8))

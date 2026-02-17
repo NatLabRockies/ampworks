@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from warnings import warn
-from typing import TYPE_CHECKING
+from typing import Sequence, TYPE_CHECKING
 
 import pandas as pd
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 # Define expected headers and their aliases
-def format_alias(names: str, units: str) -> str:
+def format_alias(names: Sequence[str], units: Sequence[str]) -> list[str]:
 
     aliases = units.copy()  # units only
 
@@ -187,29 +187,35 @@ def read_table(filepath: PathLike) -> Dataset:
     return Dataset()
 
 
-def read_excel(filepath: PathLike, sheet_name: str | int | list = 'first',
-               stack_sheets: bool = False) -> Dataset:
+def read_excel(
+    filepath: PathLike,
+    sheet_name: str | int | list[int, str] | None = None,
+    stack_sheets: bool = False,
+) -> Dataset:
     """Read excel file."""
     from ampworks import Dataset
 
     workbook = pd.ExcelFile(filepath)
     all_sheets = workbook.sheet_names
     num_sheets = len(all_sheets)
-
-    # Warn if any sheet conflicts with 'first' or 'all'
-    if sheet_name == 'first' and 'first' in all_sheets:
+    
+    # warn if 'all' matches a sheet name
+    if sheet_name == 'all' and 'all' in all_sheets: 
         warn()
-    elif sheet_name == 'all' and 'all' in all_sheets:
-        warn()
-
+    
     # Set which sheets to iterate through
-    if sheet_name in ['first', 'all']:
+    if sheet_name is None or sheet_name == 'all':
         iter_sheets = all_sheets
     elif isinstance(sheet_name, (str, int)):
         iter_sheets = [sheet_name]
+    elif isinstance(sheet_name, Sequence):
+        iter_sheets = list(sheet_name)
     else:
-        iter_sheets = sheet_name
-
+        raise TypeError(
+            "'sheet_name' expected a str, int, list[str, int], or None, but"
+            f" got {type(sheet_name)}."
+        )
+        
     # Raise errors if invalid indices/names
     indices = [v for v in iter_sheets if isinstance(v, int)]
     strings = [v for v in iter_sheets if isinstance(v, str)]
@@ -233,20 +239,21 @@ def read_excel(filepath: PathLike, sheet_name: str | int | list = 'first',
         # Find header row
         header_row = None
         for idx, row in preview.iterrows():
-            if header_matches(row.values.astype(str), REQUIRED_HEADERS):
+            tmp_headers = row.fillna('').astype(str).values
+            if header_matches(tmp_headers, REQUIRED_HEADERS):
                 header_row = idx
                 break
 
         if header_row is not None:
             df = workbook.parse(sheet, header=header_row)
             datasets[sheet] = standardize_headers(df)
-            if sheet_name == 'first':
+            if sheet_name is None:
                 break
         else:
             failed.append(sheet)
 
     # Prepare outputs
-    if sheet_name != 'first' and failed:
+    if sheet_name is None and failed:
         warn(f"Could not find valid headers in requested sheets: {failed}")
 
     if not datasets:

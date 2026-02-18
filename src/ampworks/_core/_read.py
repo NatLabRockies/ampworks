@@ -239,7 +239,7 @@ def read_excel(
         # Find header row
         header_row = None
         for idx, row in preview.iterrows():
-            tmp_headers = row.fillna('').astype(str).values
+            tmp_headers = row.fillna('NaN').astype(str).values
             if header_matches(tmp_headers, REQUIRED_HEADERS):
                 header_row = idx
                 break

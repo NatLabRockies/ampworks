@@ -3,7 +3,7 @@ import plotly.graph_objs as go
 from dash import dcc
 from plotly.subplots import make_subplots
 
-from ampworks.plotutils._style import PLOTLY_CONFIG, PLOTLY_TEMPLATE
+from ampworks.plotutils._plotly import PLOTLY_CONFIG, PLOTLY_TEMPLATE
 
 placeholder_fig = go.Figure()
 

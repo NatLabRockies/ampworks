@@ -128,13 +128,7 @@ class RichTable:
         from pandas import read_csv
         df = read_csv(path)
 
-        try:
-            return cls(df)
-        except TypeError:
-            instance = cls()
-            if hasattr(instance, '_df'):
-                instance._df = df
-            return instance
+        return cls(df)
 
     @property
     def df(self) -> DataFrame:

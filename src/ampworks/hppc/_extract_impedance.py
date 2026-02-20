@@ -36,8 +36,7 @@ def _plot_pulses(data: Dataset, **fig_kw) -> None:
         None, a temporary file is still created and is opened in the browser.
 
     """
-    from ampworks.plotutils._style import PLOTLY_TEMPLATE
-    from ampworks.plotutils._render import _render_plotly
+    from ampworks.plotutils._plotly import PLOTLY_TEMPLATE, _render_plotly
 
     save = fig_kw.get('save', None)
     figsize = fig_kw.get('figsize', (800, 500))

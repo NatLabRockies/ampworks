@@ -40,4 +40,5 @@ class _ExitHandler:
     @classmethod
     def register_atexit(cls, func: Callable) -> None:
         if func not in cls._registered:
+            cls._registered.append(func)
             atexit.register(func)

@@ -40,6 +40,8 @@ __all__ = [
     'load_datasets',
 ]
 
+RESOURCES = pathlib.Path(os.path.dirname(__file__), 'resources')
+
 
 def list_datasets(*modules: str) -> list[str]:
     """
@@ -68,20 +70,19 @@ def list_datasets(*modules: str) -> list[str]:
     >>> print(names)
 
     """
-    resources = pathlib.Path(os.path.dirname(__file__), 'resources')
-    subfolders = os.listdir(resources)
+    subfolders = os.listdir(RESOURCES)
 
     if not modules:
         modules = subfolders
 
     missing = set(modules) - set(subfolders)
     if missing:
-        raise ValueError(f"Requested module(s) not found: {missing}. Available"
-                         f" modules are {subfolders}.")
+        raise ValueError(f"Requested module(s) not found, or empty: {missing=}."
+                         f" Available modules are {subfolders=}.")
 
     names = []
     for m in modules:
-        files = [m + '/' + f for f in os.listdir(resources.joinpath(m))]
+        files = [m + '/' + f for f in os.listdir(RESOURCES.joinpath(m))]
         names.extend(files)
 
     return names
@@ -99,12 +100,10 @@ def download_all(path: str | os.PathLike | None = None) -> None:
         the current working directory is used.
 
     """
-    resources = pathlib.Path(os.path.dirname(__file__), 'resources')
-
     path = pathlib.Path(path or '.').joinpath('ampworks_datasets')
     path.mkdir(parents=True, exist_ok=True)
 
-    shutil.copytree(resources, path, dirs_exist_ok=True)
+    shutil.copytree(RESOURCES, path, dirs_exist_ok=True)
 
 
 def load_datasets(*names: str) -> Dataset:
@@ -141,7 +140,6 @@ def load_datasets(*names: str) -> Dataset:
     from ampworks import read_csv
 
     available = list_datasets()
-    resources = pathlib.Path(os.path.dirname(__file__), 'resources')
 
     if len(names) == 0:
         raise ValueError("At least one dataset name must be given.")
@@ -156,7 +154,7 @@ def load_datasets(*names: str) -> Dataset:
     for name in names:
         with catch_warnings():
             filterwarnings('ignore', message='.*No valid headers.*')
-            data = read_csv(resources.joinpath(name))
+            data = read_csv(RESOURCES.joinpath(name))
 
         datasets.append(data)
 

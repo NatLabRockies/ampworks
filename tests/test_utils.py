@@ -8,6 +8,35 @@ import pandas as pd
 import ampworks as amp
 
 
+def test_exit_handler():
+    from ampworks.utils import _ExitHandler
+
+    def dummy0():
+        pass
+
+    def dummy1():
+        pass
+
+    handler = _ExitHandler()
+    assert handler._registered == []
+    assert _ExitHandler._registered == []
+
+    # single registration
+    _ExitHandler.register_atexit(dummy0)
+    assert handler._registered == [dummy0]
+    assert _ExitHandler._registered == [dummy0]
+
+    # should not have duplicates
+    _ExitHandler.register_atexit(dummy0)
+    assert handler._registered == [dummy0]
+    assert _ExitHandler._registered == [dummy0]
+
+    # from handler instance
+    handler.register_atexit(dummy1)
+    assert handler._registered == [dummy0, dummy1]
+    assert _ExitHandler._registered == [dummy0, dummy1]
+
+
 def test_alphanum_sort():
 
     unsorted = [

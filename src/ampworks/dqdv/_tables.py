@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import pandas as pd
 
 from ampworks.utils import RichTable, RichResult
+
+if TYPE_CHECKING:  # pragma: no cover
+    from typing import Self
+    from pathlib import Path
 
 
 class DqdvFitResult(RichResult):
@@ -70,6 +76,33 @@ class DqdvFitTable(RichTable):
         df = pd.DataFrame(data)
 
         super().__init__(df)
+
+    @classmethod
+    def from_csv(cls, path: str | Path) -> Self:
+        """
+        Create a new instance from a CSV file.
+
+        Parameters
+        ----------
+        path : str or Path
+            Path to the CSV file.
+
+        Returns
+        -------
+        table : Self
+            A new instance initialized with data from the file.
+
+        """
+        from pandas import read_csv
+
+        df = read_csv(path)
+
+        extra_cols = set(df.columns) - set(cls._required_cols)
+
+        instance = cls(extra_cols=list(extra_cols))
+        instance._df = df
+
+        return instance
 
     def append(self, fit_result: DqdvFitResult, **extra_cols) -> None:
         """

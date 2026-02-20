@@ -183,7 +183,6 @@ def read_table(filepath: PathLike) -> Dataset:
 
             return standardize_headers(df)
 
-    warn(f"No valid headers found in {filepath}")
     return Dataset()
 
 
@@ -289,5 +288,4 @@ def read_csv(filepath: PathLike) -> Dataset:
 
             return standardize_headers(df)
 
-    warn(f"No valid headers found in {filepath}")
     return Dataset()

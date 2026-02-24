@@ -242,8 +242,8 @@ class DqdvSpline:
         ymin, ymax = dqdv_fit.min(), dqdv_fit.max()
         ylim = (ymin - 0.05*(ymax - ymin), ymax + 0.05*(ymax - ymin))
         axs[0, 1].set_ylim(ylim)
-        axs[0, 1].set_xlabel('dqdv [1/V]')
-        axs[0, 1].set_ylabel('Voltage [V]')
+        axs[0, 1].set_xlabel('Voltage [V]')
+        axs[0, 1].set_ylabel('dqdv [1/V]')
 
         # dvdq vs soc
         axs[1, 1].plot(self.SOC_, dvdq_dat, '.', color='C0', alpha=0.5)

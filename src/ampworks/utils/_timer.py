@@ -1,14 +1,20 @@
 from __future__ import annotations
 
 import time
+import textwrap
 
 
 class Timer:
     """Timer utility."""
 
-    __slots__ = ('name', '_units', '_converter', '_start', '_stop',)
+    __slots__ = ('name', '_units', '_converter', '_start', '_stop', '_display')
 
-    def __init__(self, name: str = 'Elapsed time', units: str = 's') -> None:
+    def __init__(
+        self,
+        name: str = 'Elapsed time',
+        units: str = 's',
+        display: bool = True,
+    ) -> None:
         """
         Measures elapsed time for a series of steps and prints results to the
         console. Initialize with a name to tell what steps each print statement
@@ -21,6 +27,9 @@ class Timer:
             Code block name used in print. The default is 'Elapsed time'.
         units : str, optional
             Printing units, from {'s', 'min', 'h'}. The default is 's'.
+        display : bool, optional
+            Whether to print the elapsed time when exiting a context block. The
+            default is True.
 
         Examples
         --------
@@ -38,6 +47,29 @@ class Timer:
             with Timer():
                 function(2.)
 
+        If you want to silence the print statement and just store the elapsed
+        time, set `display=False` and access the `elapsed_time` property:
+
+        .. code-block:: python
+
+            with Timer(display=False) as timer:
+                function(2.)
+
+            print(f"Elapsed time: {timer.elapsed_time:.5f} s")
+
+        Notes
+        -----
+        If you want to print in multiple units, you can call `print_elapsed()`
+        directly after exiting a context block. If your units are not seconds,
+        minutes, or hours, you can also perform your own conversion using the
+        `elapsed_time` property, which always returns seconds.
+
+        A timer can be reused for multiple context blocks if desired, but the
+        `elapsed_time` property will only return the most recent elapsed time
+        because each time you enter a context block the start time is reset.
+        So, make sure to print or store intermediate values if you want to keep
+        track of multiple context blocks with a single timer.
+
         """
         valid = ['s', 'min', 'h']
         if units not in valid:
@@ -53,20 +85,22 @@ class Timer:
 
         self._start = 0.
         self._stop = 0.
+        self._display = display
 
     def __repr__(self) -> str:  # pragma: no cover
 
+        elapsed = self._converter[self._units](self.elapsed_time)
+        elapsed_string = f"{elapsed} {self._units}"
+
         data = {
             'name': self.name,
-            'units': self._units,
-            'start': self._start,
-            'stop': self._stop,
-            'elapsed': self.elapsed_time,
+            'elapsed': elapsed_string,
         }
 
-        summary = "\n\t".join([f"{k}={v!r}," for k, v in data.items()])
+        summary = "\n".join([f"{k}={v!r}," for k, v in data.items()])
+        summary = textwrap.indent(summary, " " * 4)
 
-        return f"Timer(\n{summary}\n)"
+        return f"{self.__class__.__name__}(\n{summary}\n)"
 
     def __enter__(self) -> Timer:
         """Store start time when entering "with" block."""
@@ -76,9 +110,8 @@ class Timer:
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """Store stop time when exiting "with" block, and print."""
         self._stop = time.time()
-        elapsed = self._converter[self._units](self.elapsed_time)
-
-        print(f"{self.name}: {elapsed:.5f} {self._units}")
+        if self._display:
+            self.print_elapsed(self._units)
 
     @property
     def elapsed_time(self) -> float:
@@ -93,3 +126,16 @@ class Timer:
 
         """
         return self._stop - self._start
+
+    def print_elapsed(self, units: str = 's') -> None:
+        """
+        Print the elapsed time.
+
+        Parameters
+        ----------
+        units : str, optional
+            Printing units, from {'s', 'min', 'h'}. The default is 's'.
+
+        """
+        elapsed = self._converter[units](self.elapsed_time)
+        print(f"{self.name}: {elapsed:.5f} {units}")

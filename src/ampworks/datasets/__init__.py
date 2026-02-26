@@ -16,7 +16,7 @@ description of each dataset is given below:
 
 dQdV datasets:
     1. `cell1_rough` - noisy beginning of life full cell pseudo-OCV curve
-    2. `cell1_smooth` - smoothed version of `cell1_rough` 
+    2. `cell1_smooth` - smoothed version of `cell1_rough`
     3. `cell2_rough` - noisy aged full cell pseudo-OCV curve
     4. `cell2_smooth` - smoothed version of `cell2_rough`
     5. `gr_smooth` - smoothed graphite electrode pseudo-OCP voltage curve
@@ -149,7 +149,7 @@ def load_datasets(*names: str) -> Dataset:
     >>> print(ici_c)
     >>> print(ici_d)
 
-    """   
+    """
     from ampworks import read_csv
 
     available = list_datasets()
@@ -168,7 +168,7 @@ def load_datasets(*names: str) -> Dataset:
         with catch_warnings():
             filterwarnings('ignore', message='.*No valid headers.*')
             data = read_csv(RESOURCES.joinpath(name))
-            
+
         datasets.append(data)
 
     if len(datasets) == 1:

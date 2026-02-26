@@ -31,6 +31,19 @@ class Timer:
             Whether to print the elapsed time when exiting a context block. The
             default is True.
 
+        Notes
+        -----
+        If you want to print in multiple units, you can call `print_elapsed()`
+        directly after exiting a context block. If your units are not seconds,
+        minutes, or hours, you can also perform your own conversion using the
+        `elapsed_time` property, which always returns seconds.
+
+        A timer can be reused for multiple context blocks if desired, but the
+        `elapsed_time` property will only return the most recent elapsed time
+        because each time you enter a context block the start time is reset.
+        So, make sure to print or store intermediate values if you want to keep
+        track of multiple context blocks with a single timer.
+
         Examples
         --------
         The `Timer` works as a context manager and is accessed using `with`
@@ -56,19 +69,6 @@ class Timer:
                 function(2.)
 
             print(f"Elapsed time: {timer.elapsed_time:.5f} s")
-
-        Notes
-        -----
-        If you want to print in multiple units, you can call `print_elapsed()`
-        directly after exiting a context block. If your units are not seconds,
-        minutes, or hours, you can also perform your own conversion using the
-        `elapsed_time` property, which always returns seconds.
-
-        A timer can be reused for multiple context blocks if desired, but the
-        `elapsed_time` property will only return the most recent elapsed time
-        because each time you enter a context block the start time is reset.
-        So, make sure to print or store intermediate values if you want to keep
-        track of multiple context blocks with a single timer.
 
         """
         valid = ['s', 'min', 'h']

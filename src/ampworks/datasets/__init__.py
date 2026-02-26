@@ -137,7 +137,9 @@ def load_datasets(*names: str) -> Dataset:
     >>> print(ici_d)
 
     """
-    from ampworks import read_csv
+    import pandas as pd
+    
+    from ampworks import read_csv, Dataset
 
     available = list_datasets()
 
@@ -156,6 +158,10 @@ def load_datasets(*names: str) -> Dataset:
             filterwarnings('ignore', message='.*No valid headers.*')
             data = read_csv(RESOURCES.joinpath(name))
 
+        if data.empty:
+            data = pd.read_csv(RESOURCES.joinpath(name))
+            data = Dataset(data)
+            
         datasets.append(data)
 
     if len(datasets) == 1:

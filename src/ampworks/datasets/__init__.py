@@ -5,9 +5,22 @@ The datasets are used in tutorials and tests. They provide a convenient intro
 to package functions without the overhead of requiring users to perform their
 own experiments.
 
-Most datasets were created using physics-based models, like the pseudo-2D model.
-Datasets are organized into subfolders by module, e.g., `ici` for ICI datasets.
-A brief description of each dataset is given below:
+Datasets come from combinations of real-world experiments and model-generated
+data (ECM, SPM, P2D). While the `ampworks` algorithms are designed to work with
+real experimental data, model-generated data has also been useful in testing and
+demonstrating the algorithms in a controlled setting. Note that the included
+datasets are not intended to cover all user cases, and users are encouraged to
+apply the algorithms to their own data after learning from examples. Datasets
+are organized into subfolders by module, e.g., `ici` for ICI datasets. A brief
+description of each dataset is given below:
+
+dQdV datasets:
+    1. `cell1_rough` - noisy beginning of life full cell pseudo-OCV curve
+    2. `cell1_smooth` - smoothed version of `cell1_rough` 
+    3. `cell2_rough` - noisy aged full cell pseudo-OCV curve
+    4. `cell2_smooth` - smoothed version of `cell2_rough`
+    5. `gr_smooth` - smoothed graphite electrode pseudo-OCP voltage curve
+    6. `nmc_smooth` - smoothed NMC electrode pseudo-OCP voltage curve
 
 GITT datasets:
     1. `gitt_charge` - example GITT data (using charge/rest sequences)
@@ -136,10 +149,8 @@ def load_datasets(*names: str) -> Dataset:
     >>> print(ici_c)
     >>> print(ici_d)
 
-    """
-    import pandas as pd
-    
-    from ampworks import read_csv, Dataset
+    """   
+    from ampworks import read_csv
 
     available = list_datasets()
 
@@ -157,10 +168,6 @@ def load_datasets(*names: str) -> Dataset:
         with catch_warnings():
             filterwarnings('ignore', message='.*No valid headers.*')
             data = read_csv(RESOURCES.joinpath(name))
-
-        if data.empty:
-            data = pd.read_csv(RESOURCES.joinpath(name))
-            data = Dataset(data)
             
         datasets.append(data)
 

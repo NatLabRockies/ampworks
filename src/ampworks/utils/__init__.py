@@ -42,3 +42,7 @@ class _ExitHandler:
         if func not in cls._registered:
             cls._registered.append(func)
             atexit.register(func)
+
+    @classmethod
+    def clear_registered(cls) -> None:
+        cls._registered.clear()

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import Self, Literal, TYPE_CHECKING
 
 import numpy as np
@@ -197,14 +198,15 @@ class DqdvSpline:
 
         return self
 
-    def plot(self) -> plt.Axes:
+    def plot(self, return_axs: bool = False) -> np.ndarray[plt.Axes] | None:
         """
         Plot the fitted splines against the original data.
 
         Returns
         -------
-        axs : plt.Axes array
-            A 2x2 axes object containing the plots.
+        axes : np.ndarray[plt.Axes] or None
+            A 2x2 axes object containing the plots. This is only returned if
+            `return_axs=True`, otherwise None.
 
         """
         from ampworks.utils import _ExitHandler
@@ -227,8 +229,12 @@ class DqdvSpline:
         axs[0, 0].plot(self.SOC_, volts_fit, '--k')
         axs[0, 0].set_xlabel('SOC [-]')
         axs[0, 0].set_ylabel('Voltage [V]')
-        axs[0, 0].legend(['Data', 'Spline'], frameon=False, loc='upper left')
-        add_text(axs[0, 0], 0.6, 0.15, f"RMSE: {self.score_*1e3:.2f} mV")
+
+        axs[0, 0].legend(
+            ['Data', 'Spline'], frameon=False, ncols=2, loc='upper left',
+        )
+
+        add_text(axs[0, 0], 0.075, 0.75, f"RMSE: {self.score_*1e3:.2f} mV")
 
         # voltage error vs soc
         axs[1, 0].plot(self.SOC_, mV_err, '-k')
@@ -257,6 +263,9 @@ class DqdvSpline:
         format_ticks(axs)
 
         _ExitHandler.register_atexit(plt.show)
+
+        if return_axs:
+            return axs
 
     def volts_(self, soc: npt.ArrayLike) -> npt.ArrayLike:
         """

@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -124,8 +125,12 @@ def calc_lam_lli(fit_table: DqdvFitTable) -> pd.DataFrame:
     return DegModeTable(aging)
 
 
-def plot_lam_lli(deg_table: DegModeTable, x_col: str | None = None,
-                 std: bool = False) -> None:
+def plot_lam_lli(
+    deg_table: DegModeTable,
+    x_col: str | None = None,
+    std: bool = False,
+    return_axs: bool = False,
+) -> np.ndarray[plt.Axes] | None:
     """
     Plot degradation modes.
 
@@ -139,6 +144,15 @@ def plot_lam_lli(deg_table: DegModeTable, x_col: str | None = None,
     std : bool, optional
         Include shaded regions for estimated standard deviations of the LAM and
         LLI values when True. Default is False.
+    return_axs : bool, optional
+        If True (default), return the axes objects for the capacity, LAM, and
+        LLI plots. Otherwise, returns None.
+
+    Returns
+    -------
+    axes : np.ndarray[plt.Axes] or None
+        A 2x3 axes object containing the capacity, LAM, and LLI plots. This is
+        only returned if `return_axs=True`, otherwise None.
 
     See Also
     --------
@@ -199,3 +213,6 @@ def plot_lam_lli(deg_table: DegModeTable, x_col: str | None = None,
     format_ticks(axs, xdiv=2, ydiv=2)
 
     _ExitHandler.register_atexit(plt.show)
+
+    if return_axs:
+        return axs

@@ -474,18 +474,21 @@ class DqdvFitter:
 
         if params.size == 5:
             xn0, xn1, xp0, xp1, iR = params
-        else:
+        elif params.size == 4:
             xn0, xn1, xp0, xp1, iR = *params, 0.
+        else:
+            raise ValueError("'params' should be length 4 (xn0, xn1, xp0, xp1)"
+                             f" or 5 (with iR), but length is {params.size}.")
 
-        x_neg = xn0 + (xn1 - xn0) * self._soc
-        x_pos = xp0 + (xp1 - xp0) * self._soc
+        xn = xn0 + (xn1 - xn0) * self._soc
+        xp = xp0 + (xp1 - xp0) * self._soc
 
-        dxp_dx = xp1 - xp0  # for chain rule w.r.t. x_pos -> soc below
-        dxn_dx = xn1 - xn0  # for chain rule w.r.t. x_neg -> soc below
+        dxp = xp1 - xp0  # for chain rule w.r.t. x_pos -> soc below
+        dxn = xn1 - xn0  # for chain rule w.r.t. x_neg -> soc below
 
-        volt_fit = self._ocv_p(x_pos) - self._ocv_n(x_neg) - iR
+        volt_fit = self.get_ocv('pos', xp) - self.get_ocv('neg', xn) - iR
 
-        dvdq_fit = self._dvdq_p(x_pos)*dxp_dx - self._dvdq_n(x_neg)*dxn_dx
+        dvdq_fit = self.get_dvdq('pos', xp)*dxp - self.get_dvdq('neg', xn)*dxn
         dqdv_fit = 1 / dvdq_fit
 
         volt_data = self._volt_data
@@ -495,15 +498,6 @@ class DqdvFitter:
         volt_err = np.mean(np.abs((volt_fit - volt_data) / volt_data))
         dqdv_err = np.mean(np.abs((dqdv_fit - dqdv_data) / dqdv_data))
         dvdq_err = np.mean(np.abs((dvdq_fit - dvdq_data) / dvdq_data))
-
-        # attempt at using relative MSE, non-trivial to figure out scaling...
-        # volt_scale = np.maximum(volt_data, volt_data.mean())
-        # dqdv_scale = np.maximum(dqdv_data, dqdv_data.mean())
-        # dvdq_scale = np.maximum(dvdq_data, dvdq_data.mean())
-
-        # volt_err = np.mean(((volt_fit - volt_data) / volt_scale)**2)
-        # dqdv_err = np.mean(((dqdv_fit - dqdv_data) / dqdv_scale)**2)
-        # dvdq_err = np.mean(((dvdq_fit - dvdq_data) / dvdq_scale)**2)
 
         errs = RichResult(
             soc=self._soc,
@@ -646,15 +640,16 @@ class DqdvFitter:
 
         self._check_initialized('constrained_fit')
 
-        x0 = np.asarray(x0)
+        x0 = np.asarray(x0, dtype=float)
         eps = np.finfo(x0.dtype).eps
 
         # check and build bounds
         if isinstance(bounds, Real):
             bounds = [bounds]*4
-
-        if not isinstance(bounds, Iterable):
-            raise TypeError("'bounds' must be an iterable.")
+        elif isinstance(bounds, Iterable) and isinstance(bounds[0], Real):
+            bounds = np.asarray(bounds, dtype=float)
+        else:
+            raise TypeError("'bounds' should be a float or list[float].")
 
         if len(bounds) != 4:
             raise ValueError("'bounds' must have length 4.")
@@ -695,7 +690,7 @@ class DqdvFitter:
             'maxiter': maxiter,
         }
 
-        warnings.filterwarnings('ignore', 'delta_grad == 0.0')
+        warnings.filterwarnings('ignore', category=UserWarning)
 
         opt_result = opt.minimize(self._err_func, x0, method='trust-constr',
                                   bounds=bounds, constraints=constraints,
@@ -733,7 +728,7 @@ class DqdvFitter:
             size = opt_result.x.size
             cov = np.linalg.inv(opt_result.hess + scale*np.eye(size))
             std = np.sqrt(0.5*np.abs(np.diag(cov)))
-        except Exception:
+        except Exception:  # pragma: no cover
             std = None
 
         if 'voltage' not in self.cost_terms:
@@ -759,7 +754,11 @@ class DqdvFitter:
 
         return fit_result
 
-    def plot(self, params: npt.ArrayLike) -> None:
+    def plot(
+        self,
+        params: npt.ArrayLike,
+        return_axs: bool = False,
+    ) -> list[plt.Axes] | None:
         """
         Plot the model fit vs. data.
 
@@ -768,6 +767,16 @@ class DqdvFitter:
         params : ArrayLike, shape(n,)
             Array for xn0, xn1, xp0, xp1, and iR (optional). If you already
             performed a fit you can simply use `fit_result.x`.
+        return_axs : bool, optional
+            If True (default), return the axes objects for the voltage, dqdv,
+            and dvdq. Otherwise, returns None.
+
+        Returns
+        -------
+        axes : list[plt.Axes] or None
+            List of four axes objects for the voltage, dqdv, and dvdq plots. The
+            voltage plot has two y axes and consequently two axes objects. Only
+            returned if `return_axs=True`, otherwise None.
 
         """
         from ampworks.utils import _ExitHandler
@@ -788,8 +797,11 @@ class DqdvFitter:
         pstyle = {'ls': '-', 'lw': 2, 'color': 'C3', 'label': 'Pos'}
         nstyle = {'ls': '-', 'lw': 2, 'color': 'C0', 'label': 'Neg'}
         mstyle = {'ls': '-', 'lw': 2, 'color': 'k', 'label': 'Model'}
-        dstyle = {'ls': '', 'ms': 7, 'marker': 'o', 'mfc': 'grey',
-                  'alpha': 0.3, 'markeredgecolor': 'k', 'label': 'Data'}
+
+        dstyle = {
+            'ls': '', 'ms': 7, 'marker': 'o', 'mfc': 'grey',
+            'alpha': 0.3, 'markeredgecolor': 'k', 'label': 'Data',
+        }
 
         lines = []
 
@@ -815,14 +827,19 @@ class DqdvFitter:
         ax1.axvline(0., linestyle='--', color='grey')
         ax1.axvline(1., linestyle='--', color='grey')
 
-        add_text(ax1, 0.5, 0.06, f"MAPE={errs['volt_err']:.2e}%", ha='center')
+        xmin, xmax = ax1.get_xlim()
+        xloc = (0.5 - xmin) / (xmax - xmin)
+
+        add_text(ax1, xloc, 0.06, f"MAPE={errs['volt_err']:.2e}%", ha='center')
 
         ax1.set_xlabel(r"q [$-$]")
         ax1.set_ylabel(r"Voltage (pos/cell) [V]")
         twin.set_ylabel(r"Voltage (neg) [V]")
 
-        ax1.legend(lines, [line.get_label() for line in lines], ncols=2,
-                   loc='upper center', frameon=False)
+        ax1.legend(
+            lines, [ln.get_label() for ln in lines], ncols=2, frameon=False,
+            bbox_to_anchor=(xloc, 0.8), bbox_transform=plt.gca().transAxes,
+        )
 
         # ax2: dqdv -----------------------------------------------------------
         ax2.plot(errs['soc'], errs['dqdv_fit'], zorder=10, **mstyle)
@@ -853,3 +870,6 @@ class DqdvFitter:
             format_ticks(ax, xdiv=2, ydiv=2)
 
         _ExitHandler.register_atexit(plt.show)
+
+        if return_axs:
+            return [ax1, twin, ax2, ax3]

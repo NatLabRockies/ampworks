@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Self, Literal, TYPE_CHECKING
+from typing import Literal, TYPE_CHECKING
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,6 +9,7 @@ from scipy.interpolate import make_splrep
 from scipy.integrate import cumulative_trapezoid
 
 if TYPE_CHECKING:  # pragma: no cover
+    from typing import Self
     import ampworks as amp
     import numpy.typing as npt
 

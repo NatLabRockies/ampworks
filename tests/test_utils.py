@@ -17,6 +17,9 @@ def test_exit_handler():
     def dummy1():
         pass
 
+    _ExitHandler.clear_registered()
+    assert _ExitHandler._registered == []
+
     handler = _ExitHandler()
     assert handler._registered == []
     assert _ExitHandler._registered == []

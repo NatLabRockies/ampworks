@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -47,9 +48,3 @@ def focused_limits(
     ymin, ymax = y_clip.min(), y_clip.max()
     pad = margin * (ymax - ymin)
     return ymin - pad, ymax + pad
-
-
-# def shared_limits(axs, axis: str = 'y', margin: float = 0.0) -> None:
-#     # Compute shared min/max across multiple axes and set the same limits,
-#     # optionally adding a margin fraction for padding.
-#     ...

@@ -5,13 +5,11 @@ import ampworks as amp
 
 
 @pytest.fixture(scope='module')
-def raw_data():
-    return amp.datasets.load_datasets('gitt/gitt_discharge')
-
-
-@pytest.fixture
-def data(raw_data):
-    return raw_data.copy()
+def datasets():
+    datasets = {}
+    datasets['charge'] = amp.datasets.load_datasets('gitt/gitt_charge')
+    datasets['discharge'] = amp.datasets.load_datasets('gitt/gitt_discharge')
+    return datasets
 
 
 def test_extract_params_missing_columns():
@@ -21,14 +19,16 @@ def test_extract_params_missing_columns():
         _ = amp.gitt.extract_params(data, 1.8e-6)
 
 
-def test_extract_params_charge_discharge(data):
+def test_extract_params_charge_discharge(datasets):
+    data = datasets['discharge'].copy()
 
     data.loc[0, 'Amps'] = +1  # inject opposite sign
     with pytest.raises(ValueError):
         _ = amp.gitt.extract_params(data, 1.8e-6)
 
 
-def test_extract_params_basic(data):
+def test_extract_params_basic(datasets):
+    data = datasets['discharge'].copy()
 
     # test with discharge data, with return_all=True
     params, stats = amp.gitt.extract_params(data, 1.8e-6, return_all=True)
@@ -49,7 +49,7 @@ def test_extract_params_basic(data):
     assert np.all((params['Eeq'] >= 3.0) & (params['Eeq'] <= 4.1))
 
     # test with charge data - overwrite "data" fixture
-    data = amp.datasets.load_datasets('gitt/gitt_charge')
+    data = datasets['charge'].copy()
 
     params = amp.gitt.extract_params(data, 1.8e-6)
 
@@ -66,7 +66,8 @@ def test_extract_params_basic(data):
     assert np.all((params['Eeq'] >= 3.0) & (params['Eeq'] <= 4.1))
 
 
-def test_extract_params_truncate_last_step(data):
+def test_extract_params_truncate_last_step(datasets):
+    data = datasets['discharge'].copy()
 
     data['State'] = 'R'
     data.loc[data['Amps'] > 0, 'State'] = 'C'
@@ -87,7 +88,9 @@ def test_extract_params_truncate_last_step(data):
     assert params.notna().values.all()  # shouldn't have NaN for complete steps
 
 
-def test_extract_params_partial_rest(data):
+def test_extract_params_partial_rest(datasets):
+    data = datasets['discharge'].copy()
+
     # if tmin and tmax are set such that the number of points is less than two
     # then the linear regression cannot be performed and NaN is returned
 

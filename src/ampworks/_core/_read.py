@@ -4,6 +4,7 @@ from warnings import warn
 from typing import Sequence, TYPE_CHECKING
 
 import pandas as pd
+import polars as pl
 
 if TYPE_CHECKING:  # pragma: no cover
     from os import PathLike
@@ -44,7 +45,7 @@ HEADER_ALIASES = {
     'Amps': format_alias(i_names, i_units),
     'Volts': format_alias(v_names, v_units),
 
-    'Cycle': ['cycle', 'cyc', 'cyclec', 'cyclep', 'cycleindex', 'cyclenumber'],
+    'Cycle': ['cycle', 'cyc', 'cycleindex', 'cyclenumber', 'cyclec', 'cyclep'],
     'Step': ['step', 'ns', 'stepindex'],
     'State': ['state', 'md'],
 
@@ -103,7 +104,8 @@ def standardize_headers(data: pd.DataFrame) -> Dataset:
             if h2 not in HEADER_ALIASES[std_header]:
                 continue
 
-            df[std_header] = data[h1]
+            if std_header not in df.columns:
+                df[std_header] = data[h1]
 
             # Standardize units
             if std_header in UNIT_FACTORS.keys():
@@ -123,6 +125,7 @@ def standardize_headers(data: pd.DataFrame) -> Dataset:
     # Guarantee sign 'Amps' sign convention (+ charge, - discharge)
     if 'State' in df.columns:
         df['Amps'] = df['Amps'].astype(float)
+        df['State'] = df['State'].astype(str)
 
         sign = df['State'].map({'R': 0., 'C': +1, 'D': -1}).fillna(1)
         df['Amps'] = sign*df['Amps'].abs()
@@ -148,7 +151,7 @@ def standardize_headers(data: pd.DataFrame) -> Dataset:
 
         # Convert types
         if std_header in df.columns:
-            if std_header in ['DateTime', 'State']:
+            if std_header in ['State', 'DateTime']:
                 df[std_header] = df[std_header].astype(str)
             elif std_header in ['Cycle', 'Step']:
                 df[std_header] = df[std_header].astype(int)
@@ -178,10 +181,8 @@ def read_table(filepath: PathLike) -> Dataset:
                 break
 
         if found_header:
-            df = pd.read_csv(filepath, sep='\t', skiprows=skiprows,
-                             encoding_errors='ignore')
-
-            return standardize_headers(df)
+            df = pl.read_csv(filepath, separator='\t', skip_rows=skiprows)
+            return standardize_headers(df.to_pandas())
 
     return Dataset()
 
@@ -244,8 +245,19 @@ def read_excel(
                 break
 
         if header_row is not None:
-            df = workbook.parse(sheet, header=header_row)
-            datasets[sheet] = standardize_headers(df)
+            sheet_int = sheet if isinstance(sheet, int) else None
+            sheet_str = sheet if isinstance(sheet, str) else None
+            read_options = {'header_row': header_row} if header_row > 0 else {}
+
+            df = pl.read_excel(
+                filepath,
+                sheet_id=sheet_int,
+                sheet_name=sheet_str,
+                read_options=read_options,
+            )
+
+            datasets[sheet] = standardize_headers(df.to_pandas())
+
             if sheet_name is None:
                 break
         else:
@@ -283,9 +295,7 @@ def read_csv(filepath: PathLike) -> Dataset:
                 break
 
         if found_header:
-            df = pd.read_csv(filepath, sep=',', skiprows=skiprows,
-                             encoding_errors='ignore')
-
-            return standardize_headers(df)
+            df = pl.read_csv(filepath, separator=',', skip_rows=skiprows)
+            return standardize_headers(df.to_pandas())
 
     return Dataset()

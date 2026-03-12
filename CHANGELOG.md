@@ -3,6 +3,7 @@
 ## [Unreleased](https://github.com/NatLabRockies/ampworks)
 
 ### New Features
+- Change backend `read` functions to use `polars`, improving read speeds ([#24](https://github.com/NatLabRockies/ampworks/pull/24))
 - New `ocv` module with `match_peaks` function and supporting `DqdvSpline` ([#14](https://github.com/NatLabRockies/ampworks/pull/14))
 - Add `hppc` subpackage to extract impedance from HPPC protocols ([#12](https://github.com/NatLabRockies/ampworks/pull/12))
 - Update dQdV GUI figure to gridspec with electrode voltages ([#10](https://github.com/NatLabRockies/ampworks/pull/10))
@@ -28,6 +29,7 @@
 - Complete overhaul to `plotutils` for shorter, modular use ([#2](https://github.com/NatLabRockies/ampworks/pull/2))
 
 ### Chores
+- Improve test coverage for the `dqdv` module, emphasizing the `DqdvFitter` ([#24](https://github.com/NatLabRockies/ampworks/pull/24))
 - Enable and configure `codecov` for tracking test coverage and comparing PRs ([#21](https://github.com/NatLabRockies/ampworks/pull/21))
 - Organize example datasets by module to improve discovery and scalability ([#20](https://github.com/NatLabRockies/ampworks/pull/20))
 - Remove `flake8` and `autopep8` and use `ruff` for linting/formatting instead ([#18](https://github.com/NatLabRockies/ampworks/pull/18))

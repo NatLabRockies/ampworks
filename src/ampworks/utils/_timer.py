@@ -104,12 +104,12 @@ class Timer:
 
     def __enter__(self) -> Timer:
         """Store start time when entering "with" block."""
-        self._start = time.time()
+        self._start = time.perf_counter()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         """Store stop time when exiting "with" block, and print."""
-        self._stop = time.time()
+        self._stop = time.perf_counter()
         if self._display:
             self.print_elapsed(self._units)
 

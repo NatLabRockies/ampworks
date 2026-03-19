@@ -112,7 +112,6 @@ dev = [
     "nox",
     "ruff",
     "codespell",
-    "genbadge[all]",
     "ampworks[gui,docs,tests]",
 ]
 

@@ -31,7 +31,7 @@ class ProgressBar(tqdm):
             display limited stats and time, with no progress bar.
         total : int, optional
             Number of expected iterations. Use when 'iterable' is a generator,
-            otherwise ETA and the printed bar are skipped.
+            otherwise estimated remaining time and the printed bar are skipped.
         **kwargs : dict, optional
             Additional keyword arguments to pass through to `tqdm`.
 
@@ -41,6 +41,31 @@ class ProgressBar(tqdm):
             'iterable' and 'manual' values are conflicting.
         ValueError
             'iterable' cannot be None if 'manual' is False.
+
+        Examples
+        --------
+        The examples below demonstrate the two uses of the `ProgressBar` class:
+        the "automatic" mode with an iterable, and the "manual" mode with custom
+        progress updates. As demonstrated, the `set_progress` method should be
+        called once per "iteration" in the "manual" mode, and that the instance
+        should be closed when finished.
+
+        .. code-block:: python
+
+            import time
+
+            from ampworks.utils import ProgressBar
+
+            # Automatic mode with an iterable
+            for i in ProgressBar(range(5), desc='Iterable'):
+                time.sleep(0.5)
+
+            # Manual mode with custom progress updates
+            progbar = ProgressBar(manual=True, desc='Manual')
+            for i in range(5):
+                time.sleep(0.5)
+                progbar.set_progress((i + 1) / 5)
+            progbar.close()
 
         """
         if manual and iterable is not None:
@@ -134,6 +159,14 @@ class ProgressBar(tqdm):
         self._iter = 0
         super().reset()
 
-    def __del__(self) -> None:
-        if hasattr(self, 'disable'):  # if super().__init__() ran
+    def close(self) -> None:
+        """
+        Closes the progress bar and releases resources. Should be called when
+        finished with the progress bar, especially in manual mode.
+
+        """
+        super().close()
+
+    def __del__(self) -> None:  # stop warnings/errors from multiple close calls
+        if hasattr(self, 'disable'):
             super().__del__()

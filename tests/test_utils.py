@@ -94,6 +94,8 @@ def test_progbar_initialization():
     assert bar._manual is True
     assert bar.total == 1
 
+    bar.close()
+
 
 def test_iterable_progbar():
     iterable = range(10)
@@ -103,6 +105,8 @@ def test_iterable_progbar():
         pass
 
     assert bar._manual is False
+
+    bar.close()
 
 
 def test_manual_progbar():
@@ -116,6 +120,8 @@ def test_manual_progbar():
 
     bar.reset()
     assert bar._iter == 0
+
+    bar.close()
 
 
 def test_RichResult():

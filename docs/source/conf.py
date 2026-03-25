@@ -154,7 +154,7 @@ dataset_keep = [
 ]
 
 richres_keep = ['copy']
-progbar_keep = ['reset', 'set_progress']
+progbar_keep = ['set_progress', 'reset', 'close']
 
 
 def skip_util_classes(app, what, name, obj, skip, options):

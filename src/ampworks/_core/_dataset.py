@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from warnings import warn
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -34,15 +35,19 @@ class Dataset(pd.DataFrame):
 
     def downsample(
         self, *, n: int = None, frac: float = None,
-        resolution: Sequence[str, float] = None, inplace: bool = False,
+        resolution: Sequence[str, float] = None,
+        monotonic: bool = False, inplace: bool = False,
         ignore_index: bool = False, keep_last: bool = False,
-    ) -> Dataset:
+    ) -> Dataset | None:
         """
         Downsample the dataset based on the specified criteria. Eliminates rows
         to reduce the dataset by one of the following methods:
-            - Keep a given number of rows
-            - Keep a given fraction of rows
-            - Keep rows based on the resolution of a given column
+
+        - Keep a given number of rows
+        - Keep a given fraction of rows
+        - Keep rows based on the resolution of a given column
+
+        TODO: Implement monotonic option, see argument notes below.
 
         Parameters
         ----------
@@ -53,6 +58,9 @@ class Dataset(pd.DataFrame):
         resolution : Sequence[str, float], optional
             Column (str) and resolution (float) to use for downsampling based on
             adjacent values. By default None.
+        monotonic : bool, optional
+            If True, enforces that the downsampled column results in a monotonic
+            sequence. Default is False. NOT YET IMPLEMENTED...
         inplace : bool, optional
             Modify in place if True. If False (default), return a new Dataset.
         ignore_index : bool, optional
@@ -70,9 +78,25 @@ class Dataset(pd.DataFrame):
         ValueError
             Specify exactly one of: n, frac, resolution.
 
+        Examples
+        --------
+        >>> data = amp.datasets.load_datasets('dqdv/cell1_rough')
+        >>>
+        >>> # keep 100 evenly spaced rows
+        >>> sample1 = data.downsample(n=100)
+        >>>
+        >>> # keep 50% of the data, dropping evenly spaced rows
+        >>> sample2 = data.downsample(frac=0.5)
+        >>>
+        >>> # ensure adjacent voltage readings are at least 1 mV apart
+        >>> sample3 = data.downsample(resolution=('Volts', 1e-3))
+
         """
         if sum(x is not None for x in [n, frac, resolution]) != 1:
             raise ValueError("Specify exactly one of: n, frac, resolution.")
+
+        if monotonic:
+            warn("'monotonic' option is not yet implemented.")
 
         df = self.copy()
         df = df.reset_index(drop=ignore_index)
@@ -145,6 +169,15 @@ class Dataset(pd.DataFrame):
         instead this function is called from a script, the plot will be saved to
         a temporary directory and automatically opened in a local web browser.
 
+        Examples
+        --------
+        >>> data = amp.datasets.load_datasets('hppc/hppc_discharge')
+        >>> data.interactive_xy_plot('Seconds', 'Volts', tips=['Step'])
+        >>>
+        >>> # Add new column to plot time in hours instead of seconds
+        >>> data['Hours'] = data['Seconds'] / 3600
+        >>> data.interactive_xy_plot('Hours', 'Volts', tips=['Step'])
+
         """
         from ampworks.plotutils._plotly import PLOTLY_TEMPLATE, _render_plotly
 
@@ -160,7 +193,7 @@ class Dataset(pd.DataFrame):
         _render_plotly(fig=fig, figsize=figsize, save=save)
 
     def zero_below(self, column: str, threshold: float,
-                   inplace: bool = False) -> Dataset:
+                   inplace: bool = False) -> Dataset | None:
         """
         Set values in 'column' below 'threshold' to zero.
 
@@ -176,8 +209,15 @@ class Dataset(pd.DataFrame):
 
         Returns
         -------
-        data : Dataset
-            The modified Dataset if 'inplace' is False.
+        data : Dataset or None
+            The modified Dataset if 'inplace' is False. Otherwise, None.
+
+        Examples
+        --------
+        >>> # zero out currents below a threshold from non-rest data
+        >>> data = amp.datasets.load_datasets('hppc/hppc_discharge')
+        >>> threshold = data.loc[data['State'] != 'R', 'Amps'].min()*1e-2
+        >>> data_zeroed = data.zero_below(column='Amps', threshold=threshold)
 
         """
         df = self.copy()

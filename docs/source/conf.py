@@ -150,6 +150,7 @@ dataset_keep = [
     'from_excel',
     'from_table',
     'zero_below',
+    'downsample',
     'interactive_xy_plot',
 ]
 

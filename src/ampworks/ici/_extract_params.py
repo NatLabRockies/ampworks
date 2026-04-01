@@ -27,7 +27,7 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
     1. Rest for 5 min, log data every 10 s.
 
     2. Charge (or discharge) at C/10 for 5 min; include a voltage limit. Log
-       data every 5 s or every 5 mV change.
+       every 5 s or every 5 mV.
 
     3. Rest for 10 seconds, log data every 0.1 s.
 
@@ -100,6 +100,7 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
 
     Examples
     --------
+    >>> import ampworks as amp
     >>> data = amp.datasets.load_datasets('ici/ici_discharge')
     >>> params, stats = amp.ici.extract_params(data, 1.8e-6, return_all=True)
     >>> params.plot('SOC', 'Eeq')

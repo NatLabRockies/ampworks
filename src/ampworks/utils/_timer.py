@@ -52,6 +52,7 @@ class Timer:
         .. code-block:: python
 
             import time
+
             from ampworks.utils import Timer
 
             def function(sleep_time: float) -> None:

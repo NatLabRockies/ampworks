@@ -62,9 +62,11 @@ class ProgressBar(tqdm):
 
             # Manual mode with custom progress updates
             progbar = ProgressBar(manual=True, desc='Manual')
+
             for i in range(5):
                 time.sleep(0.5)
                 progbar.set_progress((i + 1) / 5)
+
             progbar.close()
 
         """

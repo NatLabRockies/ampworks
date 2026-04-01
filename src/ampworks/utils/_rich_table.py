@@ -44,10 +44,12 @@ class RichTable:
         .. code-block:: python
 
             import pandas as pd
+
             from ampworks.utils import RichTable
 
             df = pd.DataFrame({'a': [1, 2, 3], 'b': [4, 5, 6]})
             table = RichTable(df)
+
             print(table)
 
         Subclassing to enforce required columns:
@@ -55,6 +57,7 @@ class RichTable:
         .. code-block:: python
 
             import pandas as pd
+
             from ampworks.utils import RichTable
 
             class CustomTable(RichTable):

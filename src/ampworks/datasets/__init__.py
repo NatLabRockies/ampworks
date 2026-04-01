@@ -54,6 +54,7 @@ __all__ = [
 ]
 
 RESOURCES = pathlib.Path(os.path.dirname(__file__), 'resources')
+DATAFOLDERS = os.listdir(RESOURCES)
 
 
 def list_datasets(*modules: str) -> list[str]:
@@ -71,8 +72,19 @@ def list_datasets(*modules: str) -> list[str]:
     names : list[str]
         A list of example file names from an internal `resources` folder.
 
+    Raises
+    ------
+    ValueError
+        Requested module(s) not found or empty. See the list of modules that
+        have available datasets by printing `ampworks.datasets.DATAFOLDERS`.
+
     Examples
     --------
+    The code snippets below show how to use the `list_datasets` function to list
+    available datasets. The first example lists all datasets, while the second
+    and third examples filter the list by module name.
+
+    >>> from ampworks.datasets import list_datasets
     >>> names = list_datasets()
     >>> print(names)
 
@@ -83,15 +95,13 @@ def list_datasets(*modules: str) -> list[str]:
     >>> print(names)
 
     """
-    subfolders = os.listdir(RESOURCES)
-
     if not modules:
-        modules = subfolders
+        modules = DATAFOLDERS
 
-    missing = set(modules) - set(subfolders)
+    missing = set(modules) - set(DATAFOLDERS)
     if missing:
         raise ValueError(f"Requested module(s) not found, or empty: {missing=}."
-                         f" Available modules are {subfolders=}.")
+                         f" Available modules are {DATAFOLDERS=}.")
 
     names = []
     for m in modules:
@@ -142,8 +152,18 @@ def load_datasets(*names: str) -> Dataset:
 
     Examples
     --------
+    In the following example, the `load_datasets` function is used to load a
+    single HPPC dataset and the optional `.csv` extension is included. The names
+    of the available datasets can be found using the `list_datasets` function.
+
+    >>> from ampworks.datasets import load_datasets
     >>> hppc_data = load_datasets('hppc/hppc_discharge.csv')
     >>> print(hppc_data)
+
+    In the next example, two ICI datasets are loaded at once by providing their
+    names. Here, the `.csv` extensions is omitted, but the function internally
+    appends it as needed. The returned datasets are provided in the same order
+    as the given names.
 
     >>> ici_c, ici_d = load_datasets('ici/ici_charge', 'ici/ici_discharge')
     >>> print(ici_c)

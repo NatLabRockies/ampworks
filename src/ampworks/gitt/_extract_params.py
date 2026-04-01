@@ -28,9 +28,9 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
     1. Rest for 5 min, log data every 10 s.
 
     2. Charge (or discharge) at C/20 for 11 min; include a voltage limit. Log
-       data every 0.2 s or every 5 mV change.
+       every 0.2 s or every 5 mV.
 
-    3. Rest for 135 min, log data every 10 min or every 5 mV change.
+    3. Rest for 135 min, log data every 10 min or every 5 mV.
 
     4. Stop if voltage limit reached in (2), otherwise repeat (2) and (3).
 
@@ -103,6 +103,7 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
 
     Examples
     --------
+    >>> import ampworks as amp
     >>> data = amp.datasets.load_datasets('gitt/gitt_discharge')
     >>> params, stats = amp.gitt.extract_params(data, 1.8e-6, return_all=True)
     >>> params.plot('SOC', 'Eeq')

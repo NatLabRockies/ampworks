@@ -52,6 +52,7 @@ class RichResult(dict):
                 _order_keys = ['first', 'second', 'third',]
 
             result = CustomResult(second=None, last=None, first=None)
+
             print(result)
 
         `RichResult` can also be used directly, without any custom sorting.
@@ -61,6 +62,7 @@ class RichResult(dict):
         .. code-block:: python
 
             import numpy as np
+
             from ampworks.utils import RichResult
 
             t = np.linspace(0, 1, 1000)
@@ -70,6 +72,7 @@ class RichResult(dict):
             y[-1] = np.nan
 
             result = RichResult(message='Example.', status=0, t=t, y=y)
+
             print(result)
 
         After initialization, all key/value pairs are accessible as instance

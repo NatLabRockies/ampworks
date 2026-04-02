@@ -80,16 +80,25 @@ class Dataset(pd.DataFrame):
 
         Examples
         --------
-        >>> data = amp.datasets.load_datasets('dqdv/cell1_rough')
-        >>>
-        >>> # keep 100 evenly spaced rows
-        >>> sample1 = data.downsample(n=100)
-        >>>
-        >>> # keep 50% of the data, dropping evenly spaced rows
-        >>> sample2 = data.downsample(frac=0.5)
-        >>>
-        >>> # ensure adjacent voltage readings are at least 1 mV apart
-        >>> sample3 = data.downsample(resolution=('Volts', 1e-3))
+        Below are examples of how to use the downsample method. In the first two
+        examples, the rows are dropped evenly across the dataset. In the third
+        example, rows are dropped based on the resolution of the 'Volts' column,
+        ensuring that adjacent voltage readings are at least 1 mV apart.
+
+        .. code-block:: python
+
+            import ampworks as amp
+
+            data = amp.datasets.load_datasets('dqdv/cell1_rough')
+
+            # keep 100 evenly spaced rows
+            sample1 = data.downsample(n=100)
+
+            # keep 50% of the data, dropping evenly spaced rows
+            sample2 = data.downsample(frac=0.5)
+
+            # ensure adjacent voltage readings are at least 1 mV apart
+            sample3 = data.downsample(resolution=('Volts', 1e-3))
 
         """
         if sum(x is not None for x in [n, frac, resolution]) != 1:
@@ -171,12 +180,27 @@ class Dataset(pd.DataFrame):
 
         Examples
         --------
-        >>> data = amp.datasets.load_datasets('hppc/hppc_discharge')
-        >>> data.interactive_xy_plot('Seconds', 'Volts', tips=['Step'])
-        >>>
-        >>> # Add new column to plot time in hours instead of seconds
-        >>> data['Hours'] = data['Seconds'] / 3600
-        >>> data.interactive_xy_plot('Hours', 'Volts', tips=['Step'])
+        The following example uses the 'hppc_discharge' dataset and creates an
+        interactive XY plot of 'Seconds' vs. 'Volts', with a hover tip showing
+        the step number. Even though only one hover tip is requested, it must
+        be passed in a list. For more than one hover tip, simply add more column
+        names to the list.
+
+        The interactive plots only allow one x and one y variable, and both are
+        required to be existing columns in the dataset. In the second example,
+        we compute a new column for time in hours so that we can change the
+        x-axis to 'Hours' instead of 'Seconds'.
+
+        .. code-block:: python
+
+            import ampworks as amp
+
+            data = amp.datasets.load_datasets('hppc/hppc_discharge')
+            data.interactive_xy_plot('Seconds', 'Volts', tips=['Step'])
+
+            # Add new column to plot time in hours instead of seconds
+            data['Hours'] = data['Seconds'] / 3600
+            data.interactive_xy_plot('Hours', 'Volts', tips=['Step'])
 
         """
         from ampworks.plotutils._plotly import PLOTLY_TEMPLATE, _render_plotly
@@ -214,10 +238,25 @@ class Dataset(pd.DataFrame):
 
         Examples
         --------
-        >>> # zero out currents below a threshold from non-rest data
-        >>> data = amp.datasets.load_datasets('hppc/hppc_discharge')
-        >>> threshold = data.loc[data['State'] != 'R', 'Amps'].min()*1e-2
-        >>> data_zeroed = data.zero_below(column='Amps', threshold=threshold)
+        Occasionally, there may be small non-zero values in the data that can
+        be considered as noise and set to zero. When not appropriately zeroed,
+        these can cause issues with automatic pulse detection (i.e., where the
+        algorithm detects changes from rests to non-rests and vice versa). So,
+        in the following example, we load the 'hppc_discharge' dataset and zero
+        out current values below a certain threshold. The threshold here is set
+        to 1% of the mean current from non-rest data, however, the appropriate
+        threshold should be determined based on the specific characteristics of
+        the dataset.
+
+        .. code-block:: python
+
+            import ampworks as amp
+
+            # zero out currents below a threshold from non-rest data
+            data = amp.datasets.load_datasets('hppc/hppc_discharge')
+            threshold = data.loc[data['State'] != 'R', 'Amps'].mean()*1e-2
+
+            data_zeroed = data.zero_below(column='Amps', threshold=threshold)
 
         """
         df = self.copy()

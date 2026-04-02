@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import csv
+
 from warnings import warn
 from typing import Sequence, TYPE_CHECKING
 
@@ -25,7 +27,7 @@ def format_alias(names: Sequence[str], units: Sequence[str]) -> list[str]:
     return aliases
 
 
-t_names = ['t', 'time', 'testtime']
+t_names = ['t', 'time', 'testtime', 'totaltime']
 t_units = ['s', 'sec', 'seconds', 'min', 'minutes', 'h', 'hrs', 'hours']
 
 i_names = ['i', 'amperage', 'current']
@@ -34,10 +36,10 @@ i_units = ['a', 'amps', 'ma', 'milliamps']
 v_names = ['voltage', 'potential', 'ecell']
 v_units = ['v', 'volts']
 
-q_names = ['capacity']
+q_names = ['capacity', 'amphours']
 q_units = ['ah', 'ahr', 'amphr', 'mah', 'mahr', 'mamphr']
 
-e_names = ['energy']
+e_names = ['energy', 'watthours']
 e_units = ['wh', 'whr', 'watthr']
 
 HEADER_ALIASES = {
@@ -47,12 +49,12 @@ HEADER_ALIASES = {
 
     'Cycle': ['cycle', 'cyc', 'cycleindex', 'cyclenumber', 'cyclec', 'cyclep'],
     'Step': ['step', 'ns', 'stepindex'],
-    'State': ['state', 'md'],
+    'State': ['state', 'md', 'mode'],
 
     'Ah': format_alias(q_names, q_units),
     'Wh': format_alias(e_names, e_units),
 
-    'DateTime': ['datetime', 'dpttime'],
+    'DateTime': ['datetime', 'dpttime', 'realtime'],
 }
 
 REQUIRED_HEADERS = ['Seconds', 'Amps', 'Volts']
@@ -60,7 +62,7 @@ REQUIRED_HEADERS = ['Seconds', 'Amps', 'Volts']
 
 # Remove unnecessary characters from header strings
 def strip_chars(string: str) -> str:
-    transmap = str.maketrans('(/', '..', ' _-#<>)')
+    transmap = str.maketrans('(/,', '...', ' _-#<>)')
     return string.lower().translate(transmap)
 
 
@@ -124,6 +126,9 @@ def standardize_headers(data: pd.DataFrame) -> Dataset:
 
     # Guarantee sign 'Amps' sign convention (+ charge, - discharge)
     if 'State' in df.columns:
+        rename_bitrode = {'REST': 'R', 'DCHG': 'D', 'CHRG': 'C'}
+        df['State'] = df['State'].replace(rename_bitrode)
+
         df['Amps'] = df['Amps'].astype(float)
         df['State'] = df['State'].astype(str)
 
@@ -152,13 +157,14 @@ def standardize_headers(data: pd.DataFrame) -> Dataset:
         # Convert types
         if std_header in df.columns:
             if std_header in ['State', 'DateTime']:
-                df[std_header] = df[std_header].astype(str)
+                df[std_header] = df[std_header].astype('string')
             elif std_header in ['Cycle', 'Step']:
-                df[std_header] = df[std_header].astype(int)
+                df[std_header] = df[std_header].astype('Int64')
             else:
                 df[std_header] = df[std_header].replace('#', '', regex=True)
                 df[std_header] = df[std_header].replace(',', '', regex=True)
-                df[std_header] = df[std_header].astype(float)
+
+                df[std_header] = pd.to_numeric(df[std_header], errors='coerce')
         else:
             missing.append(std_header)
 
@@ -172,16 +178,19 @@ def read_table(filepath: PathLike) -> Dataset:
     """Read tab-delimited file."""
     from ampworks import Dataset
 
-    with open(filepath, encoding='utf-8') as datafile:
+    options = {'separator': '\t', 'skip_rows': 0, 'ignore_errors': True}
+    with open(filepath, encoding='latin1') as datafile:
+        reader = csv.reader(datafile, delimiter='\t')
 
-        skiprows, found_header = 0, False
-        for idx, line in enumerate(datafile):
-            if header_matches(line.rstrip('\n').split('\t'), REQUIRED_HEADERS):
-                skiprows, found_header = idx, True
+        found_header = False
+        for idx, line in enumerate(reader):
+            if header_matches(line, REQUIRED_HEADERS):
+                options['skip_rows'] = idx
+                found_header = True
                 break
 
         if found_header:
-            df = pl.read_csv(filepath, separator='\t', skip_rows=skiprows)
+            df = pl.read_csv(filepath, **options)
             return standardize_headers(df.to_pandas())
 
     return Dataset()
@@ -286,16 +295,19 @@ def read_csv(filepath: PathLike) -> Dataset:
     """Read csv file."""
     from ampworks import Dataset
 
-    with open(filepath, encoding='utf-8') as datafile:
+    options = {'separator': ',', 'skip_rows': 0, 'ignore_errors': True}
+    with open(filepath, encoding='latin1') as datafile:
+        reader = csv.reader(datafile, delimiter=',')
 
-        skiprows, found_header = 0, False
-        for idx, line in enumerate(datafile):
-            if header_matches(line.rstrip('\n').split(','), REQUIRED_HEADERS):
-                skiprows, found_header = idx, True
+        found_header = False
+        for idx, line in enumerate(reader):
+            if header_matches(line, REQUIRED_HEADERS):
+                options['skip_rows'] = idx
+                found_header = True
                 break
 
         if found_header:
-            df = pl.read_csv(filepath, separator=',', skip_rows=skiprows)
+            df = pl.read_csv(filepath, **options)
             return standardize_headers(df.to_pandas())
 
     return Dataset()

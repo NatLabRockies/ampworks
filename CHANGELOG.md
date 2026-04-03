@@ -3,6 +3,7 @@
 ## [Unreleased](https://github.com/NatLabRockies/ampworks)
 
 ### New Features
+- New `_checks` module to help developers streamline raising some exceptions ([#25](https://github.com/NatLabRockies/ampworks/pull/25))
 - Change backend `read` functions to use `polars`, improving read speeds ([#24](https://github.com/NatLabRockies/ampworks/pull/24))
 - New `ocv` module with `match_peaks` function and supporting `DqdvSpline` ([#14](https://github.com/NatLabRockies/ampworks/pull/14))
 - Add `hppc` subpackage to extract impedance from HPPC protocols ([#12](https://github.com/NatLabRockies/ampworks/pull/12))

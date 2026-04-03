@@ -101,8 +101,12 @@ class Dataset(pd.DataFrame):
             sample3 = data.downsample(resolution=('Volts', 1e-3))
 
         """
-        if sum(x is not None for x in [n, frac, resolution]) != 1:
-            raise ValueError("Specify exactly one of: n, frac, resolution.")
+        from ampworks._checks import _check_only_one
+
+        _check_only_one(
+            conditions=[x is not None for x in [n, frac, resolution]],
+            message="Specify exactly one of: n, frac, resolution.",
+        )
 
         if monotonic:
             warn("'monotonic' option is not yet implemented.")

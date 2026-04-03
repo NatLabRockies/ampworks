@@ -80,10 +80,10 @@ def test_alphanum_sort():
 
 def test_progbar_initialization():
 
-    with pytest.raises(ValueError, match='conflicting'):
+    with pytest.raises(ValueError, match='Provide exactly one'):
         _ = amp.utils.ProgressBar(iterable=[1, 2, 3], manual=True)
 
-    with pytest.raises(ValueError, match='cannot be None'):
+    with pytest.raises(ValueError, match='Provide exactly one'):
         _ = amp.utils.ProgressBar(iterable=None, manual=False)
 
     bar = amp.utils.ProgressBar(iterable=[1, 2, 3])

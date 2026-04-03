@@ -55,12 +55,10 @@ class DqdvSpline:
             Root mean square error between smoothed and raw voltages.
 
         """
-        options = ['auto', 'provided', 'integrated']
-        if capacity_method not in options:
-            raise ValueError(
-                f"'capacity_method' expected a value in {options} but received"
-                f" {capacity_method}."
-            )
+        from ampworks._checks import _check_literal
+
+        options = {'auto', 'provided', 'integrated'}
+        _check_literal('capacity_method', capacity_method, options)
 
         self._capacity_method = capacity_method
 
@@ -130,6 +128,8 @@ class DqdvSpline:
         meets these requirements if you choose to use it.
 
         """
+        from ampworks._checks import _check_columns
+
         data = data.reset_index(drop=True)
 
         # flag how to determine capacity
@@ -139,11 +139,7 @@ class DqdvSpline:
             use_Ah = self._capacity_method == 'provided'
 
         required = {'Ah', 'Volts'} if use_Ah else {'Seconds', 'Amps', 'Volts'}
-        if not required.issubset(data.columns):
-            raise ValueError(
-                f"Missing columns in 'data'. Expected at least {required} but"
-                f" received {set(data.columns)}."
-            )
+        _check_columns(data, required)
 
         # integrate to get Ah column, if needed or requested
         is_net_charge = data['Volts'].iloc[0] < data['Volts'].iloc[-1]

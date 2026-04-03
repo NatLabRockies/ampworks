@@ -64,11 +64,12 @@ class DqdvFitTable(RichTable):
             'extra_cols' must be type list[str].
 
         """
+        from ampworks._checks import _check_type
+
         if extra_cols is None:
             extra_cols = []
 
-        if not isinstance(extra_cols, list):
-            raise TypeError("'extra_cols' must be type list[str].")
+        _check_type('extra_cols', extra_cols, list)
 
         self._extra_cols = extra_cols
         data = {col: [] for col in self._required_cols + self._extra_cols}

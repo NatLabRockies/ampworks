@@ -203,6 +203,7 @@ def read_excel(
 ) -> Dataset:
     """Read excel file."""
     from ampworks import Dataset
+    from ampworks._checks import _check_type, _check_inner_type
 
     workbook = pd.ExcelFile(filepath)
     all_sheets = workbook.sheet_names
@@ -213,31 +214,28 @@ def read_excel(
         warn()
 
     # Set which sheets to iterate through
+    _check_type('sheet_name', sheet_name, (str, int, Sequence, None))
+
     if sheet_name is None or sheet_name == 'all':
         iter_sheets = all_sheets
     elif isinstance(sheet_name, (str, int)):
         iter_sheets = [sheet_name]
     elif isinstance(sheet_name, Sequence):
         iter_sheets = list(sheet_name)
-    else:
-        raise TypeError(
-            "'sheet_name' expected a str, int, list[str, int], or None, but"
-            f" got {type(sheet_name)}."
-        )
 
     # Raise errors if invalid indices/names
-    indices = [v for v in iter_sheets if isinstance(v, int)]
-    strings = [v for v in iter_sheets if isinstance(v, str)]
-    others = [v for v in iter_sheets if not isinstance(v, (int, str))]
+    _check_inner_type('sheet_name', iter_sheets, (str, int))
 
-    bad_ind = [i for i in indices if not -num_sheets <= i < num_sheets]
+    strings = [v for v in iter_sheets if isinstance(v, str)]
+    indices = [v for v in iter_sheets if isinstance(v, int)]
+
     bad_str = [s for s in strings if s not in all_sheets]
-    if bad_ind:
-        raise ValueError(f"Invalid sheet indices {bad_ind}, has {num_sheets}")
+    bad_ind = [i for i in indices if not -num_sheets <= i < num_sheets]
+
     if bad_str:
         raise ValueError(f"Invalid worksheet names {bad_str}")
-    if others:
-        raise TypeError("'sheet_name' must only contain str and/or int types")
+    if bad_ind:
+        raise ValueError(f"Invalid sheet indices {bad_ind}, has {num_sheets}")
 
     # Iterate through select sheets
     failed = []

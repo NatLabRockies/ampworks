@@ -72,9 +72,9 @@ class Timer:
             print(f"Elapsed time: {timer.elapsed_time:.5f} s")
 
         """
-        valid = ['s', 'min', 'h']
-        if units not in valid:
-            raise ValueError(f"{units=} is invalid; valid values are {valid}.")
+        from ampworks._checks import _check_literal
+
+        _check_literal('units', units, {'s', 'min', 'h'})
 
         self.name = name
         self._units = units

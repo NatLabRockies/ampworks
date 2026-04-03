@@ -109,9 +109,8 @@ class RichTable:
             If any columns listed in `_required_cols` are missing.
 
         """
-        required = set(cls._required_cols)
-        if not required.issubset(df.columns):
-            raise ValueError(f"Missing columns, {required=}.")
+        from ampworks._checks import _check_columns
+        _check_columns(df, set(cls._required_cols))
 
     @classmethod
     def from_csv(cls, path: str | Path) -> Self:

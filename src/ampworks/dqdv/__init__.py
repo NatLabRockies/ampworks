@@ -47,14 +47,11 @@ def run_gui(jupyter_mode: str = 'external', jupyter_height: int = 650) -> None:
     """
     from ampworks.dqdv.gui_files import _gui
     from ampworks import _in_interactive, _in_notebook
+    from ampworks._checks import _check_type, _check_literal
 
-    if not isinstance(jupyter_mode, str):
-        raise TypeError("'jupyter_mode' must be type str.")
-    elif jupyter_mode not in ['external', 'inline']:
-        raise ValueError("'jupyter_mode' must be in {'external', 'inline'}.")
-
-    if not isinstance(jupyter_height, int):
-        raise TypeError("'jupyter_height' must be type int.")
+    _check_type('jupyter_mode', jupyter_mode, str)
+    _check_type('jupyter_height', jupyter_height, int)
+    _check_literal('jupyter_mode', jupyter_mode, {'external', 'inline'})
 
     if not _in_notebook():
         jupyter_mode = 'external'

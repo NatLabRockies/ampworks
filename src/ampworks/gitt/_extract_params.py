@@ -112,17 +112,17 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
     >>> print(stats)
 
     """
-    required = ['Seconds', 'Amps', 'Volts']
-    if not all(col in data.columns for col in required):
-        raise ValueError(f"'data' is missing columns, {required=}.")
+    from ampworks._checks import _check_columns, _check_only_one
+
+    _check_columns(data, {'Seconds', 'Amps', 'Volts'})
 
     charging = any(data['Amps'] > 0.)
     discharging = any(data['Amps'] < 0.)
 
-    if charging and discharging:
-        raise ValueError(
-            "'data' should not include both charge and discharge segments."
-        )
+    _check_only_one(
+        conditions=[charging, discharging],
+        message="'data' cannot include both charge and discharge segments.",
+    )
 
     df = data.copy()
     df = df.reset_index(drop=True)

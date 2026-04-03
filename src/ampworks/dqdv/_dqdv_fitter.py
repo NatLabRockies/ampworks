@@ -357,8 +357,9 @@ class DqdvFitter:
         electrode.
 
         """
-        if which not in ['neg', 'pos', 'cell']:
-            raise ValueError("'which' must be in ['neg', 'pos', 'cell'].")
+        from ampworks._checks import _check_literal
+
+        _check_literal('which', which, {'neg', 'pos', 'cell'})
 
         spline = getattr(self, f"_ocv_{which[0]}")
         if spline is None:
@@ -398,8 +399,9 @@ class DqdvFitter:
         information to ensure you are evaluating each in the correct directions.
 
         """
-        if which not in ['neg', 'pos', 'cell']:
-            raise ValueError("'which' must be in ['neg', 'pos', 'cell'].")
+        from ampworks._checks import _check_literal
+
+        _check_literal('which', which, {'neg', 'pos', 'cell'})
 
         spline = getattr(self, f"_dvdq_{which[0]}")
         if spline is None:

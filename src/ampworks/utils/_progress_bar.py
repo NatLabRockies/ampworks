@@ -38,9 +38,7 @@ class ProgressBar(tqdm):
         Raises
         ------
         ValueError
-            'iterable' and 'manual' values are conflicting.
-        ValueError
-            'iterable' cannot be None if 'manual' is False.
+            Provide exactly one of 'iterable' or 'manual', not both.
 
         Examples
         --------
@@ -70,10 +68,12 @@ class ProgressBar(tqdm):
             progbar.close()
 
         """
-        if manual and iterable is not None:
-            raise ValueError("'iterable' and 'manual' values are conflicting.")
-        elif not manual and iterable is None:
-            raise ValueError("'iterable' cannot be None if 'manual' is False.")
+        from ampworks._checks import _check_only_one
+
+        _check_only_one(
+            conditions=[manual, iterable is not None],
+            message="Provide exactly one of 'iterable' or 'manual', not both.",
+        )
 
         kwargs.setdefault('desc', desc)
         kwargs.setdefault('ncols', ncols)

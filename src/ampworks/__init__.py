@@ -30,10 +30,10 @@ from ._core import (
 )
 
 from .labels import (
+    LabelSet,
     StepLabel,
     CycleLabel,
     SectionLabel,
-    LabelSet,
     apply_labels,
 )
 
@@ -44,10 +44,10 @@ __all__ = [
     'read_csv',
     'read_excel',
     'read_table',
+    'LabelSet',
     'StepLabel',
     'CycleLabel',
     'SectionLabel',
-    'LabelSet',
     'apply_labels',
     'ocv',
     'ici',
@@ -59,8 +59,8 @@ __all__ = [
     'datasets',
     'mathutils',
     'plotutils',
-    '_in_interactive',
     '_in_notebook',
+    '_in_interactive',
 ]
 
 if TYPE_CHECKING:  # pragma: no cover

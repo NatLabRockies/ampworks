@@ -1,3 +1,13 @@
+"""
+A module for applying user-defined labels to steps, cycles, and sections of a
+dataset. This is intended to be used for datasets that have a 'Cycle' and 'Step'
+column. Note that all classes and functions in this module are also available in
+the top-level `ampworks` namespace. This is done for convenience so that calls
+to these classes and functions can stay short and simple, e.g. `amp.StepLabel`
+instead of `ampworks.labels.StepLabel`. However, the module is still available
+separately to help discoverability and to keep the code organized.
+
+"""
 from __future__ import annotations
 
 from numbers import Integral

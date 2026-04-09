@@ -3,7 +3,6 @@ General-purpose mathematical utilities for array and numerical computations.
 Provides reusable functions to simplify common tasks in data analysis and math.
 
 """
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

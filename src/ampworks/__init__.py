@@ -66,7 +66,7 @@ __all__ = [
 if TYPE_CHECKING:  # pragma: no cover
     from ampworks import (
         ocv, ici, gitt, dqdv, hppc, utils, labels, datasets, mathutils,
-        plotutils, 
+        plotutils,
     )
 
 

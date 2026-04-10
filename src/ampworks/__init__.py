@@ -29,6 +29,14 @@ from ._core import (
     read_table,
 )
 
+from .labels import (
+    LabelSet,
+    StepLabel,
+    CycleLabel,
+    SectionLabel,
+    apply_labels,
+)
+
 __version__ = '0.0.2.dev0'
 
 __all__ = [
@@ -36,22 +44,29 @@ __all__ = [
     'read_csv',
     'read_excel',
     'read_table',
+    'LabelSet',
+    'StepLabel',
+    'CycleLabel',
+    'SectionLabel',
+    'apply_labels',
     'ocv',
     'ici',
     'gitt',
     'dqdv',
     'hppc',
     'utils',
+    'labels',
     'datasets',
     'mathutils',
     'plotutils',
-    '_in_interactive',
     '_in_notebook',
+    '_in_interactive',
 ]
 
 if TYPE_CHECKING:  # pragma: no cover
     from ampworks import (
-        ocv, ici, gitt, dqdv, hppc, utils, datasets, mathutils, plotutils,
+        ocv, ici, gitt, dqdv, hppc, utils, labels, datasets, mathutils,
+        plotutils,
     )
 
 
@@ -63,6 +78,7 @@ _lazy_modules = {
     'dqdv': 'ampworks.dqdv',
     'hppc': 'ampworks.hppc',
     'utils': 'ampworks.utils',
+    'labels': 'ampworks.labels',
     'datasets': 'ampworks.datasets',
     'mathutils': 'ampworks.mathutils',
     'plotutils': 'ampworks.plotutils',

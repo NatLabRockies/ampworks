@@ -3,6 +3,7 @@
 ## [Unreleased](https://github.com/NatLabRockies/ampworks)
 
 ### New Features
+- Add a new module for labeling data with human-readable step, cycle, section names ([#26](https://github.com/NatLabRockies/ampworks/pull/26))
 - New `_checks` module to help developers streamline raising some exceptions ([#25](https://github.com/NatLabRockies/ampworks/pull/25))
 - Change backend `read` functions to use `polars`, improving read speeds ([#24](https://github.com/NatLabRockies/ampworks/pull/24))
 - New `ocv` module with `match_peaks` function and supporting `DqdvSpline` ([#14](https://github.com/NatLabRockies/ampworks/pull/14))

@@ -1,14 +1,10 @@
 from __future__ import annotations
 
 from warnings import warn
-from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 import plotly.express as px
-
-if TYPE_CHECKING:  # pragma: no cover
-    from typing import Sequence
 
 
 class Dataset(pd.DataFrame):
@@ -35,7 +31,7 @@ class Dataset(pd.DataFrame):
 
     def downsample(
         self, *, n: int = None, frac: float = None,
-        resolution: Sequence[str, float] = None,
+        resolution: tuple[str, float] = None,
         monotonic: bool = False, inplace: bool = False,
         ignore_index: bool = False, keep_last: bool = False,
     ) -> Dataset | None:
@@ -55,7 +51,7 @@ class Dataset(pd.DataFrame):
             Number of evenly spaced rows to keep, by default None.
         frac : float, optional
             Fraction of evenly spaced rows to keep, by default None.
-        resolution : Sequence[str, float], optional
+        resolution : tuple[str, float], optional
             Column (str) and resolution (float) to use for downsampling based on
             adjacent values. By default None.
         monotonic : bool, optional
@@ -153,7 +149,7 @@ class Dataset(pd.DataFrame):
 
     def interactive_xy_plot(
         self, x: str, y: str, tips: list[str] | None = None,
-        figsize: Sequence[int, int] = (800, 450), save: str = None,
+        figsize: tuple[int, int] = (800, 450), save: str = None,
     ) -> None:
         """
         Create an interactive XY plot using Plotly. Allows hovertips, zooming,
@@ -171,7 +167,7 @@ class Dataset(pd.DataFrame):
             Column name for the variable to plot on the y-axis.
         tips : list[str] or None, optional
             List of column names to display as hover tips, by default None.
-        figsize : Sequence[int, int], optional
+        figsize : tuple[int, int], optional
             Figure size (width, height) in pixels, by default (800, 450).
         save : str, optional
             File path to save the plot as an HTML file, by default None.

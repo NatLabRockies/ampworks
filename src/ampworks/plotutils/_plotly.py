@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 from tempfile import NamedTemporaryFile
-from typing import Sequence, TYPE_CHECKING
 
 import plotly.graph_objects as go
 
@@ -54,7 +54,7 @@ PLOTLY_CONFIG = {
 
 def _render_plotly(
     fig: Figure,
-    figsize: Sequence[int, int] | None = None,
+    figsize: tuple[int, int] | None = None,
     save: str | None = None,
 ) -> None:
     """
@@ -69,7 +69,7 @@ def _render_plotly(
     ----------
     fig : Figure
         The plotly figure to be rendered.
-    figsize : Sequence[int, int] | None, optional
+    figsize : tuple[int, int] | None, optional
         The size of the figure (width, height), by default None. If None, the
         default plotly size is used. You may also specify one dimension as None
         to make it responsive (i.e., adjust to the page) in that dimension.

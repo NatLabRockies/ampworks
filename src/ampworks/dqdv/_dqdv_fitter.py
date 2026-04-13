@@ -154,7 +154,7 @@ class DqdvFitter:
         return self._cost_terms
 
     @cost_terms.setter
-    def cost_terms(self, value: str | list[str]) -> None:
+    def cost_terms(self, value: str | Sequence[str]) -> None:
 
         options = ['voltage', 'dqdv', 'dvdq']
 
@@ -164,7 +164,7 @@ class DqdvFitter:
             value = [value]
 
         if not isinstance(value, Sequence):
-            raise TypeError("cost_terms must be a Sequence.")
+            raise TypeError("cost_terms must be a string or Sequence[str].")
 
         if len(value) == 0:
             raise ValueError("cost_terms is empty. Set to either 'all' or a"

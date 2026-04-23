@@ -3,6 +3,7 @@ import pathlib
 from warnings import filterwarnings
 
 import pytest
+import pandas as pd
 import ampworks as amp
 
 
@@ -34,9 +35,9 @@ def test_read_extra_columns(extension):
 
     assert {'Temperature', 'Notes'}.issubset(data.columns)
 
-    assert data['Notes'].dtype == 'string'
-    assert data['Temperature'].dtype == 'float64'
     assert data['Notes'].to_list() == ['start', 'run']
+    assert pd.api.types.is_string_dtype(data['Notes'])
+    assert pd.api.types.is_float_dtype(data['Temperature'])
 
 
 @pytest.mark.parametrize('extension', ['.csv', '.txt', '.xls', '.xlsx'])
@@ -55,13 +56,15 @@ def test_read_custom_aliases(extension):
 
     reader = all_readers[extension]
 
+    # Aliases with str, list[str], and None
     aliases = amp.HeaderAliases(
         Seconds='elapsed_s',
-        Amps='amps_raw',
-        Volts='volts_raw',
+        Amps=['amps_raw'],
+        Volts=None,
     )
 
-    data = reader(file, aliases=aliases, extra_columns={'Meta': None})
+    data = reader(file, aliases=aliases, extra_columns={'Meta': 'string'})
 
-    assert set(['Seconds', 'Amps', 'Volts', 'Meta']).issubset(data.columns)
     assert data['Meta'].to_list() == ['a', 'b']
+    assert pd.api.types.is_string_dtype(data['Meta'])
+    assert set(['Seconds', 'Amps', 'Volts', 'Meta']).issubset(data.columns)

@@ -51,14 +51,33 @@ def read_table(
 
     See Also
     --------
-    Dataset
-    HeaderAliases
+    HeaderAliases : Customize the column/header mapping for standardization.
 
     Notes
     -----
     By default, only aliases of Seconds, Amps, Volts, Cycle, Step, State, Ah,
     Wh, and DateTime are included. If you'd like to ensure that additional data
     columns are included, use the `extra_columns` parameter.
+
+    Examples
+    --------
+    The following example shows how to read in data from a `.txt` file using a
+    few of the available options.
+
+    .. code-block:: python
+
+        import ampworks as amp
+
+        # read in the file using all default options
+        data = amp.read_table('data.txt')
+
+        # specify custom aliases for a couple column headers
+        aliases = amp.HeaderAliases(Seconds='Time_s', Amps='Current_A')
+        data = amp.read_table('data.txt', aliases=aliases)
+
+        # include extra columns for temperature and notes
+        extra_cols = {'Temperature': float, 'Notes': None}
+        data = amp.read_table('data.txt', extra_columns=extra_cols)
 
     """
     from ampworks._checks import _check_type
@@ -140,14 +159,40 @@ def read_excel(
 
     See Also
     --------
-    Dataset
-    HeaderAliases
+    HeaderAliases : Customize the column/header mapping for standardization.
 
     Notes
     -----
     By default, only aliases of Seconds, Amps, Volts, Cycle, Step, State, Ah,
     Wh, and DateTime are included. If you'd like to ensure that additional data
     columns are included, use the `extra_columns` parameter.
+
+    Examples
+    --------
+    The following example shows how to read in data from an Excel file using a
+    few of the available options. Note that the examples demonstrate different
+    extensions that are both types of Excel files.
+
+    .. code-block:: python
+
+        import ampworks as amp
+
+        # read in the file using all default options
+        data = amp.read_excel('data.xls')
+
+        # specify custom aliases for a couple column headers
+        aliases = amp.HeaderAliases(Seconds='Time_s', Amps='Current_A')
+        data = amp.read_excel('data.xls', aliases=aliases)
+
+        # include extra columns for temperature and notes
+        extra_cols = {'Temperature': float, 'Notes': None}
+        data = amp.read_excel('data.xls', extra_columns=extra_cols)
+
+        # specify the second sheet and a sheet named 'last'
+        data = amp.read_excel('data.xlsx', sheet_name=[2, 'last'])
+
+        # read in all sheets and concatenate the results
+        data = amp.read_excel('data.xlsx', sheet_name='all', stack_sheets=True)
 
     """
     from ampworks import Dataset, HeaderAliases
@@ -290,14 +335,33 @@ def read_csv(
 
     See Also
     --------
-    Dataset
-    HeaderAliases
+    HeaderAliases : Customize the column/header mapping for standardization.
 
     Notes
     -----
     By default, only aliases of Seconds, Amps, Volts, Cycle, Step, State, Ah,
     Wh, and DateTime are included. If you'd like to ensure that additional data
     columns are included, use the `extra_columns` parameter.
+
+    Examples
+    --------
+    The following example shows how to read in data from a `.csv` file using a
+    few of the available options.
+
+    .. code-block:: python
+
+        import ampworks as amp
+
+        # read in the file using all default options
+        data = amp.read_csv('data.csv')
+
+        # specify custom aliases for a couple column headers
+        aliases = amp.HeaderAliases(Seconds='Time_s', Amps='Current_A')
+        data = amp.read_csv('data.csv', aliases=aliases)
+
+        # include extra columns for temperature and notes
+        extra_cols = {'Temperature': float, 'Notes': None}
+        data = amp.read_csv('data.csv', extra_columns=extra_cols)
 
     """
     from ampworks import Dataset, HeaderAliases

@@ -100,6 +100,7 @@ class HeaderAliases:
 
     def __init__(
         self,
+        *,
         Seconds: str | list[str] | None = None,
         Amps: str | list[str] | None = None,
         Volts: str | list[str] | None = None,
@@ -136,6 +137,20 @@ class HeaderAliases:
             Aliases for the standardized Wh column.
         DateTime : str or list[str] or None, optional
             Aliases for the standardized DateTime column.
+
+        Examples
+        --------
+        The following example shows how to use `HeaderAliases` to specify custom
+        aliases. Any inputs that are skipped will use a list of defaults. Note
+        that you can provide a single alias or many for each standard header. Be
+        aware that all parameters must be provided as keywords to avoid improper
+        ordering.
+
+        >>> import ampworks as amp
+        >>> aliases = amp.HeaderAliases(
+        ...     Seconds='elapsed_s',
+        ...     Amps=['current_amps', 'current_a'],
+        ... )
 
         """
         from ampworks._checks import _check_inner_type, _check_type

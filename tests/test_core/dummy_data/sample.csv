@@ -1,0 +1,3 @@
+Cycle,Step,Time (s),Current (A),Voltage (V),Temperature,Notes
+1,1,0,0.10,3.10,25.5,start
+1,2,1,0.20,3.20,26.0,run

@@ -186,7 +186,7 @@ def load_datasets(*names: str) -> Dataset:
     datasets = []
     for name in names:
         with catch_warnings():
-            filterwarnings('ignore', message='.*No valid headers.*')
+            filterwarnings('ignore', message='.*No valid aliases.*')
             data = read_csv(RESOURCES.joinpath(name))
 
         datasets.append(data)

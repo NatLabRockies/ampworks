@@ -27,6 +27,7 @@ from ._core import (
     read_csv,
     read_excel,
     read_table,
+    HeaderAliases,
 )
 
 from .labels import (
@@ -44,6 +45,7 @@ __all__ = [
     'read_csv',
     'read_excel',
     'read_table',
+    'HeaderAliases',
     'LabelSet',
     'StepLabel',
     'CycleLabel',

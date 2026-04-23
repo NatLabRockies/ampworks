@@ -34,7 +34,7 @@ def strip_chars(string: str | list[str] | None) -> str | list[str] | None:
         return None
     elif isinstance(string, list):
         return [strip_chars(s) for s in string]
-    
+
     transmap = str.maketrans('(/,', '...', ' _-#<>)')
     return string.lower().translate(transmap)
 
@@ -71,13 +71,13 @@ HEADER_ALIASES = {
 
 REQUIRED_HEADERS = ['Seconds', 'Amps', 'Volts']
 
-    
+
 # Allow users to define their own custom header aliases
 class HeaderAliases:
-    
+
     __slots__ = ('Seconds', 'Amps', 'Volts', 'Cycle', 'Step', 'State', 'Ah',
                  'Wh', 'DateTime')
-    
+
     def __init__(
         self,
         Seconds: str | list[str] | None = None,
@@ -90,34 +90,54 @@ class HeaderAliases:
         Wh: str | list[str] | None = None,
         DateTime: str | list[str] | None = None,
     ) -> None:
-        
-        self.Seconds = strip_chars(Seconds) or HEADER_ALIASES['Seconds']
-        self.Amps = strip_chars(Amps) or HEADER_ALIASES['Amps']
-        self.Volts = strip_chars(Volts) or HEADER_ALIASES['Volts']
-        self.Cycle = strip_chars(Cycle) or HEADER_ALIASES['Cycle']
-        self.Step = strip_chars(Step) or HEADER_ALIASES['Step']
-        self.State = strip_chars(State) or HEADER_ALIASES['State']
-        self.Ah = strip_chars(Ah) or HEADER_ALIASES['Ah']
-        self.Wh = strip_chars(Wh) or HEADER_ALIASES['Wh']
-        self.DateTime = strip_chars(DateTime) or HEADER_ALIASES['DateTime']
-        
+        from ampworks._checks import _check_type, _check_inner_type
+
+        params = {
+            'Seconds': Seconds,
+            'Amps': Amps,
+            'Volts': Volts,
+            'Cycle': Cycle,
+            'Step': Step,
+            'State': State,
+            'Ah': Ah,
+            'Wh': Wh,
+            'DateTime': DateTime,
+        }
+
+        # convert inputs to list[str] or use defaults if None
+        def make_list_or_default(key, value):
+            if value is None:
+                return HEADER_ALIASES[key]
+            if isinstance(value, str):
+                return strip_chars([value])
+            return strip_chars(value)
+
+        # loop over fields and add to class instance
+        for name, value in params.items():
+
+            _check_type(name, value, (str, list, None))
+            value = make_list_or_default(name, value)
+            _check_inner_type(name, value, str)
+
+            setattr(self, name, value)
+
     def __getitem__(self, key):
         if key in self.__slots__:
             return getattr(self, key)
         raise KeyError(f"{key} not found in {self.__class__.__name__}")
-                
+
     def __repr__(self) -> str:  # pragma: no cover
-        
+
         data = {k: v for k, v in self.items()}
 
         summary = "\n".join([f"{k}={v!r}," for k, v in data.items()])
         summary = textwrap.indent(summary, " " * 4)
-    
+
         return f"{self.__class__.__name__}(\n{summary}\n)"
-    
+
     def keys(self) -> list[str]:
         return list(self.__slots__)
-    
+
     def items(self) -> Generator:
         for slot in self.__slots__:
             yield (slot, getattr(self, slot))
@@ -143,12 +163,12 @@ def header_matches(
 def standardize_headers(
     data: pd.DataFrame,
     aliases: HeaderAliases | None = None,
-    extra_columns: list[str] | None = None,
+    extra_columns: dict[str, type | None] | None = None,
 ) -> Dataset:
     from ampworks import Dataset
-    
-    if extra_columns is not None:
-        warn("The `extra_columns` parameter is not yet implemented.")
+
+    print(data.columns)
+    print(data.dtypes)
 
     df = Dataset()
 
@@ -235,7 +255,33 @@ def standardize_headers(
             missing.append(std_header)
 
     if missing:
-        warn(f"No valid headers found for std_header={missing}.")
+        warn(f"No valid aliases found for {missing}.")
+
+    # Keep user-requested non-standardized columns from source data.
+    if extra_columns is not None:
+        missing_extra = []
+        skipped_extra = []
+
+        for col_name, col_type in extra_columns.items():
+            if col_name not in data.columns:
+                missing_extra.append(col_name)
+                continue
+
+            if col_name in df.columns:
+                skipped_extra.append(col_name)
+                continue
+
+            df[col_name] = data[col_name]
+            if col_type is not None:
+                df[col_name] = df[col_name].astype(col_type)
+
+        if missing_extra:
+            warn(f"'extra_columns' not found: {missing_extra=}. Only found"
+                 f" {set(data.columns)}.")
+
+        if skipped_extra:
+            warn(f"Skipped some conflicting 'extra_columns': {skipped_extra=}."
+                 f" Existing are {set(df.columns)}.")
 
     return df
 
@@ -243,16 +289,16 @@ def standardize_headers(
 def read_table(
     filepath: PathLike,
     aliases: HeaderAliases | None = None,
-    extra_columns: dict[str, type] | None = None,
+    extra_columns: dict[str, type | None] | None = None,
 ) -> Dataset:
     """
     Read a tab-delimited file.
-    
+
     Custom reading function for tab-delimited files. Scans the file to identify
     expected headers (see Notes for specifics). This routine is not specific to
     any particular cycler. Instead, it uses internal or user-defined aliases to
     find and standardize the headers, columns, and data types.
-    
+
     Parameters
     ----------
     filepath : PathLike
@@ -260,34 +306,41 @@ def read_table(
     aliases : HeaderAliases or None, optional
         Column alias mapping for the header standardization. If None (default),
         a set of internal default aliases is used.
-    extra_columns : dict[str, type] or None, optional
+    extra_columns : dict[str, type or None] or None, optional
         Additional columns to include in the standardized dataset. Include both
-        the column names and their corresponding data types in a dictionary. The
-        default is None. TODO: not yet implemented.
-        
+        the exact source column names and their corresponding data types in a
+        dictionary. Use value None to keep pandas-inferred dtype. The `type` is
+        also compatible with pandas dtypes, e.g., 'string', 'Int64', etc.
+
     Returns
     -------
     dataset : Dataset
         The read data.
-        
+
+    Warnings
+    --------
+    UserWarning
+        If `extra_columns` are not found in the source data or conflict with any
+        of the standardized headers.
+
+    See Also
+    --------
+    Dataset
+    HeaderAliases
+
     Notes
     -----
     By default, only aliases of Seconds, Amps, Volts, Cycle, Step, State, Ah,
     Wh, and DateTime are included. If you'd like to ensure that additional data
     columns are included, use the `extra_columns` parameter.
-        
-    See Also
-    --------
-    Dataset
-    HeaderAliases
-    
+
     """
     from ampworks import Dataset
     from ampworks._checks import _check_type
-    
+
     if aliases is None:
         aliases = HeaderAliases()
-        
+
     _check_type('aliases', aliases, HeaderAliases)
 
     options = {'separator': '\t', 'skip_rows': 0, 'ignore_errors': True}
@@ -296,7 +349,7 @@ def read_table(
 
         found_header = False
         for idx, line in enumerate(reader):
-            if header_matches(line, REQUIRED_HEADERS):
+            if header_matches(line, REQUIRED_HEADERS, aliases):
                 options['skip_rows'] = idx
                 found_header = True
                 break
@@ -313,16 +366,16 @@ def read_excel(
     sheet_name: str | int | list[int, str] | None = None,
     stack_sheets: bool = False,
     aliases: HeaderAliases | None = None,
-    extra_columns: dict[str, type] | None = None,
+    extra_columns: dict[str, type | None] | None = None,
 ) -> Dataset:
     """
     Read an Excel file.
-    
+
     Custom reading function for Excel files. Scans all (or some) of the sheets
     to identify expected headers (see Notes for specifics). This routine is not
     specific to any particular cycler. Instead, it uses internal or user-defined
     aliases to find and standardize the headers, columns, and data types.
-    
+
     Parameters
     ----------
     filepath : PathLike
@@ -336,29 +389,36 @@ def read_excel(
     aliases : HeaderAliases or None, optional
         Column alias mapping for the header standardization. If None (default),
         a set of internal default aliases is used.
-    extra_columns : dict[str, type] or None, optional
+    extra_columns : dict[str, type or None] or None, optional
         Additional columns to include in the standardized dataset. Include both
-        the column names and their corresponding data types in a dictionary. The
-        default is None. TODO: not yet implemented.
-        
+        the exact source column names and their corresponding data types in a
+        dictionary. Use value None to keep pandas-inferred dtype. The `type` is
+        also compatible with pandas dtypes, e.g., 'string', 'Int64', etc.
+
     Returns
     -------
     dataset : Dataset or dict[Dataset]
         The read data. If many sheets are read without stacking, a dictionary of
         Datasets is returned. The keys correspond to the provided `sheet_name`
         values, so may be a mix of strings and integers.
-        
+
+    Warnings
+    --------
+    UserWarning
+        If `extra_columns` are not found in the source data or conflict with any
+        of the standardized headers.
+
+    See Also
+    --------
+    Dataset
+    HeaderAliases
+
     Notes
     -----
     By default, only aliases of Seconds, Amps, Volts, Cycle, Step, State, Ah,
     Wh, and DateTime are included. If you'd like to ensure that additional data
     columns are included, use the `extra_columns` parameter.
-        
-    See Also
-    --------
-    Dataset
-    HeaderAliases
-    
+
     """
     from ampworks import Dataset
     from ampworks._checks import _check_type, _check_inner_type
@@ -396,13 +456,13 @@ def read_excel(
     if bad_ind:
         raise ValueError(f"Invalid sheet indices {bad_ind}, must be between 1"
                          f" and {num_sheets}.")
-        
+
     # Set up aliases or use defaults
     if aliases is None:
         aliases = HeaderAliases()
 
     _check_type('aliases', aliases, HeaderAliases)
-    
+
     # Iterate through select sheets
     failed = []
     datasets = {}
@@ -440,10 +500,10 @@ def read_excel(
 
     # Prepare outputs
     if sheet_name is None and failed:
-        warn(f"Could not find valid headers in requested sheets: {failed}")
+        warn(f"No valid aliases found in requested sheets: {failed}.")
 
     if not datasets:
-        warn(f"No valid headers found in requested sheets of {filepath}")
+        warn(f"No valid aliases found in requested sheets of {filepath}.")
         return Dataset()
 
     if stack_sheets:
@@ -460,17 +520,17 @@ def read_excel(
 def read_csv(
     filepath: PathLike,
     aliases: HeaderAliases | None = None,
-    extra_columns: dict[str, type] | None = None,
+    extra_columns: dict[str, type | None] | None = None,
 ) -> Dataset:
     """
     Read a csv file.
-    
+
     Custom reading function for comma-separated values (CSV) files. Scans the
     file to identify expected headers (see Notes for specifics). This routine is
-    not specific to any particular cycler. Instead, it uses default internal or 
+    not specific to any particular cycler. Instead, it uses default internal or
     user-defined aliases to find and standardize the headers, columns, and data
     types.
-    
+
     Parameters
     ----------
     filepath : PathLike
@@ -478,36 +538,43 @@ def read_csv(
     aliases : HeaderAliases or None, optional
         Column alias mapping for the header standardization. If None (default),
         a set of internal default aliases is used.
-    extra_columns : dict[str, type] or None, optional
+    extra_columns : dict[str, type or None] or None, optional
         Additional columns to include in the standardized dataset. Include both
-        the column names and their corresponding data types in a dictionary. The
-        default is None. TODO: not yet implemented.
-        
+        the exact source column names and their corresponding data types in a
+        dictionary. Use value None to keep pandas-inferred dtype. The `type` is
+        also compatible with pandas dtypes, e.g., 'string', 'Int64', etc.
+
     Returns
     -------
     dataset : Dataset
         The read data.
-        
+
+    Warnings
+    --------
+    UserWarning
+        If `extra_columns` are not found in the source data or conflict with any
+        of the standardized headers.
+
+    See Also
+    --------
+    Dataset
+    HeaderAliases
+
     Notes
     -----
     By default, only aliases of Seconds, Amps, Volts, Cycle, Step, State, Ah,
     Wh, and DateTime are included. If you'd like to ensure that additional data
     columns are included, use the `extra_columns` parameter.
-        
-    See Also
-    --------
-    Dataset
-    HeaderAliases
-    
+
     """
     from ampworks import Dataset
     from ampworks._checks import _check_type
 
     if aliases is None:
         aliases = HeaderAliases()
-    
+
     _check_type('aliases', aliases, HeaderAliases)
-    
+
     options = {'separator': ',', 'skip_rows': 0, 'ignore_errors': True}
     with open(filepath, encoding='latin1') as datafile:
         reader = csv.reader(datafile, delimiter=',')
@@ -522,5 +589,9 @@ def read_csv(
         if found_header:
             df = pl.read_csv(filepath, **options).to_pandas()
             return standardize_headers(df, aliases, extra_columns)
+
+        else:
+            warn(f"No valid aliases found for {REQUIRED_HEADERS} in {filepath}."
+                 " Returning empty dataset.")
 
     return Dataset()

@@ -5,7 +5,8 @@ made available at the base-level of the package.
 """
 
 from ._dataset import Dataset
-from ._read import read_csv, read_excel, read_table, HeaderAliases
+from ._headers import HeaderAliases, standardize_headers
+from ._read import read_csv, read_excel, read_table
 
 __all__ = [
     'Dataset',
@@ -13,4 +14,5 @@ __all__ = [
     'read_excel',
     'read_table',
     'HeaderAliases',
+    'standardize_headers',
 ]

@@ -28,6 +28,7 @@ from ._core import (
     read_excel,
     read_table,
     HeaderAliases,
+    standardize_headers,
 )
 
 from .labels import (
@@ -46,6 +47,7 @@ __all__ = [
     'read_excel',
     'read_table',
     'HeaderAliases',
+    'standardize_headers',
     'LabelSet',
     'StepLabel',
     'CycleLabel',

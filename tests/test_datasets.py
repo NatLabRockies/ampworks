@@ -3,9 +3,10 @@ import os
 import pytest
 import ampworks as amp
 
+from ampworks.datasets import RESOURCES
+
 
 def test_list_datasets():
-    from ampworks.datasets import RESOURCES
 
     # requested invalid or empty module
     with pytest.raises(ValueError):
@@ -33,7 +34,6 @@ def test_list_datasets():
 
 
 def test_download_all(tmp_path):
-    from ampworks.datasets import RESOURCES
 
     amp.datasets.download_all(path=tmp_path)
 

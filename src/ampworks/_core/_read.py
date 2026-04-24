@@ -3,180 +3,94 @@ from __future__ import annotations
 import csv
 
 from warnings import warn
-from typing import Sequence, TYPE_CHECKING
+from typing import TYPE_CHECKING, Sequence
 
 import pandas as pd
 import polars as pl
 
 if TYPE_CHECKING:  # pragma: no cover
     from os import PathLike
-    from ampworks import Dataset
+    from ampworks import Dataset, HeaderAliases
 
 
-# Define expected headers and their aliases
-def format_alias(names: Sequence[str], units: Sequence[str]) -> list[str]:
+def read_table(
+    filepath: PathLike,
+    aliases: HeaderAliases | None = None,
+    extra_columns: dict[str, type | None] | None = None,
+) -> Dataset:
+    """
+    Read a tab-delimited file.
 
-    aliases = units.copy()  # units only
+    Custom reading function for tab-delimited files. Scans the file to identify
+    expected headers (see Notes for specifics). This routine is not specific to
+    any particular cycler. Instead, it uses internal or user-defined aliases to
+    find and standardize the headers, columns, and data types.
 
-    for n in names:
-        aliases.append(f"{n}")  # name only
+    Parameters
+    ----------
+    filepath : PathLike
+        Path to the file, including extension.
+    aliases : HeaderAliases or None, optional
+        Column alias mapping for the header standardization. If None (default),
+        a set of internal default aliases is used.
+    extra_columns : dict[str, type or None] or None, optional
+        Extra source columns to preserve using exact source names as keys. The
+        values define cast type. Use None to keep inferred dtype. Both Python
+        types and pandas dtypes are accepted, e.g., `'string'`, `'Int64'`, etc.
 
-        for u in units:
-            aliases.append(f"{n}.{u}")  # name.units
+    Returns
+    -------
+    dataset : Dataset
+        Standardized battery dataset.
 
-    return aliases
+    Warnings
+    --------
+    UserWarning
+        If `extra_columns` are not found in the source data or conflict with any
+        of the standardized headers. Also, if no valid headers are found and an
+        empty dataset is returned.
 
+    See Also
+    --------
+    HeaderAliases : Customize the column/header mapping for standardization.
 
-t_names = ['t', 'time', 'testtime', 'totaltime']
-t_units = ['s', 'sec', 'seconds', 'min', 'minutes', 'h', 'hrs', 'hours']
+    Notes
+    -----
+    By default, only aliases of Seconds, Amps, Volts, Cycle, Step, State, Ah,
+    Wh, and DateTime are included. If you'd like to ensure that additional data
+    columns are included, use the `extra_columns` parameter.
 
-i_names = ['i', 'amperage', 'current']
-i_units = ['a', 'amps', 'ma', 'milliamps']
+    Examples
+    --------
+    The following example shows how to read in data from a `.txt` file using a
+    few of the available options.
 
-v_names = ['voltage', 'potential', 'ecell']
-v_units = ['v', 'volts']
+    .. code-block:: python
 
-q_names = ['capacity', 'amphours']
-q_units = ['ah', 'ahr', 'amphr', 'mah', 'mahr', 'mamphr']
+        import ampworks as amp
 
-e_names = ['energy', 'watthours']
-e_units = ['wh', 'whr', 'watthr']
+        # read in the file using all default options
+        data = amp.read_table('data.txt')
 
-HEADER_ALIASES = {
-    'Seconds': format_alias(t_names, t_units),
-    'Amps': format_alias(i_names, i_units),
-    'Volts': format_alias(v_names, v_units),
+        # specify custom aliases for a couple column headers
+        aliases = amp.HeaderAliases(Seconds='Time_s', Amps='Current_A')
+        data = amp.read_table('data.txt', aliases=aliases)
 
-    'Cycle': ['cycle', 'cyc', 'cycleindex', 'cyclenumber', 'cyclec', 'cyclep'],
-    'Step': ['step', 'ns', 'stepindex'],
-    'State': ['state', 'md', 'mode'],
+        # include extra columns for temperature and notes
+        extra_cols = {'Temperature': float, 'Notes': None}
+        data = amp.read_table('data.txt', extra_columns=extra_cols)
 
-    'Ah': format_alias(q_names, q_units),
-    'Wh': format_alias(e_names, e_units),
+    """
+    from ampworks._checks import _check_type
+    from ampworks import Dataset, HeaderAliases
+    from ampworks._core._headers import (
+        standardize_headers, header_matches, REQUIRED_HEADERS,
+    )
 
-    'DateTime': ['datetime', 'dpttime', 'realtime'],
-}
+    if aliases is None:
+        aliases = HeaderAliases()
 
-REQUIRED_HEADERS = ['Seconds', 'Amps', 'Volts']
-
-
-# Remove unnecessary characters from header strings
-def strip_chars(string: str) -> str:
-    transmap = str.maketrans('(/,', '...', ' _-#<>)')
-    return string.lower().translate(transmap)
-
-
-# Matches input headers with aliases of the standard headers
-def header_matches(headers: list[str], target_aliases: list[str]) -> bool:
-    headers = [strip_chars(h) for h in headers]
-
-    checks = {}
-    for k in target_aliases:
-        if any(alias in headers for alias in HEADER_ALIASES[k]):
-            checks[k] = True
-        else:
-            checks[k] = False
-
-    return all(checks.values())
-
-
-# Standardizes the column header names and the data units
-def standardize_headers(data: pd.DataFrame) -> Dataset:
-    from ampworks import Dataset
-
-    df = Dataset()
-
-    UNIT_FACTORS = {
-        'Amps': {
-            ('ma', 'mamps', 'milliamps'): 0.001,
-        },
-        'Ah': {
-            ('mah', 'mahr', 'mamphr'): 0.001,
-        },
-        'Seconds': {
-            ('min', 'mins', 'minute', 'minutes'): 60.,
-            ('h', 'hr', 'hrs', 'hour', 'hours'): 3600.,
-        },
-    }
-
-    # Match as-imported headers with standardized headers
-    for std_header in HEADER_ALIASES.keys():
-        for h1 in data.columns:
-            h2 = strip_chars(h1)
-            if h2 not in HEADER_ALIASES[std_header]:
-                continue
-
-            if std_header not in df.columns:
-                df[std_header] = data[h1]
-
-            # Standardize units
-            if std_header in UNIT_FACTORS.keys():
-                for units, factor in UNIT_FACTORS[std_header].items():
-                    if any(u in h2 for u in units):
-                        df[std_header] = df[std_header].astype(float)*factor
-                        break
-
-    # Create 'State' data if not present
-    if ('State' not in df.columns) and ('Amps' in df.columns):
-        df['Amps'] = df['Amps'].astype(float)
-
-        df['State'] = 'R'
-        df.loc[df['Amps'] > 0, 'State'] = 'C'
-        df.loc[df['Amps'] < 0, 'State'] = 'D'
-
-    # Guarantee sign 'Amps' sign convention (+ charge, - discharge)
-    if 'State' in df.columns:
-        rename_bitrode = {'REST': 'R', 'DCHG': 'D', 'CHRG': 'C'}
-        df['State'] = df['State'].replace(rename_bitrode)
-
-        df['Amps'] = df['Amps'].astype(float)
-        df['State'] = df['State'].astype(str)
-
-        sign = df['State'].map({'R': 0., 'C': +1, 'D': -1}).fillna(1)
-        df['Amps'] = sign*df['Amps'].abs()
-
-    # Create 'Ah' and 'Wh' from separate charge and discharge columns
-    if any(h not in df.columns for h in ['Ah', 'Wh']):
-        Q_headers = ['charge' + h for h in HEADER_ALIASES['Ah']]
-        E_headers = ['charge' + h for h in HEADER_ALIASES['Wh']]
-        for h1 in data.columns:
-            h2 = strip_chars(h1)
-            if h2 in Q_headers:
-                df['Ah'] = data[h1]
-                discharge_Ah = data[h1.replace('Charge', 'Discharge')]
-                df.loc[df['State'] == 'D', 'Ah'] = discharge_Ah
-            if h2 in E_headers:
-                df['Wh'] = data[h1]
-                discharge_Wh = data[h1.replace('Charge', 'Discharge')]
-                df.loc[df['State'] == 'D', 'Wh'] = discharge_Wh
-
-    # Final data typing, unit normalization, and checks for missing headers
-    missing = []
-    for std_header in HEADER_ALIASES.keys():
-
-        # Convert types
-        if std_header in df.columns:
-            if std_header in ['State', 'DateTime']:
-                df[std_header] = df[std_header].astype('string')
-            elif std_header in ['Cycle', 'Step']:
-                df[std_header] = df[std_header].astype('Int64')
-            else:
-                df[std_header] = df[std_header].replace('#', '', regex=True)
-                df[std_header] = df[std_header].replace(',', '', regex=True)
-
-                df[std_header] = pd.to_numeric(df[std_header], errors='coerce')
-        else:
-            missing.append(std_header)
-
-    if missing:
-        warn(f"No valid headers found for std_header={missing}.")
-
-    return df
-
-
-def read_table(filepath: PathLike) -> Dataset:
-    """Read tab-delimited file."""
-    from ampworks import Dataset
+    _check_type('aliases', aliases, HeaderAliases)
 
     options = {'separator': '\t', 'skip_rows': 0, 'ignore_errors': True}
     with open(filepath, encoding='latin1') as datafile:
@@ -184,26 +98,116 @@ def read_table(filepath: PathLike) -> Dataset:
 
         found_header = False
         for idx, line in enumerate(reader):
-            if header_matches(line, REQUIRED_HEADERS):
+            if header_matches(line, REQUIRED_HEADERS, aliases):
                 options['skip_rows'] = idx
                 found_header = True
                 break
 
         if found_header:
-            df = pl.read_csv(filepath, **options)
-            return standardize_headers(df.to_pandas())
+            df = pl.read_csv(filepath, **options).to_pandas()
+            return standardize_headers(df, aliases, extra_columns)
+
+        warn(f"No valid aliases found for {REQUIRED_HEADERS} in {filepath}."
+             " Returning empty dataset.")
 
     return Dataset()
 
 
 def read_excel(
     filepath: PathLike,
-    sheet_name: str | int | list[int, str] | None = None,
+    sheet_name: str | int | Sequence[str | int] | None = None,
     stack_sheets: bool = False,
+    aliases: HeaderAliases | None = None,
+    extra_columns: dict[str, type | None] | None = None,
 ) -> Dataset:
-    """Read excel file."""
-    from ampworks import Dataset
+    """
+    Read an Excel file.
+
+    Custom reading function for Excel files. Scans all (or some) of the sheets
+    to identify expected headers (see Notes for specifics). This routine is not
+    specific to any particular cycler. Instead, it uses internal or user-defined
+    aliases to find and standardize the headers, columns, and data types.
+
+    Parameters
+    ----------
+    filepath : PathLike
+        Path to the file, including extension.
+    sheet_name : str or int or Sequence[str or int] or None, optional
+        Name or index of the sheet(s) to read. For integers, use natural indices
+        from 1 to the number of sheets. None (default) will scan for the first
+        sheet with valid headers. Use `'all'` to read all sheets.
+    stack_sheets : bool, optional
+        If True, concatenate all parsed sheets into one dataset.
+    aliases : HeaderAliases or None, optional
+        Column alias mapping for the header standardization. If None (default),
+        a set of internal default aliases is used.
+    extra_columns : dict[str, type or None] or None, optional
+        Extra source columns to preserve using exact source names as keys. The
+        values define cast type. Use None to keep inferred dtype. Both Python
+        types and pandas dtypes are accepted, e.g., `'string'`, `'Int64'`, etc.
+
+    Returns
+    -------
+    dataset : Dataset or dict[str or int, Dataset]
+        Standardized dataset output. A dictionary is returned if multiple sheets
+        are read and `stack_sheets` is False.
+
+    Raises
+    ------
+    ValueError
+        If the parameter (or any of the elements in) `sheet_name` are invalid
+        names or indices.
+
+    Warnings
+    --------
+    UserWarning
+        If `extra_columns` are not found in the source data or conflict with any
+        of the standardized headers. Also, if no valid headers are found and an
+        empty dataset is returned.
+
+    See Also
+    --------
+    HeaderAliases : Customize the column/header mapping for standardization.
+
+    Notes
+    -----
+    By default, only aliases of Seconds, Amps, Volts, Cycle, Step, State, Ah,
+    Wh, and DateTime are included. If you'd like to ensure that additional data
+    columns are included, use the `extra_columns` parameter.
+
+    Examples
+    --------
+    The following example shows how to read in data from an Excel file using a
+    few of the available options. Note that the examples demonstrate different
+    extensions that are both types of Excel files.
+
+    .. code-block:: python
+
+        import ampworks as amp
+
+        # read in the file using all default options
+        data = amp.read_excel('data.xls')
+
+        # specify custom aliases for a couple column headers
+        aliases = amp.HeaderAliases(Seconds='Time_s', Amps='Current_A')
+        data = amp.read_excel('data.xls', aliases=aliases)
+
+        # include extra columns for temperature and notes
+        extra_cols = {'Temperature': float, 'Notes': None}
+        data = amp.read_excel('data.xls', extra_columns=extra_cols)
+
+        # specify the second sheet and a sheet named 'last'
+        data = amp.read_excel('data.xlsx', sheet_name=[2, 'last'])
+
+        # read in all sheets and concatenate the results
+        data = amp.read_excel('data.xlsx', sheet_name='all', stack_sheets=True)
+
+    """
+    from ampworks import Dataset, HeaderAliases
     from ampworks._checks import _check_type, _check_inner_type
+    from ampworks._core._headers import (
+        standardize_headers, header_matches, REQUIRED_HEADERS,
+    )
 
     workbook = pd.ExcelFile(filepath)
     all_sheets = workbook.sheet_names
@@ -211,7 +215,8 @@ def read_excel(
 
     # warn if 'all' matches a sheet name
     if sheet_name == 'all' and 'all' in all_sheets:
-        warn()
+        warn("sheet_name='all' is interpreted as ALL sheets, but a sheet named"
+             " 'all' exists. To read only that sheet, pass ['all'] explicitly.")
 
     # Set which sheets to iterate through
     _check_type('sheet_name', sheet_name, (str, int, Sequence, None))
@@ -226,16 +231,23 @@ def read_excel(
     # Raise errors if invalid indices/names
     _check_inner_type('sheet_name', iter_sheets, (str, int))
 
-    strings = [v for v in iter_sheets if isinstance(v, str)]
-    indices = [v for v in iter_sheets if isinstance(v, int)]
+    strings = [value for value in iter_sheets if isinstance(value, str)]
+    indices = [value for value in iter_sheets if isinstance(value, int)]
 
-    bad_str = [s for s in strings if s not in all_sheets]
-    bad_ind = [i for i in indices if not -num_sheets <= i < num_sheets]
+    bad_str = [value for value in strings if value not in all_sheets]
+    bad_ind = [value for value in indices if not 1 <= value <= num_sheets]
 
     if bad_str:
-        raise ValueError(f"Invalid worksheet names {bad_str}")
+        raise ValueError(f"Invalid worksheet names {bad_str}.")
     if bad_ind:
-        raise ValueError(f"Invalid sheet indices {bad_ind}, has {num_sheets}")
+        raise ValueError(f"Invalid sheet indices {bad_ind}, must be between 1"
+                         f" and {num_sheets}.")
+
+    # Set up aliases or use defaults
+    if aliases is None:
+        aliases = HeaderAliases()
+
+    _check_type('aliases', aliases, HeaderAliases)
 
     # Iterate through select sheets
     failed = []
@@ -246,8 +258,8 @@ def read_excel(
         # Find header row
         header_row = None
         for idx, row in preview.iterrows():
-            tmp_headers = row.fillna('NaN').astype(str).values
-            if header_matches(tmp_headers, REQUIRED_HEADERS):
+            tmp_headers = row.fillna('NaN').astype(str).to_list()
+            if header_matches(tmp_headers, REQUIRED_HEADERS, aliases):
                 header_row = idx
                 break
 
@@ -263,7 +275,9 @@ def read_excel(
                 read_options=read_options,
             )
 
-            datasets[sheet] = standardize_headers(df.to_pandas())
+            datasets[sheet] = standardize_headers(
+                df.to_pandas(), aliases, extra_columns,
+            )
 
             if sheet_name is None:
                 break
@@ -272,10 +286,10 @@ def read_excel(
 
     # Prepare outputs
     if sheet_name is None and failed:
-        warn(f"Could not find valid headers in requested sheets: {failed}")
+        warn(f"No valid aliases found in requested sheets: {failed}.")
 
     if not datasets:
-        warn(f"No valid headers found in requested sheets of {filepath}")
+        warn(f"No valid aliases found in requested sheets of {filepath}.")
         return Dataset()
 
     if stack_sheets:
@@ -289,9 +303,86 @@ def read_excel(
     return datasets
 
 
-def read_csv(filepath: PathLike) -> Dataset:
-    """Read csv file."""
-    from ampworks import Dataset
+def read_csv(
+    filepath: PathLike,
+    aliases: HeaderAliases | None = None,
+    extra_columns: dict[str, type | None] | None = None,
+) -> Dataset:
+    """
+    Read a csv file.
+
+    Custom reading function for comma-separated values (CSV) files. Scans the
+    file to identify expected headers (see Notes for specifics). This routine is
+    not specific to any particular cycler. Instead, it uses default internal or
+    user-defined aliases to find and standardize the headers, columns, and data
+    types.
+
+    Parameters
+    ----------
+    filepath : PathLike
+        Path to the file, including extension.
+    aliases : HeaderAliases or None, optional
+        Column alias mapping for the header standardization. If None (default),
+        a set of internal default aliases is used.
+    extra_columns : dict[str, type or None] or None, optional
+        Additional columns to include in the standardized dataset. Include both
+        the exact source column names and their corresponding data types in a
+        dictionary. Use value None to keep pandas-inferred dtype. The `type` is
+        also compatible with pandas dtypes, e.g., `'string'`, `'Int64'`, etc.
+
+    Returns
+    -------
+    dataset : Dataset
+        Standardized battery dataset.
+
+    Warnings
+    --------
+    UserWarning
+        If `extra_columns` are not found in the source data or conflict with any
+        of the standardized headers. Also, if no valid headers are found and an
+        empty dataset is returned.
+
+    See Also
+    --------
+    HeaderAliases : Customize the column/header mapping for standardization.
+
+    Notes
+    -----
+    By default, only aliases of Seconds, Amps, Volts, Cycle, Step, State, Ah,
+    Wh, and DateTime are included. If you'd like to ensure that additional data
+    columns are included, use the `extra_columns` parameter.
+
+    Examples
+    --------
+    The following example shows how to read in data from a `.csv` file using a
+    few of the available options.
+
+    .. code-block:: python
+
+        import ampworks as amp
+
+        # read in the file using all default options
+        data = amp.read_csv('data.csv')
+
+        # specify custom aliases for a couple column headers
+        aliases = amp.HeaderAliases(Seconds='Time_s', Amps='Current_A')
+        data = amp.read_csv('data.csv', aliases=aliases)
+
+        # include extra columns for temperature and notes
+        extra_cols = {'Temperature': float, 'Notes': None}
+        data = amp.read_csv('data.csv', extra_columns=extra_cols)
+
+    """
+    from ampworks import Dataset, HeaderAliases
+    from ampworks._checks import _check_type
+    from ampworks._core._headers import (
+        standardize_headers, header_matches, REQUIRED_HEADERS,
+    )
+
+    if aliases is None:
+        aliases = HeaderAliases()
+
+    _check_type('aliases', aliases, HeaderAliases)
 
     options = {'separator': ',', 'skip_rows': 0, 'ignore_errors': True}
     with open(filepath, encoding='latin1') as datafile:
@@ -299,13 +390,16 @@ def read_csv(filepath: PathLike) -> Dataset:
 
         found_header = False
         for idx, line in enumerate(reader):
-            if header_matches(line, REQUIRED_HEADERS):
+            if header_matches(line, REQUIRED_HEADERS, aliases):
                 options['skip_rows'] = idx
                 found_header = True
                 break
 
         if found_header:
-            df = pl.read_csv(filepath, **options)
-            return standardize_headers(df.to_pandas())
+            df = pl.read_csv(filepath, **options).to_pandas()
+            return standardize_headers(df, aliases, extra_columns)
+
+        warn(f"No valid aliases found for {REQUIRED_HEADERS} in {filepath}."
+             " Returning empty dataset.")
 
     return Dataset()

@@ -3,6 +3,7 @@
 ## [Unreleased](https://github.com/NatLabRockies/ampworks)
 
 ### New Features
+- Expose `standardize_headers` function and add options for custom headers and extra columns ([#27](https://github.com/NatLabRockies/ampworks/pull/27))
 - Add a new module for labeling data with human-readable step, cycle, section names ([#26](https://github.com/NatLabRockies/ampworks/pull/26))
 - New `_checks` module to help developers streamline raising some exceptions ([#25](https://github.com/NatLabRockies/ampworks/pull/25))
 - Change backend `read` functions to use `polars`, improving read speeds ([#24](https://github.com/NatLabRockies/ampworks/pull/24))

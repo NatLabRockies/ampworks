@@ -36,7 +36,7 @@ def read_table(
     extra_columns : dict[str, type or None] or None, optional
         Extra source columns to preserve using exact source names as keys. The
         values define cast type. Use None to keep inferred dtype. Both Python
-        types and pandas dtypes are accepted, e.g., `'string'`, `'Int64`', etc.
+        types and pandas dtypes are accepted, e.g., `'string'`, `'Int64'`, etc.
 
     Returns
     -------
@@ -47,7 +47,8 @@ def read_table(
     --------
     UserWarning
         If `extra_columns` are not found in the source data or conflict with any
-        of the standardized headers.
+        of the standardized headers. Also, if no valid headers are found and an
+        empty dataset is returned.
 
     See Also
     --------
@@ -143,7 +144,7 @@ def read_excel(
     extra_columns : dict[str, type or None] or None, optional
         Extra source columns to preserve using exact source names as keys. The
         values define cast type. Use None to keep inferred dtype. Both Python
-        types and pandas dtypes are accepted, e.g., `'string'`, `'Int64`', etc.
+        types and pandas dtypes are accepted, e.g., `'string'`, `'Int64'`, etc.
 
     Returns
     -------
@@ -151,11 +152,18 @@ def read_excel(
         Standardized dataset output. A dictionary is returned if multiple sheets
         are read and `stack_sheets` is False.
 
+    Raises
+    ------
+    ValueError
+        If the parameter (or any of the elements in) `sheet_name` are invalid
+        names or indices.
+
     Warnings
     --------
     UserWarning
         If `extra_columns` are not found in the source data or conflict with any
-        of the standardized headers.
+        of the standardized headers. Also, if no valid headers are found and an
+        empty dataset is returned.
 
     See Also
     --------
@@ -320,7 +328,7 @@ def read_csv(
         Additional columns to include in the standardized dataset. Include both
         the exact source column names and their corresponding data types in a
         dictionary. Use value None to keep pandas-inferred dtype. The `type` is
-        also compatible with pandas dtypes, e.g., 'string', 'Int64', etc.
+        also compatible with pandas dtypes, e.g., `'string'`, `'Int64'`, etc.
 
     Returns
     -------
@@ -331,7 +339,8 @@ def read_csv(
     --------
     UserWarning
         If `extra_columns` are not found in the source data or conflict with any
-        of the standardized headers.
+        of the standardized headers. Also, if no valid headers are found and an
+        empty dataset is returned.
 
     See Also
     --------

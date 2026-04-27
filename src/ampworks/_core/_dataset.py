@@ -14,21 +14,6 @@ class Dataset(pd.DataFrame):
     def _constructor(self) -> Dataset:
         return Dataset
 
-    @classmethod
-    def from_csv(cls, filepath):
-        from ampworks import read_csv
-        return read_csv(filepath)
-
-    @classmethod
-    def from_excel(cls, filepath):
-        from ampworks import read_excel
-        return read_excel(filepath)
-
-    @classmethod
-    def from_table(cls, filepath):
-        from ampworks import read_table
-        return read_table(filepath)
-
     def downsample(
         self, *, n: int = None, frac: float = None,
         resolution: tuple[str, float] = None,

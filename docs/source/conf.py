@@ -146,9 +146,6 @@ myst_enable_extensions = ['amsmath', 'dollarmath']
 # to keep in the ampworks documentation. The rest is excluded.
 
 dataset_keep = [
-    'from_csv',
-    'from_excel',
-    'from_table',
     'zero_below',
     'downsample',
     'interactive_xy_plot',

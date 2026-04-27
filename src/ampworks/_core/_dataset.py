@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from warnings import warn
-
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -15,20 +13,21 @@ class Dataset(pd.DataFrame):
         return Dataset
 
     def downsample(
-        self, *, n: int = None, frac: float = None,
+        self,
+        *,
+        n: int = None,
+        frac: float = None,
         resolution: tuple[str, float] = None,
-        monotonic: bool = False, inplace: bool = False,
-        ignore_index: bool = False, keep_last: bool = False,
+        inplace: bool = False,
+        ignore_index: bool = False,
+        keep_last: bool = False,
     ) -> Dataset | None:
         """
-        Downsample the dataset based on the specified criteria. Eliminates rows
-        to reduce the dataset by one of the following methods:
+        Downsample the dataset by eliminating rows using one of the following:
 
         - Keep a given number of rows
         - Keep a given fraction of rows
         - Keep rows based on the resolution of a given column
-
-        TODO: Implement monotonic option, see argument notes below.
 
         Parameters
         ----------
@@ -39,9 +38,6 @@ class Dataset(pd.DataFrame):
         resolution : tuple[str, float], optional
             Column (str) and resolution (float) to use for downsampling based on
             adjacent values. By default None.
-        monotonic : bool, optional
-            If True, enforces that the downsampled column results in a monotonic
-            sequence. Default is False. NOT YET IMPLEMENTED...
         inplace : bool, optional
             Modify in place if True. If False (default), return a new Dataset.
         ignore_index : bool, optional
@@ -88,9 +84,6 @@ class Dataset(pd.DataFrame):
             conditions=[x is not None for x in [n, frac, resolution]],
             message="Specify exactly one of: n, frac, resolution.",
         )
-
-        if monotonic:
-            warn("'monotonic' option is not yet implemented.")
 
         df = self.copy()
         df = df.reset_index(drop=ignore_index)

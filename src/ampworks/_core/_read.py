@@ -13,6 +13,144 @@ if TYPE_CHECKING:  # pragma: no cover
     from ampworks import Dataset, HeaderAliases
 
 
+def _read_delimited(
+    filepath: PathLike,
+    delimiter: str,
+    aliases: HeaderAliases,
+    extra_columns: dict[str, type | None] | None,
+) -> Dataset:
+    r"""
+    Generic internal reader for delimited files. Used for shared logic between
+    the csv and txt readers.
+
+    Parameters
+    ----------
+    filepath : PathLike
+        Path to the file, including extension.
+    delimiter : str
+        Delimiter to use for parsing the file. For example, `','` for csv files
+        and `'\t'` for tab-delimited files.
+    aliases : HeaderAliases or None, optional
+        Column alias mapping for the header standardization. If None (default),
+        a set of internal default aliases is used.
+    extra_columns : dict[str, type or None] or None, optional
+        Additional columns to include in the standardized dataset. Include both
+        the exact source column names and their corresponding data types in a
+        dictionary. Use value None to keep pandas-inferred dtype. The `type` is
+        also compatible with pandas dtypes, e.g., `'string'`, `'Int64'`, etc.
+
+    Returns
+    -------
+    data : Dataset
+        Standardized battery dataset.
+
+    """
+    from ampworks import Dataset, HeaderAliases
+    from ampworks._checks import _check_type
+    from ampworks._core._headers import (
+        standardize_headers, header_matches, REQUIRED_HEADERS,
+    )
+
+    if aliases is None:
+        aliases = HeaderAliases()
+
+    _check_type('aliases', aliases, HeaderAliases)
+
+    options = {'separator': delimiter, 'ignore_errors': True}
+
+    skip_rows = None
+    with open(filepath, encoding='latin1') as datafile:
+        reader = csv.reader(datafile, delimiter=delimiter)
+
+        for idx, line in enumerate(reader):
+            if header_matches(line, REQUIRED_HEADERS, aliases):
+                skip_rows = idx
+                break
+
+    if skip_rows is not None:
+        options['skip_rows'] = skip_rows
+        df = pl.read_csv(filepath, **options).to_pandas()
+        return standardize_headers(df, aliases, extra_columns)
+
+    warn(f"No valid aliases found for {REQUIRED_HEADERS} in {filepath}."
+         " Returning empty dataset.")
+
+    return Dataset()
+
+
+def read_csv(
+    filepath: PathLike,
+    aliases: HeaderAliases | None = None,
+    extra_columns: dict[str, type | None] | None = None,
+) -> Dataset:
+    """
+    Read a csv file.
+
+    Custom reading function for comma-separated values (CSV) files. Scans the
+    file to identify expected headers (see Notes for specifics). This routine is
+    not specific to any particular cycler. Instead, it uses default internal or
+    user-defined aliases to find and standardize the headers, columns, and data
+    types.
+
+    Parameters
+    ----------
+    filepath : PathLike
+        Path to the file, including extension.
+    aliases : HeaderAliases or None, optional
+        Column alias mapping for the header standardization. If None (default),
+        a set of internal default aliases is used.
+    extra_columns : dict[str, type or None] or None, optional
+        Additional columns to include in the standardized dataset. Include both
+        the exact source column names and their corresponding data types in a
+        dictionary. Use value None to keep pandas-inferred dtype. The `type` is
+        also compatible with pandas dtypes, e.g., `'string'`, `'Int64'`, etc.
+
+    Returns
+    -------
+    data : Dataset
+        Standardized battery dataset.
+
+    Warnings
+    --------
+    UserWarning
+        If `extra_columns` are not found in the source data or conflict with any
+        of the standardized headers. Also, if no valid headers are found and an
+        empty dataset is returned.
+
+    See Also
+    --------
+    ~ampworks.HeaderAliases : Custom column mapping for standardization.
+
+    Notes
+    -----
+    By default, only aliases of Seconds, Amps, Volts, Cycle, Step, State, Ah,
+    Wh, and DateTime are included. If you'd like to ensure that additional data
+    columns are included, use the `extra_columns` parameter.
+
+    Examples
+    --------
+    The following example shows how to read in data from a `.csv` file using a
+    few of the available options.
+
+    .. code-block:: python
+
+        import ampworks as amp
+
+        # read in the file using all default options
+        data = amp.read_csv('data.csv')
+
+        # specify custom aliases for a couple column headers
+        aliases = amp.HeaderAliases(Seconds='Time_s', Amps='Current_A')
+        data = amp.read_csv('data.csv', aliases=aliases)
+
+        # include extra columns for temperature and notes
+        extra_cols = {'Temperature': float, 'Notes': None}
+        data = amp.read_csv('data.csv', extra_columns=extra_cols)
+
+    """
+    return _read_delimited(filepath, ',', aliases, extra_columns)
+
+
 def read_table(
     filepath: PathLike,
     aliases: HeaderAliases | None = None,
@@ -81,36 +219,7 @@ def read_table(
         data = amp.read_table('data.txt', extra_columns=extra_cols)
 
     """
-    from ampworks._checks import _check_type
-    from ampworks import Dataset, HeaderAliases
-    from ampworks._core._headers import (
-        standardize_headers, header_matches, REQUIRED_HEADERS,
-    )
-
-    if aliases is None:
-        aliases = HeaderAliases()
-
-    _check_type('aliases', aliases, HeaderAliases)
-
-    options = {'separator': '\t', 'skip_rows': 0, 'ignore_errors': True}
-    with open(filepath, encoding='latin1') as datafile:
-        reader = csv.reader(datafile, delimiter='\t')
-
-        found_header = False
-        for idx, line in enumerate(reader):
-            if header_matches(line, REQUIRED_HEADERS, aliases):
-                options['skip_rows'] = idx
-                found_header = True
-                break
-
-        if found_header:
-            df = pl.read_csv(filepath, **options).to_pandas()
-            return standardize_headers(df, aliases, extra_columns)
-
-        warn(f"No valid aliases found for {REQUIRED_HEADERS} in {filepath}."
-             " Returning empty dataset.")
-
-    return Dataset()
+    return _read_delimited(filepath, '\t', aliases, extra_columns)
 
 
 def read_excel(
@@ -284,7 +393,7 @@ def read_excel(
         else:
             failed.append(sheet)
 
-    # Prepare outputs
+    # Prepare outputs (only warn about failed when auto-detecting)
     if sheet_name is None and failed:
         warn(f"No valid aliases found in requested sheets: {failed}.")
 
@@ -301,105 +410,3 @@ def read_excel(
         return single
 
     return datasets
-
-
-def read_csv(
-    filepath: PathLike,
-    aliases: HeaderAliases | None = None,
-    extra_columns: dict[str, type | None] | None = None,
-) -> Dataset:
-    """
-    Read a csv file.
-
-    Custom reading function for comma-separated values (CSV) files. Scans the
-    file to identify expected headers (see Notes for specifics). This routine is
-    not specific to any particular cycler. Instead, it uses default internal or
-    user-defined aliases to find and standardize the headers, columns, and data
-    types.
-
-    Parameters
-    ----------
-    filepath : PathLike
-        Path to the file, including extension.
-    aliases : HeaderAliases or None, optional
-        Column alias mapping for the header standardization. If None (default),
-        a set of internal default aliases is used.
-    extra_columns : dict[str, type or None] or None, optional
-        Additional columns to include in the standardized dataset. Include both
-        the exact source column names and their corresponding data types in a
-        dictionary. Use value None to keep pandas-inferred dtype. The `type` is
-        also compatible with pandas dtypes, e.g., `'string'`, `'Int64'`, etc.
-
-    Returns
-    -------
-    data : Dataset
-        Standardized battery dataset.
-
-    Warnings
-    --------
-    UserWarning
-        If `extra_columns` are not found in the source data or conflict with any
-        of the standardized headers. Also, if no valid headers are found and an
-        empty dataset is returned.
-
-    See Also
-    --------
-    ~ampworks.HeaderAliases : Custom column mapping for standardization.
-
-    Notes
-    -----
-    By default, only aliases of Seconds, Amps, Volts, Cycle, Step, State, Ah,
-    Wh, and DateTime are included. If you'd like to ensure that additional data
-    columns are included, use the `extra_columns` parameter.
-
-    Examples
-    --------
-    The following example shows how to read in data from a `.csv` file using a
-    few of the available options.
-
-    .. code-block:: python
-
-        import ampworks as amp
-
-        # read in the file using all default options
-        data = amp.read_csv('data.csv')
-
-        # specify custom aliases for a couple column headers
-        aliases = amp.HeaderAliases(Seconds='Time_s', Amps='Current_A')
-        data = amp.read_csv('data.csv', aliases=aliases)
-
-        # include extra columns for temperature and notes
-        extra_cols = {'Temperature': float, 'Notes': None}
-        data = amp.read_csv('data.csv', extra_columns=extra_cols)
-
-    """
-    from ampworks import Dataset, HeaderAliases
-    from ampworks._checks import _check_type
-    from ampworks._core._headers import (
-        standardize_headers, header_matches, REQUIRED_HEADERS,
-    )
-
-    if aliases is None:
-        aliases = HeaderAliases()
-
-    _check_type('aliases', aliases, HeaderAliases)
-
-    options = {'separator': ',', 'skip_rows': 0, 'ignore_errors': True}
-    with open(filepath, encoding='latin1') as datafile:
-        reader = csv.reader(datafile, delimiter=',')
-
-        found_header = False
-        for idx, line in enumerate(reader):
-            if header_matches(line, REQUIRED_HEADERS, aliases):
-                options['skip_rows'] = idx
-                found_header = True
-                break
-
-        if found_header:
-            df = pl.read_csv(filepath, **options).to_pandas()
-            return standardize_headers(df, aliases, extra_columns)
-
-        warn(f"No valid aliases found for {REQUIRED_HEADERS} in {filepath}."
-             " Returning empty dataset.")
-
-    return Dataset()

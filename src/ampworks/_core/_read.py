@@ -40,7 +40,7 @@ def read_table(
 
     Returns
     -------
-    dataset : Dataset
+    data : Dataset
         Standardized battery dataset.
 
     Warnings
@@ -52,7 +52,7 @@ def read_table(
 
     See Also
     --------
-    HeaderAliases : Customize the column/header mapping for standardization.
+    ~ampworks.HeaderAliases : Custom column mapping for standardization.
 
     Notes
     -----
@@ -148,7 +148,7 @@ def read_excel(
 
     Returns
     -------
-    dataset : Dataset or dict[str or int, Dataset]
+    data : Dataset or dict[str or int, Dataset]
         Standardized dataset output. A dictionary is returned if multiple sheets
         are read and `stack_sheets` is False.
 
@@ -167,7 +167,7 @@ def read_excel(
 
     See Also
     --------
-    HeaderAliases : Customize the column/header mapping for standardization.
+    ~ampworks.HeaderAliases : Custom column mapping for standardization.
 
     Notes
     -----
@@ -332,7 +332,7 @@ def read_csv(
 
     Returns
     -------
-    dataset : Dataset
+    data : Dataset
         Standardized battery dataset.
 
     Warnings
@@ -344,7 +344,7 @@ def read_csv(
 
     See Also
     --------
-    HeaderAliases : Customize the column/header mapping for standardization.
+    ~ampworks.HeaderAliases : Custom column mapping for standardization.
 
     Notes
     -----

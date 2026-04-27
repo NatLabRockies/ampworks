@@ -1,10 +1,10 @@
 # ampworks
 
 [![ci](https://github.com/NatLabRockies/ampworks/actions/workflows/ci.yml/badge.svg)](https://github.com/NatLabRockies/ampworks/actions/workflows/ci.yml) &nbsp;
-[![codecov](https://codecov.io/gh/NatLabRockies/ampworks/graph/badge.svg?token=O6PP2KXSEV)](https://codecov.io/gh/NatLabRockies/ampworks) &nbsp;
 [![license](https://img.shields.io/badge/license-BSD--3-blue.svg)](https://github.com/NatLabRockies/ampworks/blob/main/LICENSE) &nbsp;
-[![downloads](https://static.pepy.tech/personalized-badge/ampworks?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/ampworks) &nbsp;
-[![pypi](https://img.shields.io/pypi/v/ampworks)](https://pypi.org/project/ampworks)
+[![codecov](https://codecov.io/gh/NatLabRockies/ampworks/graph/badge.svg?token=O6PP2KXSEV)](https://codecov.io/gh/NatLabRockies/ampworks) &nbsp;
+[![pypi](https://img.shields.io/pypi/v/ampworks)](https://pypi.org/project/ampworks) &nbsp;
+[![pypi-downloads](https://static.pepy.tech/personalized-badge/ampworks?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=BRIGHTGREEN&left_text=pypi|downloads)](https://pepy.tech/projects/ampworks)
 
 ## Summary
 `ampworks` is a collection of tools designed to visualize and process experimental battery data. It provides routines for degradation mode analysis, parameter extraction from common protocols (e.g., GITT, ICI, etc.), and more. These routines provide key properties for life and physics-based models (e.g., SPM and P2D). Graphical user interfaces (GUIs) are available for some of the analyses. See a full list of the GUI-based applications by running `ampworks -h` in your terminal after installation. 
@@ -23,7 +23,9 @@ Using `[gui]` is optional. When included, the installation includes extra depend
 For those interested in setting up a developer and/or editable version of this software please see the directions available in the "Development" section of our [documentation](https://ampworks.readthedocs.io/en/latest/development).
 
 ## Get Started
-The best way to get started is by exploring the `examples` folder, which includes real datasets and demonstrates key functionality. These examples will evolve as the software progresses.
+The best way to get started is by exploring the online [documentation](https://ampworks.readthedocs.io) and the repository's `examples` folder. The software includes a `datasets` module with practice/example datasets that can be used to learn and test various routines.
+
+Current examples are limited in the documentation and are mostly present in docstrings. Even the repository's `examples` folder currently has a limited amount of examples. However, if you are interested in seeing an example or any specific functionality, please feel free to submit an issue and request one be added to the documentation. When present, user requests for specific examples will be prioritized over developer-chosen examples.
 
 **Notes:**
 * If you are new to Python, check out [Spyder IDE](https://www.spyder-ide.org/). Spyder is a powerful interactive development environment (IDE) that can make programming in Python more approachable to new users.

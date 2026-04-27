@@ -259,7 +259,7 @@ def standardize_headers(
 
     Returns
     -------
-    dataset : Dataset
+    data : Dataset
         Standardized dataset.
 
     Warnings

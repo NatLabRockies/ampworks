@@ -141,7 +141,7 @@ def load_datasets(*names: str) -> Dataset:
 
     Returns
     -------
-    datasets : Dataset or tuple[Dataset]
+    data : Dataset or tuple[Dataset]
         A single dataset if one name, otherwise a tuple of datasets in the same
         order as the given `names`.
 

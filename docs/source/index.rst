@@ -42,7 +42,8 @@ Note: `ampworks` is in early development. The API may change as it matures.
 `numpy <https://numpy.org/doc/stable/>`_  |  
 `scipy <https://scipy.org/>`_ |
 `pandas <https://pandas.pydata.org/>`_ |
-`matplotlib <https://matplotlib.org/stable/users/>`_
+`matplotlib <https://matplotlib.org/stable/users/>`_ |
+`seaborn <https://seaborn.pydata.org/>`_
 
 .. grid:: 1 2 2 2
 

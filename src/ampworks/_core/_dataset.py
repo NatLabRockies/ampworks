@@ -317,6 +317,7 @@ class Dataset(pd.DataFrame):
             Column name to apply thresholding.
         threshold : float
             Values with absolute value below this threshold are set to zero.
+            Note that values exactly equal to the threshold are not zeroed.
         inplace : bool, optional
             If True, modify the Dataset in place. Otherwise, return a new
             Dataset. Default is False.
@@ -382,8 +383,9 @@ class Dataset(pd.DataFrame):
         sorting by time first, if needed, using `data.sort_values('Seconds')`.
 
         """
-        from ampworks._checks import _check_columns
+        from ampworks._checks import _check_type, _check_columns
 
+        _check_type('inplace', inplace, bool)
         _check_columns(self, ['Seconds'])
 
         result = self.copy()

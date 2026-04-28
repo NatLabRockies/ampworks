@@ -1,12 +1,12 @@
 [
     {
         "name": "dev",
-        "version": "0.0.2.dev0",
+        "version": "0.2.0.dev0",
         "url": "https://ampworks.readthedocs.io/en/latest/"
     },
     {
         "name": "stable",
-        "version": "0.0.1",
+        "version": "0.1.0",
         "url": "https://ampworks.readthedocs.io/en/stable/",
         "preferred": true
     }

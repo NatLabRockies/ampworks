@@ -39,11 +39,12 @@ Note: `ampworks` is in early development. The API may change as it matures.
 `anaconda <https://www.anaconda.com/download>`_ |
 `spyder <https://www.spyder-ide.org/>`_ |
 `notebooks <https://jupyter.org/>`_ |
+`pandas <https://pandas.pydata.org/>`_ |
 `numpy <https://numpy.org/doc/stable/>`_  |  
 `scipy <https://scipy.org/>`_ |
-`pandas <https://pandas.pydata.org/>`_ |
 `matplotlib <https://matplotlib.org/stable/users/>`_ |
-`seaborn <https://seaborn.pydata.org/>`_
+`seaborn <https://seaborn.pydata.org/>`_ |
+`plotly <https://plotly.com/python/>`_
 
 .. grid:: 1 2 2 2
 

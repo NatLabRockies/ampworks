@@ -3,6 +3,20 @@
 ## [Unreleased](https://github.com/NatLabRockies/ampworks)
 
 ### New Features
+None.
+
+### Optimizations
+None.
+
+### Bug Fixes
+None.
+
+### Chores
+None.
+
+## [v0.1.0](https://github.com/NatLabRockies/ampworks/tree/v0.1.0)
+
+### New Features
 - The core `Dataset` class now has methods to enforce monotonicity and re-zero time ([#28](https://github.com/NatLabRockies/ampworks/pull/28))
 - New `aggregate_over_x` function in `mathutils` for getting stats over replicates ([#28](https://github.com/NatLabRockies/ampworks/pull/28))
 - Expose `standardize_headers` function and add options for custom headers and extra columns ([#27](https://github.com/NatLabRockies/ampworks/pull/27))

@@ -12,7 +12,7 @@ None.
 None.
 
 ### Chores
-None.
+- Use base class `_RangeLabel` for both cycle and section labels ([#29](https://github.com/NatLabRockies/ampworks/pull/29))
 
 ## [v0.1.0](https://github.com/NatLabRockies/ampworks/tree/v0.1.0)
 

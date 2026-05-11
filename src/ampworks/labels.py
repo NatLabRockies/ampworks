@@ -67,9 +67,62 @@ class StepLabel:
         self.step = step
 
 
-class CycleLabel:
+class _RangeLabel:
 
     __slots__ = ('label', 'steps', 'cycles')
+
+    def __init__(
+        self,
+        label: str,
+        *,
+        steps: Sequence[Integral] | None = None,
+        cycles: Sequence[Integral] | None = None,
+    ) -> None:
+        """
+        Base class for CycleLabel and SectionLabel, which have same structure.
+
+        Parameters
+        ----------
+        label : str
+            The label to apply for a cycle/section.
+        steps : Sequence[int] or None, optional
+            The step numbers that define the cycle/section. Defaults to None.
+            Must be provided if `cycles` is not.
+        cycles : Sequence[int] or None, optional
+            The cycle numbers that define the cycle/section. Defaults to None.
+            Must be provided if `steps` is not.
+
+        """
+        from ampworks._checks import (
+            _check_type, _check_inner_type, _check_only_one,
+        )
+
+        _check_type('label', label, str)
+        _check_only_one(
+            conditions=[steps is not None, cycles is not None],
+            message="Provide one of 'steps' or 'cycles', not both or neither.",
+        )
+
+        if steps is not None:
+            _check_type('steps', steps, Sequence)
+            _check_inner_type('steps', steps, Integral)
+        else:
+            _check_type('cycles', cycles, Sequence)
+            _check_inner_type('cycles', cycles, Integral)
+
+        self.label = label
+        self.steps = steps
+        self.cycles = cycles
+
+    def __repr__(self) -> str:  # pragma: no cover
+        classname = self.__class__.__name__
+        if self.steps is not None:
+            return f"{classname}(label={self.label!r}, steps={self.steps!r})"
+        else:
+            return f"{classname}(label={self.label!r}, cycles={self.cycles!r})"
+
+
+class CycleLabel(_RangeLabel):
 
     def __init__(
         self,
@@ -84,13 +137,13 @@ class CycleLabel:
         Parameters
         ----------
         label : str
-            The label to apply for the cycle, defined by the 'steps' argument.
+            The label to apply for the cycle.
         steps : Sequence[int] or None, optional
             The step numbers that define the cycle. Defaults to None. Must be
-            provided if `cycles` is not provided.
+            provided if `cycles` is not.
         cycles : Sequence[int] or None, optional
             The cycle numbers that define the cycle. Defaults to None. Must be
-            provided if `steps` is not provided.
+            provided if `steps` is not.
 
         Raises
         ------
@@ -122,35 +175,10 @@ class CycleLabel:
         >>> cycle2 = CycleLabel('Aging Cycle', cycles=[1, 2, 3, 4, 5])
 
         """
-        from ampworks._checks import (
-            _check_type, _check_inner_type, _check_only_one,
-        )
-
-        _check_type('label', label, str)
-        _check_only_one(
-            conditions=[steps is None, cycles is None],
-            message="'steps' and 'cycles' cannot both be 'None'.",
-        )
-        _check_only_one(
-            conditions=[steps is not None, cycles is not None],
-            message="'steps' and 'cycles' cannot both be provided.",
-        )
-
-        if steps is not None:
-            _check_type('steps', steps, Sequence)
-            _check_inner_type('steps', steps, Integral)
-        elif cycles is not None:
-            _check_type('cycles', cycles, Sequence)
-            _check_inner_type('cycles', cycles, Integral)
-
-        self.label = label
-        self.steps = steps
-        self.cycles = cycles
+        super().__init__(label, steps=steps, cycles=cycles)
 
 
-class SectionLabel:
-
-    __slots__ = ('label', 'steps', 'cycles')
+class SectionLabel(_RangeLabel):
 
     def __init__(
         self,
@@ -165,13 +193,13 @@ class SectionLabel:
         Parameters
         ----------
         label : str
-            The label to apply for the section, defined by the 'steps' argument.
+            The label to apply for the section.
         steps : Sequence[int] or None, optional
             The step numbers that define the section. Defaults to None. Must be
-            provided if `cycles` is not provided.
+            provided if `cycles` is not.
         cycles : Sequence[int] or None, optional
             The cycle numbers that define the section. Defaults to None. Must be
-            provided if `steps` is not provided.
+            provided if `steps` is not.
 
         Raises
         ------
@@ -206,30 +234,7 @@ class SectionLabel:
         >>> section2 = SectionLabel('RPT2', cycles=range(100, 104))
 
         """
-        from ampworks._checks import (
-            _check_type, _check_inner_type, _check_only_one,
-        )
-
-        _check_type('label', label, str)
-        _check_only_one(
-            conditions=[steps is None, cycles is None],
-            message="'steps' and 'cycles' cannot both be 'None'.",
-        )
-        _check_only_one(
-            conditions=[steps is not None, cycles is not None],
-            message="'steps' and 'cycles' cannot both be provided.",
-        )
-
-        if steps is not None:
-            _check_type('steps', steps, Sequence)
-            _check_inner_type('steps', steps, Integral)
-        elif cycles is not None:
-            _check_type('cycles', cycles, Sequence)
-            _check_inner_type('cycles', cycles, Integral)
-
-        self.label = label
-        self.steps = steps
-        self.cycles = cycles
+        super().__init__(label, steps=steps, cycles=cycles)
 
 
 class LabelSet:
@@ -363,7 +368,7 @@ def apply_labels(data: Dataset, labels: LabelSet) -> Dataset:
     labeled = data.copy()
 
     def _which_to_label(
-        which_label: CycleLabel | StepLabel,
+        which_label: _RangeLabel,
     ) -> tuple[str, Sequence[Integral], str]:
 
         if which_label.steps is not None:

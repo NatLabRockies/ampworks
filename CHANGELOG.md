@@ -3,7 +3,7 @@
 ## [Unreleased](https://github.com/NatLabRockies/ampworks)
 
 ### New Features
-None.
+- New hidden `auxiliary` module for repeated logic across package (only for devs, for now) ([#30](https://github.com/NatLabRockies/ampworks/pull/30))
 
 ### Optimizations
 None.

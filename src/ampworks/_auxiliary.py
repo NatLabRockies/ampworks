@@ -52,6 +52,18 @@ def _calc_soc(data: amp.Dataset, charging: bool | None = None) -> None:
         net charge has an increase in voltage from start to end, and discharge
         has the opposite trend).
 
+    Notes
+    -----
+    This function assumes that the data starts at a known SOC of either 0 or 1,
+    depending on if the net protocol charges or discharges. Furthermore, it
+    assumes that the maximum accumulated capacity corresponds to a full charge
+    or discharge. If these assumptions are not met, SOC values may be incorrect.
+
+    Since this function uses a trapezoidal integration to estimate SOC, it may
+    be inaccurate if the data is very sparse or noisy. In such cases, consider
+    using an alternate method, possibly using the `Ah` column directly, if one
+    is available.
+
     """
     Ah = cumulative_trapezoid(data['Amps'], data['Seconds'] / 3600., initial=0.)
 

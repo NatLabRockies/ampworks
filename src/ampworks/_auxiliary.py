@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING
 
 from scipy.integrate import cumulative_trapezoid
 
@@ -78,7 +78,7 @@ def _calc_soc(data: amp.Dataset, charging: bool | None = None) -> None:
 
 def _calc_relative_time(
     data: amp.Dataset,
-    groupby_cols: str | Sequence[str],
+    groupby_cols: str | list[str],
     col_name: str = 'RelativeTime',
 ) -> None:
     """
@@ -93,7 +93,7 @@ def _calc_relative_time(
     ----------
     data : Dataset
         DataFrame with a 'Seconds' column, and columns needed for grouping.
-    groupby_cols : str or Sequence[str]
+    groupby_cols : str or list[str]
         Column names to group by before computing relative time.
     col_name : str, optional
         Name of the output column. Defaults to `'RelativeTime'`.

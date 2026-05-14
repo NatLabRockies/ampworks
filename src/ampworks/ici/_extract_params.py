@@ -12,7 +12,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 def extract_params(data: Dataset, radius: float, tmin: float = 1,
-                   tmax: float = 10, return_all: bool = False) -> pd.DataFrame:
+                   tmax: float = 10, return_stats: bool = False) -> Dataset:
     """
     Extracts parameters from ICI data.
 
@@ -24,17 +24,19 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
     The following protocol was used to test this algorithm:
 
     1. Rest for 5 min, log data every 10 s.
-
-    2. Charge (or discharge) at C/10 for 5 min; include a voltage limit. Log
-       every 5 s or every 5 mV.
-
+    2. Charge at C/10 for 5 min; with a voltage limit. Log every 5 s or 5 mV.
     3. Rest for 10 seconds, log data every 0.1 s.
-
     4. Stop if voltage limit reached in (2), otherwise repeat (2) and (3).
 
     The protocol assumes formation cycles have already been completed and that
     the cell was rested until equilibrium before starting the steps above.
-    Implementation details are available in [1]_.
+    Implementation details are available in [1]_. This specific protocol assumes
+    the cell starts at a fully discharged state and only includes charge pulses;
+    however, you can similarly perform the experiment in the discharge direction
+    or in both directions. The only change would be to step (2) where you would
+    discharge at C/20 instead of charge. It is common to perform the ICI tests
+    in both directions, but you must process the charge and discharge segments
+    separately by slicing your data and calling this routine twice.
 
     Parameters
     ----------
@@ -50,17 +52,17 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
     tmax : float, optional
         The maximum relative rest time (in seconds) to use when fitting sqrt(t)
         vs. voltage for time constants. Default is 10.
-    return_all : bool, optional
+    return_stats : bool, optional
         If False (default), only the extracted parameters vs. state of charge
         are returned. If True, also returns stats with info about each rest.
 
     Returns
     -------
-    params : pd.DataFrame
+    params : Dataset
         Table of parameters. Columns include 'SOC' (state of charge, -), 'Ds'
         (diffusivity, m2/s), and 'Eeq' (equilibrium potential, V).
-    stats : pd.DataFrame
-        Only returned if `return_all=True`. Provides additional stats about
+    stats : Dataset
+        Only returned if `return_stats=True`. Provides additional stats about
         each rest, including errors from the sqrt(t) vs. voltage regressions.
 
     Raises
@@ -101,13 +103,15 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
     --------
     >>> import ampworks as amp
     >>> data = amp.datasets.load_datasets('ici/ici_discharge')
-    >>> params, stats = amp.ici.extract_params(data, 1.8e-6, return_all=True)
+    >>> params, stats = amp.ici.extract_params(data, 1.8e-6, return_stats=True)
     >>> params.plot('SOC', 'Eeq')
     >>> params.plot('SOC', 'Ds', logy=True)
     >>> print(params)
     >>> print(stats)
 
     """
+    import ampworks as amp
+
     from ampworks._checks import _check_columns, _check_only_one
     from ampworks._auxiliary import _infer_state, _calc_soc, _calc_relative_time
 
@@ -121,32 +125,32 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
         message="'data' cannot include both charge and discharge segments.",
     )
 
-    df = data.copy()
-    df = df.reset_index(drop=True)
+    ds = data.copy()
+    ds = ds.reset_index(drop=True)
 
     # States based on current direction: charge, discharge, or rests
-    _infer_state(df)
+    _infer_state(ds)
 
     # Add in state-of-charge column to map each value to an SOC
-    _calc_soc(df, charging)
+    _calc_soc(ds, charging)
 
     # Count each time a rest/charge or rest/discharge changeover occurs
-    rest = (df['State'] != 'R') & (df['State'].shift(fill_value='R') == 'R')
-    df['Rest'] = rest.cumsum()
+    rest = (ds['State'] != 'R') & (ds['State'].shift(fill_value='R') == 'R')
+    ds['Rest'] = rest.cumsum()
 
     # Relative time of each rest/charge or rest/discharge step
-    _calc_relative_time(df, ['Rest', 'State'], col_name='StepTime')
+    _calc_relative_time(ds, ['Rest', 'State'], col_name='StepTime')
 
     # Remove last cycle if not complete, i.e., ended on charge or discharge
-    if df.iloc[-1]['State'] != 'R':
-        df = df[df['Rest'] != df['Rest'].max()].reset_index(drop=True)
+    if ds.iloc[-1]['State'] != 'R':
+        ds = ds[ds['Rest'] != ds['Rest'].max()].reset_index(drop=True)
 
     # Record summary stats for each loop, immediately before the rests
-    groups = df[df['State'] != 'R'].groupby('Rest', as_index=False)
+    groups = ds[ds['State'] != 'R'].groupby('Rest', as_index=False)
     summary = groups.agg(lambda x: x.iloc[-1])
 
     # Store slope and intercepts (V = m*t^0.5 + b) for each rest
-    groups = df.groupby('Rest')
+    groups = ds.groupby('Rest')
 
     regression = None
     for idx, g in groups:
@@ -186,7 +190,7 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
     stats = pd.merge(summary, regression, on='Rest')
     stats['dEdt'] = np.gradient(stats['Volts'], stats['Seconds'])
 
-    params = pd.DataFrame({
+    params = amp.Dataset({
         'SOC': stats['SOC'],
         'Ds': 4./9./np.pi * (radius * stats['dEdt']/stats['dUdrt'])**2,
         'Eeq': stats['Eeq'],
@@ -194,7 +198,7 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
 
     params.sort_values(by='SOC', inplace=True, ignore_index=True)
 
-    if return_all:
-        return params, stats
+    if return_stats:
+        return params, amp.Dataset(stats)
 
     return params

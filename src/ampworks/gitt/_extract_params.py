@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 
 from scipy.stats import linregress
-from scipy.integrate import cumulative_trapezoid
 
 if TYPE_CHECKING:  # pragma: no cover
     from ampworks import Dataset
@@ -113,6 +112,7 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
 
     """
     from ampworks._checks import _check_columns, _check_only_one
+    from ampworks._auxiliary import _infer_state, _calc_soc, _calc_relative_time
 
     _check_columns(data, {'Seconds', 'Amps', 'Volts'})
 
@@ -128,27 +128,17 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
     df = df.reset_index(drop=True)
 
     # States based on current direction: charge, discharge, or rests
-    df['State'] = 'R'
-    df.loc[df['Amps'] > 0, 'State'] = 'C'
-    df.loc[df['Amps'] < 0, 'State'] = 'D'
+    _infer_state(df)
 
     # Add in state-of-charge column to map each value to an SOC
-    Ah = cumulative_trapezoid(
-        df['Amps'].abs(), df['Seconds'] / 3600, initial=0,
-    )
-
-    if charging:
-        df['SOC'] = Ah / Ah.max()
-    elif discharging:
-        df['SOC'] = 1 - Ah / Ah.max()
+    _calc_soc(df, charging)
 
     # Count each time a rest/charge or rest/discharge changeover occurs
     pulse = (df['State'] != 'R') & (df['State'].shift(fill_value='R') == 'R')
     df['Pulse'] = pulse.cumsum()
 
     # Relative time of each rest/charge or rest/discharge step
-    groups = df.groupby(['Pulse', 'State'])
-    df['StepTime'] = groups['Seconds'].transform(lambda x: x - x.iloc[0])
+    _calc_relative_time(df, ['Pulse', 'State'], col_name='StepTime')
 
     # Remove last cycle if not complete, i.e., ended on charge or discharge
     if df.iloc[-1]['State'] != 'R':

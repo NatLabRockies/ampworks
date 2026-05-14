@@ -164,6 +164,8 @@ def _detect_pulses(
         'Ah', 'SOC', 'Segment', 'StepTime', 'DisPulse', 'ChgPulse'.
 
     """
+    from ampworks._auxiliary import _infer_state
+
     df = data.copy()
     df = df.reset_index(drop=True)
 
@@ -171,9 +173,7 @@ def _detect_pulses(
     df['Hours'] = df['Seconds'] / 3600.
 
     # Create State column
-    df['State'] = 'R'
-    df.loc[df['Amps'] > 0, 'State'] = 'C'
-    df.loc[df['Amps'] < 0, 'State'] = 'D'
+    _infer_state(df)
 
     # Add Ah and SOC columns
     is_net_charge = df['Volts'].iloc[0] < df['Volts'].iloc[-1]

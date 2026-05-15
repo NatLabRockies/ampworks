@@ -242,7 +242,7 @@ class Dataset(pd.DataFrame):
         y: str,
         *,
         tips: list[str] | None = None,
-        figsize: tuple[int, int] = (800, 450),
+        figsize: tuple[int | None, int | None] = (800, 450),
         kind: Literal['line', 'scatter', 'both'] = 'line',
         save: str = None,
     ) -> None:
@@ -258,7 +258,7 @@ class Dataset(pd.DataFrame):
             Column name for the variable to plot on the y-axis.
         tips : list[str] or None, optional
             List of column names to display as hover tips, by default None.
-        figsize : tuple[int, int], optional
+        figsize : tuple[int | None, int | None], optional
             Figure size (width, height) in pixels, by default (800, 450). Set
             either or both dimensions to None to allow them to stretch.
         kind : {'line', 'scatter', 'both'}, optional
@@ -327,7 +327,7 @@ class Dataset(pd.DataFrame):
         y: str,
         *,
         tips: list[str] | None = None,
-        figsize: tuple[int, int] = (800, 450),
+        figsize: tuple[int | None, int | None] = (800, 450),
         kind: Literal['line', 'scatter', 'both'] = 'line',
         save: str = None,
     ) -> None:
@@ -343,7 +343,7 @@ class Dataset(pd.DataFrame):
             Column name for the variable to plot on the y-axis.
         tips : list[str] or None, optional
             List of column names to display as hover tips, by default None.
-        figsize : tuple[int, int], optional
+        figsize : tuple[int | None, int | None], optional
             Figure size (width, height) in pixels, by default (800, 450). Set
             either or both dimensions to None to allow them to stretch.
         kind : {'line', 'scatter', 'both'}, optional
@@ -434,6 +434,27 @@ class Dataset(pd.DataFrame):
 
         _apply_bokeh_style(fig)
         _render_bokeh(fig=fig, figsize=figsize, save=save)
+
+    def interactive_xy_plot(
+        self,
+        x: str,
+        y: str,
+        *,
+        tips: list[str] | None = None,
+        figsize: tuple[int | None, int | None] = (800, 450),
+        save: str = None,
+    ) -> None:
+        """Deprecated. Use :meth:`interactive_plotly` instead."""
+        import warnings
+        warnings.warn(
+            "interactive_xy_plot() is deprecated and will be removed in a "
+            "future version. Use interactive_plotly() instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.interactive_plotly(
+            x=x, y=y, tips=tips, figsize=figsize, kind='both', save=save,
+        )
 
     def zero_below(
         self,

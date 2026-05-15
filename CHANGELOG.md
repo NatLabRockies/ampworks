@@ -3,7 +3,11 @@
 ## [Unreleased](https://github.com/NatLabRockies/ampworks)
 
 ### New Features
+- New `interactive_plotly` and `interactive_bokeh` methods with `kind` line/scatter option ([#XX])
 - New hidden `auxiliary` module for repeated logic across package (only for devs, for now) ([#30](https://github.com/NatLabRockies/ampworks/pull/30))
+
+### Deprecations
+- `interactive_xy_plot` deprecated in favor of `interactive_plotly` ([#XX])
 
 ### Optimizations
 None.

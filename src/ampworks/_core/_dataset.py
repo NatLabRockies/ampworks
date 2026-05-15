@@ -271,7 +271,7 @@ class Dataset(pd.DataFrame):
         --------
         interactive_bokeh
             Interactive plots using bokeh. Typically has higher performance for
-            large (100k - 1M)datasets and better support for notebook exports.
+            large (100k - 1M) datasets and better support for notebook exports.
 
         Notes
         -----

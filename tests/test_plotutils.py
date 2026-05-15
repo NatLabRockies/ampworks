@@ -1,10 +1,15 @@
 import pytest
 import numpy as np
 
+import plotly.graph_objects as go
+
+from bokeh.plotting import figure
 from matplotlib import pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
 
 from ampworks import plotutils as aplt
+from ampworks.plotutils._bokeh import _render_bokeh
+from ampworks.plotutils._plotly import _render_plotly
 
 
 # tests for _colors submodule
@@ -171,3 +176,95 @@ def test_format_ticks():
     assert yparams['direction'] == 'inout' and not yparams['right']
 
     plt.close(fig)
+
+
+# tests for plotutils._plotly._render_plotly
+class TestRenderPlotly:
+
+    @pytest.fixture(autouse=True)
+    def _not_in_notebook(self, monkeypatch):
+        monkeypatch.setattr('ampworks._in_notebook', lambda: False)
+
+    def test_save_writes_file_and_opens(self, tmp_path, monkeypatch):
+        opened = []
+        monkeypatch.setattr(
+            'webbrowser.open', lambda url, **kw: opened.append(url),
+        )
+
+        save_path = tmp_path / 'chart.html'
+        _render_plotly(go.Figure(), save=str(save_path))
+
+        assert len(opened) == 1
+        assert save_path.exists()
+
+    def test_save_adds_html_extension(self, tmp_path, monkeypatch):
+        monkeypatch.setattr('webbrowser.open', lambda *a, **kw: None)
+
+        _render_plotly(go.Figure(), save=str(tmp_path / 'chart'))
+
+        assert (tmp_path / 'chart.html').exists()
+
+    def test_no_save_creates_temp_html(self, tmp_path, monkeypatch):
+        opened = []
+        monkeypatch.setattr(
+            'webbrowser.open', lambda url, **kw: opened.append(url),
+        )
+
+        _render_plotly(go.Figure())
+
+        assert len(opened) == 1
+        assert opened[0].endswith('.html')
+        assert opened[0].startswith('file://')
+
+
+# tests for plotutils._bokeh._render_bokeh
+class TestRenderBokeh:
+
+    @pytest.fixture(autouse=True)
+    def _not_in_notebook(self, monkeypatch):
+        monkeypatch.setattr('ampworks._in_notebook', lambda: False)
+
+    def test_save_writes_file_and_opens(self, tmp_path, monkeypatch):
+        shown = []
+        monkeypatch.setattr(
+            'bokeh.io.show', lambda *a, **kw: shown.append(True),
+        )
+
+        out = []
+        monkeypatch.setattr(
+            'bokeh.io.output_file', lambda *a, **kw: out.append(kw['filename']),
+        )
+
+        save_path = tmp_path / 'chart.html'
+        _render_bokeh(figure(), save=str(save_path))
+
+        assert len(shown) == 1
+        assert save_path.exists()
+
+        assert len(out) == 1
+        assert out[0] == str(save_path)
+
+    def test_save_adds_html_extension(self, tmp_path, monkeypatch):
+        monkeypatch.setattr('bokeh.io.show', lambda *a, **kw: None)
+
+        _render_bokeh(figure(), save=str(tmp_path / 'chart'))
+
+        assert (tmp_path / 'chart.html').exists()
+
+    def test_no_save_creates_temp_html(self, monkeypatch):
+        shown = []
+        monkeypatch.setattr(
+            'bokeh.io.show', lambda *a, **kw: shown.append(True),
+        )
+
+        out = []
+        monkeypatch.setattr(
+            'bokeh.io.output_file', lambda *a, **kw: out.append(kw['filename']),
+        )
+
+        _render_bokeh(figure())
+
+        assert len(shown) == 1
+
+        assert len(out) == 1
+        assert out[0].endswith('.html')

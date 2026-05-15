@@ -33,6 +33,16 @@ def noisy_data():
     })
 
 
+@pytest.fixture
+def plot_data():
+    """A Dataset for interactive plotting tests."""
+    return amp.Dataset({
+        'X': [1., 2., 3.],
+        'Y': [4., 5., 6.],
+        'Tag': ['a', 'b', 'c'],
+    })
+
+
 # downsample method validation and functionality
 class TestDownsampleValidation:
 
@@ -392,3 +402,82 @@ class TestZeroBelowFunctional:
     def test_return_type_is_dataset(self, sample_data):
         result = sample_data.zero_below(column='A', threshold=1.0)
         assert isinstance(result, amp.Dataset)
+
+
+# interactive_plotly method
+class TestInteractivePlotly:
+
+    @pytest.mark.parametrize('kind', ['line', 'scatter', 'both'])
+    def test_kind(self, plot_data, monkeypatch, kind):
+        monkeypatch.setattr(
+            'ampworks.plotutils._plotly._render_plotly', lambda **kw: None,
+        )
+        plot_data.interactive_plotly('X', 'Y', kind=kind)
+
+        # invalid kind option
+        with pytest.raises(ValueError):
+            plot_data.interactive_plotly('X', 'Y', kind='fake')
+
+    def test_with_tips(self, plot_data, monkeypatch):
+        monkeypatch.setattr(
+            'ampworks.plotutils._plotly._render_plotly', lambda **kw: None,
+        )
+        plot_data.interactive_plotly('X', 'Y', tips=['Tag'])
+
+        # invalid tips column
+        with pytest.raises(ValueError):
+            plot_data.interactive_plotly('X', 'Y', tips=['Fake'])
+
+    def test_save_forwarded(self, plot_data, monkeypatch):
+        captured = {}
+        monkeypatch.setattr(
+            'ampworks.plotutils._plotly._render_plotly',
+            lambda fig, figsize, save: captured.update(save=save),
+        )
+        plot_data.interactive_plotly('X', 'Y', save='out.html')
+        assert captured['save'] == 'out.html'
+
+
+# interactive_bokeh method
+class TestInteractiveBokeh:
+
+    @pytest.mark.parametrize('kind', ['line', 'scatter', 'both'])
+    def test_kind(self, plot_data, monkeypatch, kind):
+        monkeypatch.setattr(
+            'ampworks.plotutils._bokeh._render_bokeh', lambda **kw: None,
+        )
+        plot_data.interactive_bokeh('X', 'Y', kind=kind)
+
+        # invalid kind option
+        with pytest.raises(ValueError):
+            plot_data.interactive_bokeh('X', 'Y', kind='fake')
+
+    def test_with_tips(self, plot_data, monkeypatch):
+        monkeypatch.setattr(
+            'ampworks.plotutils._bokeh._render_bokeh', lambda **kw: None,
+        )
+        plot_data.interactive_bokeh('X', 'Y', tips=['Tag'])
+
+        # invalid tips column
+        with pytest.raises(KeyError):
+            plot_data.interactive_bokeh('X', 'Y', tips=['Fake'])
+
+    def test_save_forwarded(self, plot_data, monkeypatch):
+        captured = {}
+        monkeypatch.setattr(
+            'ampworks.plotutils._bokeh._render_bokeh',
+            lambda fig, figsize, save: captured.update(save=save),
+        )
+        plot_data.interactive_bokeh('X', 'Y', save='out.html')
+        assert captured['save'] == 'out.html'
+
+
+# interactive_xy_plot deprecation warning
+class TestInteractiveXYPlotDeprecated:
+
+    def test_emits_deprecation_warning(self, plot_data, monkeypatch):
+        monkeypatch.setattr(
+            'ampworks.plotutils._plotly._render_plotly', lambda **kw: None,
+        )
+        with pytest.warns(DeprecationWarning):
+            plot_data.interactive_xy_plot('X', 'Y')

@@ -7,9 +7,14 @@ from tempfile import NamedTemporaryFile
 import plotly.graph_objects as go
 
 if TYPE_CHECKING:  # pragma: no cover
-    from plotly.graph_objs._figure import Figure
+    from plotly.graph_objs._figure import Figure as PlotlyFigure
 
-__all__ = ['PLOTLY_TEMPLATE', 'PLOTLY_CONFIG', '_render_plotly']
+__all__ = [
+    'PLOTLY_TEMPLATE',
+    'PLOTLY_CONFIG',
+    '_apply_plotly_style',
+    '_render_plotly',
+]
 
 PLOTLY_TEMPLATE = go.layout.Template(
     layout=dict(
@@ -52,8 +57,21 @@ PLOTLY_CONFIG = {
 }
 
 
+def _apply_plotly_style(fig: PlotlyFigure) -> None:
+    """
+    Style a plotly figure.
+
+    Parameters
+    ----------
+    fig : PlotlyFigure
+        The plotly figure to be styled.
+
+    """
+    fig.update_layout(template=PLOTLY_TEMPLATE)
+
+
 def _render_plotly(
-    fig: Figure,
+    fig: PlotlyFigure,
     figsize: tuple[int, int] | None = None,
     save: str | None = None,
 ) -> None:
@@ -67,7 +85,7 @@ def _render_plotly(
 
     Parameters
     ----------
-    fig : Figure
+    fig : PlotlyFigure
         The plotly figure to be rendered.
     figsize : tuple[int, int] | None, optional
         The size of the figure (width, height), by default None. If None, the

@@ -33,6 +33,7 @@ dependencies = [
     "tqdm",
     "xlrd",
     "numpy",
+    "bokeh",
     "pandas",
     "polars",
     "plotly",

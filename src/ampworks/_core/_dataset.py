@@ -4,6 +4,9 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
+from bokeh.plotting import figure
+from bokeh.models import HoverTool, ColumnDataSource
+
 
 class Dataset(pd.DataFrame):
     """General dataset."""
@@ -233,12 +236,18 @@ class Dataset(pd.DataFrame):
         else:
             return result
 
-    def interactive_xy_plot(
-        self, x: str, y: str, tips: list[str] | None = None,
-        figsize: tuple[int, int] = (800, 450), save: str = None,
+    def interactive_plotly(
+        self,
+        x: str,
+        y: str,
+        *,
+        tips: list[str] | None = None,
+        figsize: tuple[int, int] = (800, 450),
+        markers: bool = False,
+        save: str = None,
     ) -> None:
         """
-        Create an interactive XY plot using Plotly. Allows hovertips, zooming,
+        Create an interactive XY plot using plotly. Allows hovertips, zooming,
         and more. Optionally, save the plot to an html file, which can be sent
         and opened in a web browser, without needing Python and/or ampworks.
 
@@ -254,23 +263,39 @@ class Dataset(pd.DataFrame):
         tips : list[str] or None, optional
             List of column names to display as hover tips, by default None.
         figsize : tuple[int, int], optional
-            Figure size (width, height) in pixels, by default (800, 450).
+            Figure size (width, height) in pixels, by default (800, 450). Set
+            one or both dimensions to None to make the plot responsive (i.e.,
+            the width and/or height will adjust to the page).
+        markers : bool, optional
+            If True, show markers at each data point. Default is False.
         save : str, optional
             File path to save the plot as an HTML file, by default None.
+
+        See Also
+        --------
+        interactive_bokeh : Similar interactive plots with a bokeh backend. It
+            is typically more performant than plotly for larger datasets.
 
         Notes
         -----
         When run inside a Jupyter notebook, the plot will be rendered inline. If
         instead this function is called from a script, the plot will be saved to
         a temporary directory and automatically opened in a local web browser.
+        You can also choose to save to a non-temporary directory, in which case
+        the file is saved in the specified location and opened from there.
+
+        The responsive height size option is limited in notebook environments.
+        Since output cells do not have adjustable heights, the height will be
+        set to a default minimum value. Despite this limitation, the responsive
+        height is fully functional for saved HTML files. Additionally, the width
+        is fully responsive in both notebooks and saved HTML files.
 
         Examples
         --------
         The following example uses the 'hppc_discharge' dataset and creates an
         interactive XY plot of 'Seconds' vs. 'Volts', with a hover tip showing
-        the step number. Even though only one hover tip is requested, it must
-        be passed in a list. For more than one hover tip, simply add more column
-        names to the list.
+        the step numbers. Even though only one hover tip is requested, it must
+        be passed in a list. Add more names for additional hover tips.
 
         The interactive plots only allow one x and one y variable, and both are
         required to be existing columns in the dataset. In the second example,
@@ -282,25 +307,139 @@ class Dataset(pd.DataFrame):
             import ampworks as amp
 
             data = amp.datasets.load_datasets('hppc/hppc_discharge')
-            data.interactive_xy_plot('Seconds', 'Volts', tips=['Step'])
+            data.interactive_plotly('Seconds', 'Volts', tips=['Step'])
 
             # Add new column to plot time in hours instead of seconds
             data['Hours'] = data['Seconds'] / 3600
-            data.interactive_xy_plot('Hours', 'Volts', tips=['Step'])
+            data.interactive_plotly('Hours', 'Volts', tips=['Step'])
 
         """
-        from ampworks.plotutils._plotly import PLOTLY_TEMPLATE, _render_plotly
+        from ampworks.plotutils._plotly import (
+            _apply_plotly_style, _render_plotly,
+        )
+
+        hover_data = {} if tips is None else {col: True for col in tips}
+
+        fig = px.line(self, x=x, y=y, markers=markers, hover_data=hover_data)
+
+        _apply_plotly_style(fig)
+        _render_plotly(fig=fig, figsize=figsize, save=save)
+
+    def interactive_bokeh(
+        self,
+        x: str,
+        y: str,
+        *,
+        tips: list[str] | None = None,
+        figsize: tuple[int, int] = (800, 450),
+        markers: bool = False,
+        save: str = None,
+    ) -> None:
+        """
+        Create an interactive XY plot using bokeh. Allows hovertips, zooming,
+        and more. Optionally, save the plot to an html file, which can be sent
+        and opened in a web browser, without needing Python and/or ampworks.
+
+        The hovertips are particularly useful for exploring the data and finding
+        specific cycle and steps for slicing and further analysis.
+
+        Parameters
+        ----------
+        x : str
+            Column name for the variable to plot on the x-axis.
+        y : str
+            Column name for the variable to plot on the y-axis.
+        tips : list[str] or None, optional
+            List of column names to display as hover tips, by default None.
+        figsize : tuple[int, int], optional
+            Figure size (width, height) in pixels, by default (800, 450). Set
+            one or both dimensions to None to make the plot responsive (i.e.,
+            the width and/or height will adjust to the page).
+        markers : bool, optional
+            If True, show markers at each data point. Default is False.
+        save : str, optional
+            File path to save the plot as an HTML file, by default None.
+
+        See Also
+        --------
+        interactive_plotly : Similar interactive plots with a plotly backend. It
+            is typically less performant than bokeh for larger datasets, but is
+            a legacy function and is compatible with `dash` applications.
+
+        Notes
+        -----
+        When run inside a Jupyter notebook, the plot will be rendered inline. If
+        instead this function is called from a script, the plot will be saved to
+        a temporary directory and automatically opened in a local web browser.
+        You can also choose to save to a non-temporary directory, in which case
+        the file is saved in the specified location and opened from there.
+
+        The responsive height size option is limited in notebook environments.
+        Since output cells do not have adjustable heights, the height will be
+        set to a default minimum value. Despite this limitation, the responsive
+        height is fully functional for saved HTML files. Additionally, the width
+        is fully responsive in both notebooks and saved HTML files.
+
+        Examples
+        --------
+        The following example uses the 'hppc_discharge' dataset and creates an
+        interactive XY plot of 'Seconds' vs. 'Volts', with a hover tip showing
+        the step numbers. Even though only one hover tip is requested, it must
+        be passed in a list. Add more names for additional hover tips.
+
+        The interactive plots only allow one x and one y variable, and both are
+        required to be existing columns in the dataset. In the second example,
+        we compute a new column for time in hours so that we can change the
+        x-axis to 'Hours' instead of 'Seconds'.
+
+        .. code-block:: python
+
+            import ampworks as amp
+
+            data = amp.datasets.load_datasets('hppc/hppc_discharge')
+            data.interactive_bokeh('Seconds', 'Volts', tips=['Step'])
+
+            # Add new column to plot time in hours instead of seconds
+            data['Hours'] = data['Seconds'] / 3600
+            data.interactive_bokeh('Hours', 'Volts', tips=['Step'])
+
+        """
+        from ampworks.plotutils._bokeh import _apply_bokeh_style, _render_bokeh
 
         if tips is None:
             tips = []
 
-        fig = px.line(
-            self, x=x, y=y, markers=True,
-            hover_data={col: True for col in tips},
+        color = '#636EFA'  # adopt color from plotly's default
+
+        cols = [x, y] + tips
+        source = ColumnDataSource(data=self[cols])
+
+        # Horizontal HTML tooltip to match Plotly's compact single-row layout
+        tooltips = [(x, '$x'), (y, '$y')]
+        for tip in tips:
+            tooltips.append((tip, "@{" + tip + "}"))
+
+        fig = figure(
+            x_axis_label=x,
+            y_axis_label=y,
+            width=figsize[0],
+            height=figsize[1],
+            active_scroll='wheel_zoom',
+            tools=['pan', 'box_zoom', 'wheel_zoom', 'save', 'reset'],
         )
 
-        fig.update_layout(template=PLOTLY_TEMPLATE)
-        _render_plotly(fig=fig, figsize=figsize, save=save)
+        line = fig.line(x=x, y=y, source=source, color=color, line_width=2)
+
+        if markers:
+            fig.scatter(x=x, y=y, source=source, color=color, size=6)
+
+        # Attach hover only to the line so a single tooltip fires even when
+        # markers are densely overlapping at zoomed-out views
+        hover = HoverTool(mode='vline', renderers=[line], tooltips=tooltips)
+        fig.add_tools(hover)
+
+        _apply_bokeh_style(fig)
+        _render_bokeh(fig=fig, figsize=figsize, save=save)
 
     def zero_below(
         self,

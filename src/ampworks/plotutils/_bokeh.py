@@ -5,15 +5,32 @@ from typing import TYPE_CHECKING
 from tempfile import NamedTemporaryFile
 
 from IPython.display import display, HTML
-from bokeh.models import LinearAxis, Span, CustomJS
-from bokeh.io import (
-    reset_output, output_notebook, output_file, show, save as bk_save,
-)
+from bokeh import io as bk_io, models as bk_m
 
 if TYPE_CHECKING:  # pragma: no cover
     from bokeh.plotting import figure as BokehFigure
 
-__all__ = ['_apply_bokeh_style', '_render_bokeh']
+__all__ = [
+    'BOKEH_TEMPLATE',
+    'BOKEH_CONFIG',
+    '_apply_bokeh_style',
+    '_render_bokeh',
+]
+
+BOKEH_TEMPLATE = {
+    'margin': (7, 7, 7, 7),  # (top, right, bottom, left)
+    'border': {'top': 60, 'left': 80, 'right': 80, 'bottom': 80},
+    'minor_tick_len': 3,
+    'major_tick_len': 6,
+    'font_family': 'Arial',
+    'font_size': '10pt',
+    'font_style': 'normal',
+}
+
+BOKEH_CONFIG = {
+    'active_scroll': 'wheel_zoom',
+    'tools': ['pan', 'box_zoom', 'wheel_zoom', 'save', 'reset'],
+}
 
 
 def _apply_bokeh_style(fig: BokehFigure) -> None:
@@ -27,36 +44,37 @@ def _apply_bokeh_style(fig: BokehFigure) -> None:
 
     """
     # margin and borders
-    fig.margin = (7, 7, 7, 7)  # (left, right, top, bottom)
+    fig.margin = BOKEH_TEMPLATE['margin']
 
-    fig.min_border_top = 60
-    fig.min_border_left = 80
-    fig.min_border_right = 80
-    fig.min_border_bottom = 80
+    fig.min_border_top = BOKEH_TEMPLATE['border']['top']
+    fig.min_border_left = BOKEH_TEMPLATE['border']['left']
+    fig.min_border_right = BOKEH_TEMPLATE['border']['right']
+    fig.min_border_bottom = BOKEH_TEMPLATE['border']['bottom']
 
     # adjust xrange (no left/right padding)
     fig.x_range.range_padding = 0
 
     # Primary axes (bottom and left)
     for ax in fig.axis:
-        ax.major_tick_in = 6
-        ax.major_tick_out = 0
-        ax.minor_tick_in = 3
         ax.minor_tick_out = 0
+        ax.major_tick_out = 0
 
-        ax.axis_label_text_font_size = '10pt'
-        ax.axis_label_text_font_style = 'normal'
+        ax.minor_tick_in = BOKEH_TEMPLATE['minor_tick_len']
+        ax.major_tick_in = BOKEH_TEMPLATE['major_tick_len']
 
-        ax.major_label_text_font_size = '9pt'
-        ax.major_label_text_font_style = 'normal'
+        ax.axis_label_text_font_size = BOKEH_TEMPLATE['font_size']
+        ax.axis_label_text_font_style = BOKEH_TEMPLATE['font_style']
+
+        ax.major_label_text_font_size = BOKEH_TEMPLATE['font_size']
+        ax.major_label_text_font_style = BOKEH_TEMPLATE['font_style']
 
     # Mirrored axes on top and right (ticks only, no labels)
     for position in ('above', 'right'):
-        ax = LinearAxis(
-            major_tick_in=6,
-            major_tick_out=0,
-            minor_tick_in=3,
+        ax = bk_m.LinearAxis(
             minor_tick_out=0,
+            major_tick_out=0,
+            minor_tick_in=BOKEH_TEMPLATE['minor_tick_len'],
+            major_tick_in=BOKEH_TEMPLATE['major_tick_len'],
         )
 
         ax.major_label_text_font_size = '0pt'
@@ -65,7 +83,7 @@ def _apply_bokeh_style(fig: BokehFigure) -> None:
 
     # Add spanning grid lines for the x=0 and y=0 axes
     for direction in ('width', 'height'):
-        span = Span(
+        span = bk_m.Span(
             location=0,
             line_width=1,
             line_color='black',
@@ -78,7 +96,7 @@ def _apply_bokeh_style(fig: BokehFigure) -> None:
     fig.toolbar.logo = None
 
     # JS Callback to trigger reset tool on double-click
-    callback = CustomJS(args=dict(fig=fig), code='fig.reset.emit()')
+    callback = bk_m.CustomJS(args=dict(fig=fig), code='fig.reset.emit()')
     fig.js_on_event('doubletap', callback)
 
 
@@ -90,19 +108,16 @@ def _render_bokeh(
     """
     Render a Bokeh figure.
 
-    Automatically determines whether the code is running in a notebook or from
-    a script. When run from a notebook, the figure is rendered inline. From a
-    script, the figure is opened in a local web browser. It is either opened
-    from the save location, or from a temporary directory, if not saved.
+    Determine whether to render the figure inline in a notebook or open in the
+    browser from a user-saved or temporary HTML file.
 
     Parameters
     ----------
     fig : BokehFigure
-        The Bokeh figure to be rendered.
+        The bokeh figure to be rendered.
     figsize : tuple[int, int] | None, optional
-        The size of the figure (width, height), by default None. If None, the
-        default bokeh size is used. You may also specify one dimension as None
-        to make it responsive (i.e., adjust to the page) in that dimension.
+        The size of the figure (width, height), by default None. Set either or
+        both dimensions to None to allow them to stretch.
     save : str | None, optional
         The file path to save the figure, by default None.
 
@@ -123,7 +138,7 @@ def _render_bokeh(
     else:
         fig.sizing_mode = 'fixed'
 
-    reset_output()
+    bk_io.reset_output()
 
     # Save or create temp file to display when not in notebook
     if save is not None:
@@ -144,13 +159,13 @@ def _render_bokeh(
     in_nb = _in_notebook()
 
     if save is not None:
-        bk_save(fig, filename=str_path, resources='cdn', title=path.name)
+        bk_io.save(fig, filename=str_path, resources='cdn', title=path.name)
 
     if not in_nb:
-        output_file(filename=str_path, mode='cdn', title=path.name)
-        show(fig)
+        bk_io.output_file(filename=str_path, mode='cdn', title=path.name)
+        bk_io.show(fig)
     elif save is not None:
         display(HTML(str_path))
     else:
-        output_notebook(hide_banner=True)
-        show(fig)
+        bk_io.output_notebook(hide_banner=True)
+        bk_io.show(fig)

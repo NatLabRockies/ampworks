@@ -58,8 +58,8 @@ def strip_chars(string: str | list[str] | None) -> str | list[str] | None:
     if isinstance(string, list):
         return [strip_chars(s) for s in string]
 
-    transmap = str.maketrans('(/,', '...', ' _-#<>)')
-    return string.lower().translate(transmap)
+    transmap = str.maketrans('[(/,', '....', ' _-#<>)]')
+    return string.lower().translate(transmap).replace('..', '.').strip('.')
 
 
 t_names = ['t', 'time', 'testtime', 'totaltime']
@@ -71,10 +71,10 @@ i_units = ['a', 'amps', 'ma', 'milliamps']
 v_names = ['voltage', 'potential', 'ecell']
 v_units = ['v', 'volts']
 
-q_names = ['capacity', 'amphours']
+q_names = ['capacity', 'amphours', 'cap']
 q_units = ['ah', 'ahr', 'amphr', 'mah', 'mahr', 'mamphr']
 
-e_names = ['energy', 'watthours']
+e_names = ['energy', 'watthours', 'ener']
 e_units = ['wh', 'whr', 'watthr']
 
 HEADER_ALIASES = {

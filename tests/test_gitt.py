@@ -14,24 +14,24 @@ def datasets():
 
 def test_extract_params_missing_columns():
 
-    data = amp.Dataset({'Seconds': [], 'Volts': []})  # missing 'Amps'
+    ds = amp.Dataset({'Seconds': [], 'Volts': []})  # missing 'Amps'
     with pytest.raises(ValueError):
-        _ = amp.gitt.extract_params(data, 1.8e-6)
+        _ = amp.gitt.extract_params(ds, 1.8e-6)
 
 
 def test_extract_params_charge_discharge(datasets):
-    data = datasets['discharge'].copy()
+    ds = datasets['discharge'].copy()
 
-    data.loc[0, 'Amps'] = +1  # inject opposite sign
+    ds.loc[0, 'Amps'] = +1  # inject opposite sign
     with pytest.raises(ValueError):
-        _ = amp.gitt.extract_params(data, 1.8e-6)
+        _ = amp.gitt.extract_params(ds, 1.8e-6)
 
 
 def test_extract_params_basic(datasets):
-    data = datasets['discharge'].copy()
+    ds = datasets['discharge'].copy()
 
-    # test with discharge data, with return_all=True
-    params, stats = amp.gitt.extract_params(data, 1.8e-6, return_all=True)
+    # test with discharge data, with return_stats=True
+    params, stats = amp.gitt.extract_params(ds, 1.8e-6, return_stats=True)
 
     assert isinstance(params, pd.DataFrame)
     assert {'SOC', 'Ds', 'Eeq'}.issubset(params.columns)
@@ -48,10 +48,10 @@ def test_extract_params_basic(datasets):
     assert np.all((params['Ds'][2:] < 4e-15) & (params['Ds'][2:] > 1e-16))
     assert np.all((params['Eeq'] >= 3.0) & (params['Eeq'] <= 4.1))
 
-    # test with charge data - overwrite "data" fixture
-    data = datasets['charge'].copy()
+    # test with charge data - overwrite "ds" fixture
+    ds = datasets['charge'].copy()
 
-    params = amp.gitt.extract_params(data, 1.8e-6)
+    params = amp.gitt.extract_params(ds, 1.8e-6)
 
     assert isinstance(params, pd.DataFrame)
     assert {'SOC', 'Ds', 'Eeq'}.issubset(params.columns)
@@ -67,18 +67,17 @@ def test_extract_params_basic(datasets):
 
 
 def test_extract_params_truncate_last_step(datasets):
-    data = datasets['discharge'].copy()
+    from ampworks._auxiliary import _infer_state
 
-    data['State'] = 'R'
-    data.loc[data['Amps'] > 0, 'State'] = 'C'
-    data.loc[data['Amps'] < 0, 'State'] = 'D'
+    ds = datasets['discharge'].copy()
 
-    pulse = (data['State'] != 'R') & (
-        data['State'].shift(fill_value='R') == 'R')
-    data['Pulse'] = pulse.cumsum()
+    _infer_state(ds)
+
+    pulse = (ds['State'] != 'R') & (ds['State'].shift(fill_value='R') == 'R')
+    ds['Pulse'] = pulse.cumsum()
 
     # get first 5 discharge/rest steps, then remove last rest
-    subset = data[data['Pulse'] <= 5]
+    subset = ds[ds['Pulse'] <= 5]
     last_rest = subset[(subset['Pulse'] == 5) & (subset['State'] == 'R')]
     subset = subset.drop(last_rest.index)
 
@@ -89,21 +88,19 @@ def test_extract_params_truncate_last_step(datasets):
 
 
 def test_extract_params_partial_rest(datasets):
-    data = datasets['discharge'].copy()
+    from ampworks._auxiliary import _infer_state
+
+    ds = datasets['discharge'].copy()
 
     # if tmin and tmax are set such that the number of points is less than two
     # then the linear regression cannot be performed and NaN is returned
+    _infer_state(ds)
 
-    data['State'] = 'R'
-    data.loc[data['Amps'] > 0, 'State'] = 'C'
-    data.loc[data['Amps'] < 0, 'State'] = 'D'
-
-    pulse = (data['State'] != 'R') & (
-        data['State'].shift(fill_value='R') == 'R')
-    data['Pulse'] = pulse.cumsum()
+    pulse = (ds['State'] != 'R') & (ds['State'].shift(fill_value='R') == 'R')
+    ds['Pulse'] = pulse.cumsum()
 
     # get first 5 pulse/rest steps, then make last pulse points all < tmin=1
-    subset = data[data['Pulse'] <= 5]
+    subset = ds[ds['Pulse'] <= 5]
 
     last = subset[(subset['Pulse'] == 5) & (subset['State'] != 'R')]
     tmin_limit = last[last['Seconds'] - last['Seconds'].iloc[0] > 1]

@@ -7,12 +7,18 @@ from tempfile import NamedTemporaryFile
 import plotly.graph_objects as go
 
 if TYPE_CHECKING:  # pragma: no cover
-    from plotly.graph_objs._figure import Figure
+    from plotly.graph_objs._figure import Figure as PlotlyFigure
 
-__all__ = ['PLOTLY_TEMPLATE', 'PLOTLY_CONFIG', '_render_plotly']
+__all__ = [
+    'PLOTLY_TEMPLATE',
+    'PLOTLY_CONFIG',
+    '_apply_plotly_style',
+    '_render_plotly',
+]
 
 PLOTLY_TEMPLATE = go.layout.Template(
     layout=dict(
+        hovermode='x',
         dragmode='pan',
         plot_bgcolor='white',
         paper_bgcolor='white',
@@ -52,27 +58,37 @@ PLOTLY_CONFIG = {
 }
 
 
+def _apply_plotly_style(fig: PlotlyFigure) -> None:
+    """
+    Style a plotly figure.
+
+    Parameters
+    ----------
+    fig : PlotlyFigure
+        The plotly figure to be styled.
+
+    """
+    fig.update_layout(template=PLOTLY_TEMPLATE)
+
+
 def _render_plotly(
-    fig: Figure,
+    fig: PlotlyFigure,
     figsize: tuple[int, int] | None = None,
     save: str | None = None,
 ) -> None:
     """
     Render a plotly figure.
 
-    Automatically determines whether the code is running in a notebook or from
-    a script. When run from a notebook, the figure is rendered inline. From a
-    script, the figure is opened in a local web browser. It is either opened
-    from the save location, or from a temporary directory, if not saved.
+    Determine whether to render the figure inline in a notebook or open in the
+    browser from a user-saved or temporary HTML file.
 
     Parameters
     ----------
-    fig : Figure
+    fig : PlotlyFigure
         The plotly figure to be rendered.
     figsize : tuple[int, int] | None, optional
-        The size of the figure (width, height), by default None. If None, the
-        default plotly size is used. You may also specify one dimension as None
-        to make it responsive (i.e., adjust to the page) in that dimension.
+        The size of the figure (width, height), by default None. Set either or
+        both dimensions to None to allow them to stretch.
     save : str | None, optional
         The file path to save the figure, by default None.
 

@@ -3,13 +3,17 @@
 ## [Unreleased](https://github.com/NatLabRockies/ampworks)
 
 ### New Features
+- New `interactive_plotly` and `interactive_bokeh` methods with `kind` line/scatter option ([#31](https://github.com/NatLabRockies/ampworks/pull/31))
 - New hidden `auxiliary` module for repeated logic across package (only for devs, for now) ([#30](https://github.com/NatLabRockies/ampworks/pull/30))
+
+### Deprecations
+- `interactive_xy_plot` deprecated in favor of `interactive_plotly` ([#31](https://github.com/NatLabRockies/ampworks/pull/31))
 
 ### Optimizations
 None.
 
 ### Bug Fixes
-None.
+- Extra tabs in some `.txt` files were creating read errors, now ignore ragged columns ([#31](https://github.com/NatLabRockies/ampworks/pull/31))
 
 ### Chores
 - Use base class `_RangeLabel` for both cycle and section labels ([#29](https://github.com/NatLabRockies/ampworks/pull/29))

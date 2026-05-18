@@ -307,6 +307,13 @@ def apply_labels(data: Dataset, labels: LabelSet) -> Dataset:
     ValueError
         If `data` does not contain the required 'Cycle' and 'Step' columns.
 
+    See Also
+    --------
+    Dataset.interactive_plotly
+        Interactively inspect the labeled dataset with plotly hover tips.
+    Dataset.interactive_bokeh
+        Same using bokeh; better suited for large datasets.
+
     Notes
     -----
     Any cycles or steps that are not labeled will have a label of `'None'` in
@@ -352,7 +359,7 @@ def apply_labels(data: Dataset, labels: LabelSet) -> Dataset:
         # Add an hours column and plot with the labels as hover tips
         labeled['Hours'] = labeled['Seconds'] / 3600
 
-        labeled.interactive_xy_plot(
+        labeled.interactive_plotly(
             x='Hours', y='Volts', tips=['StepLabel', 'CycleLabel'],
         )
 

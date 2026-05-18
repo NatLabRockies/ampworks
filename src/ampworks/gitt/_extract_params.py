@@ -12,7 +12,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 def extract_params(data: Dataset, radius: float, tmin: float = 1,
-                   tmax: float = 60, return_all: bool = False) -> pd.DataFrame:
+                   tmax: float = 60, return_stats: bool = False) -> Dataset:
     """
     Extracts parameters from GITT data.
 
@@ -25,17 +25,19 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
     The following protocol was used to test this algorithm:
 
     1. Rest for 5 min, log data every 10 s.
-
-    2. Charge (or discharge) at C/20 for 11 min; include a voltage limit. Log
-       every 0.2 s or every 5 mV.
-
+    2. Charge at C/20 for 11 min; with a voltage limit. Log every 0.2 s or 5 mV.
     3. Rest for 135 min, log data every 10 min or every 5 mV.
-
     4. Stop if voltage limit reached in (2), otherwise repeat (2) and (3).
 
     The protocol assumes formation cycles have already been completed and that
     the cell was rested until equilibrium before starting the steps above.
-    Implementation details are available in [1]_.
+    Implementation details are available in [1]_. This specific protocol assumes
+    the cell starts at a fully discharged state and only includes charge pulses;
+    however, you can similarly perform the experiment in the discharge direction
+    or in both directions. The only change would be to step (2) where you would
+    discharge at C/20 instead of charge. It is common to perform the GITT tests
+    in both directions, but you must process the charge and discharge segments
+    separately by slicing your data and calling this routine twice.
 
     Parameters
     ----------
@@ -51,17 +53,17 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
     tmax : float, optional
         The maximum relative pulse time (in seconds) to use when fitting sqrt(t)
         vs. voltage for time constants. Default is 60. See notes for more info.
-    return_all : bool, optional
+    return_stats : bool, optional
         If False (default), only the extracted parameters vs. state of charge
         are returned. If True, also returns stats with info about each pulse.
 
     Returns
     -------
-    params : pd.DataFrame
+    params : Dataset
         Table of parameters. Columns include 'SOC' (state of charge, -), 'Ds'
         (diffusivity, m2/s), and 'Eeq' (equilibrium potential, V).
-    stats : pd.DataFrame
-        Only returned if `return_all=True`. Provides additional stats about
+    stats : Dataset
+        Only returned if `return_stats=True`. Provides additional stats about
         each pulse, including errors from the sqrt(t) vs. voltage regressions.
 
     Raises
@@ -104,13 +106,15 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
     --------
     >>> import ampworks as amp
     >>> data = amp.datasets.load_datasets('gitt/gitt_discharge')
-    >>> params, stats = amp.gitt.extract_params(data, 1.8e-6, return_all=True)
+    >>> params, stats = amp.gitt.extract_params(data, 1.8e-6, return_stats=True)
     >>> params.plot('SOC', 'Eeq')
     >>> params.plot('SOC', 'Ds', logy=True)
     >>> print(params)
     >>> print(stats)
 
     """
+    import ampworks as amp
+
     from ampworks._checks import _check_columns, _check_only_one
     from ampworks._auxiliary import _infer_state, _calc_soc, _calc_relative_time
 
@@ -124,32 +128,32 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
         message="'data' cannot include both charge and discharge segments.",
     )
 
-    df = data.copy()
-    df = df.reset_index(drop=True)
+    ds = data.copy()
+    ds = ds.reset_index(drop=True)
 
     # States based on current direction: charge, discharge, or rests
-    _infer_state(df)
+    _infer_state(ds)
 
     # Add in state-of-charge column to map each value to an SOC
-    _calc_soc(df, charging)
+    _calc_soc(ds, charging)
 
     # Count each time a rest/charge or rest/discharge changeover occurs
-    pulse = (df['State'] != 'R') & (df['State'].shift(fill_value='R') == 'R')
-    df['Pulse'] = pulse.cumsum()
+    pulse = (ds['State'] != 'R') & (ds['State'].shift(fill_value='R') == 'R')
+    ds['Pulse'] = pulse.cumsum()
 
     # Relative time of each rest/charge or rest/discharge step
-    _calc_relative_time(df, ['Pulse', 'State'], col_name='StepTime')
+    _calc_relative_time(ds, ['Pulse', 'State'], col_name='StepTime')
 
     # Remove last cycle if not complete, i.e., ended on charge or discharge
-    if df.iloc[-1]['State'] != 'R':
-        df = df[df['Pulse'] != df['Pulse'].max()].reset_index(drop=True)
+    if ds.iloc[-1]['State'] != 'R':
+        ds = ds[ds['Pulse'] != ds['Pulse'].max()].reset_index(drop=True)
 
     # Record summary stats for each loop, immediately before the pulses
-    groups = df[df['State'] != 'R'].groupby('Pulse', as_index=False)
+    groups = ds[ds['State'] != 'R'].groupby('Pulse', as_index=False)
     summary = groups.agg(lambda x: x.iloc[0])
 
     # Store slope and intercepts (V = m*t^0.5 + b) for each pulse
-    groups = df.groupby('Pulse')
+    groups = ds.groupby('Pulse')
 
     regression = None
     for idx, g in groups:
@@ -189,7 +193,7 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
     stats = pd.merge(summary, regression, on='Pulse')
     stats['dEdt'] = np.gradient(stats['Volts'], np.cumsum(stats['dt_pulse']))
 
-    params = pd.DataFrame({
+    params = amp.Dataset({
         'SOC': stats['SOC'],
         'Ds': 4./9./np.pi * (radius * stats['dEdt']/stats['dUdrt'])**2,
         'Eeq': stats['Eeq'],
@@ -197,7 +201,7 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
 
     params.sort_values(by='SOC', inplace=True, ignore_index=True)
 
-    if return_all:
-        return params, stats
+    if return_stats:
+        return params, amp.Dataset(stats)
 
     return params

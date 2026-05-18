@@ -45,7 +45,8 @@ share/python-wheels/
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
+# Unit test / coverage reports / in progress
+inprogress/
 references/
 reports/
 htmlcov/

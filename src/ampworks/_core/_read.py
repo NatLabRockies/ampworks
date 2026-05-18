@@ -56,7 +56,11 @@ def _read_delimited(
 
     _check_type('aliases', aliases, HeaderAliases)
 
-    options = {'separator': delimiter, 'ignore_errors': True}
+    options = {
+        'ignore_errors': True,
+        'separator': delimiter,
+        'truncate_ragged_lines': True,
+    }
 
     skip_rows = None
     with open(filepath, encoding='latin1') as datafile:

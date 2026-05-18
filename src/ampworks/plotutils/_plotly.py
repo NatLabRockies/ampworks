@@ -18,6 +18,7 @@ __all__ = [
 
 PLOTLY_TEMPLATE = go.layout.Template(
     layout=dict(
+        hovermode='x',
         dragmode='pan',
         plot_bgcolor='white',
         paper_bgcolor='white',

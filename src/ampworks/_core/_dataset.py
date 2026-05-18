@@ -271,7 +271,7 @@ class Dataset(pd.DataFrame):
         --------
         interactive_bokeh
             Interactive plots using bokeh. Typically has higher performance for
-            large (100k - 1M) datasets and better support for notebook exports.
+            large (>250k) datasets and better support for notebook exports.
 
         Notes
         -----
@@ -356,7 +356,7 @@ class Dataset(pd.DataFrame):
         --------
         interactive_plotly
             Interactive plots using plotly. Typically has lower performance for
-            large (100k - 1M) datasets, but is compatible with `dash` apps.
+            large (>250k) datasets, but is compatible with `dash` apps.
 
         Notes
         -----
@@ -444,11 +444,15 @@ class Dataset(pd.DataFrame):
         figsize: tuple[int | None, int | None] = (800, 450),
         save: str = None,
     ) -> None:
-        """Deprecated. Use :meth:`interactive_plotly` instead."""
+        """
+        Deprecated. This method will be removed in a future release. Use either
+        `interactive_plotly` or `interactive_bokeh` instead.
+
+        """
         import warnings
         warnings.warn(
-            "interactive_xy_plot() is deprecated and will be removed in a "
-            "future version. Use interactive_plotly() instead.",
+            "interactive_xy_plot() is deprecated and will be removed in a"
+            " future release. Use interactive_plotly() or interactive_bokeh().",
             DeprecationWarning,
             stacklevel=2,
         )

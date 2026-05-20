@@ -8,29 +8,35 @@ from tqdm import tqdm
 class ProgressBar(tqdm):
     """Progress bar."""
 
-    def __init__(self, iterable: Iterable = None, manual: bool = False,
-                 desc: str = None, ncols: int = 80, total: int = None,
-                 **kwargs) -> None:
+    def __init__(
+        self,
+        iterable: Iterable | None = None,
+        manual: bool = False,
+        desc: str | None = None,
+        ncols: int = 80,
+        total: int | None = None,
+        **kwargs,
+    ) -> None:
         """
-        Wraps the progress bar from `tqdm`, with different defaults. Also
-        enables a custom "manual" mode in which the user manually sets the
-        progress as a fraction in [0, 1] using `set_progress`.
+        Wraps `tqdm` with different defaults and enables a "manual" mode that is
+        controlled using the `set_progress()` method.
 
         Parameters
         ----------
-        iterable : Iterable, optional
-            The iterable to use to construct the "automatic" progress bar, by
-            default None. 'manual' must be False if 'iterable' is not None.
+        iterable : Iterable or None, optional
+            An iterable to automatically track progress across. Must be None if
+            using the manual mode. The default is None. Set `total` when using a
+            generator to make sure remaining time and the bar are displayed.
         manual : bool, optional
-            True enables a "manual" mode progress bar, allowing manual updates
-            via 'set_progress'. If False (default), 'iterable' cannot be None.
-        desc : str, optional
+            True enables a manual mode where the user controls progress updates.
+            Must be False (default) if `iterable` is not None.
+        desc : str or None, optional
             Prefix description, by default None.
         ncols : int, optional
             Terminal column width, by default 80. The special case of zero will
             display limited stats and time, with no progress bar.
-        total : int, optional
-            Number of expected iterations. Use when 'iterable' is a generator,
+        total : int or None, optional
+            Number of expected iterations. Use when `iterable` is a generator,
             otherwise estimated remaining time and the printed bar are skipped.
         **kwargs : dict, optional
             Additional keyword arguments to pass through to `tqdm`.
@@ -38,15 +44,17 @@ class ProgressBar(tqdm):
         Raises
         ------
         ValueError
-            Provide exactly one of 'iterable' or 'manual', not both.
+            Provide exactly one of `iterable` or `manual`, not both.
 
         Examples
         --------
-        The examples below demonstrate the two uses of the `ProgressBar` class:
-        the "automatic" mode with an iterable, and the "manual" mode with custom
-        progress updates. As demonstrated, the `set_progress` method should be
-        called once per "iteration" in the "manual" mode, and that the instance
-        should be closed when finished.
+        The following examples demonstrate both the automatic and manual modes
+        of the progress bar. Note that `set_progress()` must be called manually
+        to update the progress using values between [0, 1] in manual mode.
+
+        When assigning a progress bar to a variable, you should also call the
+        `close()` method when finished using it to release resources. This is
+        demonstrated for the manual mode below.
 
         .. code-block:: python
 
@@ -54,11 +62,11 @@ class ProgressBar(tqdm):
 
             from ampworks.utils import ProgressBar
 
-            # Automatic mode with an iterable
+            # automatic mode with an iterable
             for i in ProgressBar(range(5), desc='Iterable'):
                 time.sleep(0.5)
 
-            # Manual mode with custom progress updates
+            # manual mode with custom progress updates
             progbar = ProgressBar(manual=True, desc='Manual')
 
             for i in range(5):
@@ -93,9 +101,7 @@ class ProgressBar(tqdm):
 
     def set_progress(self, progress: float) -> None:
         """
-        Updates the progress bar percentage and increments the tracked total
-        number of iterations for the "manual" mode. Should be called once per
-        "iteration", based on the user's definition of an iteration.
+        Updates progress in manual mode. Should be called once per iteration.
 
         Parameters
         ----------
@@ -110,16 +116,16 @@ class ProgressBar(tqdm):
     def format_meter(self, n: int | float, total: int | float, elapsed: float,
                      **kwargs) -> str:
         """
-        Wraps the parent `format_meter` method to customize stats for the
-        "manual" mode. Users should not need to call this method directly.
+        Wraps the parent `format_meter` to customize stats in manual mode. Users
+        should not need to call this method.
 
         Parameters
         ----------
         n : int or float
             Number of finished iterations.
         total : int or float
-            The expected total number of iterations. If meaningless (None),
-            only basic progress statistics are displayed (no ETA).
+            The expected total number of iterations. If meaningless (None), only
+            basic progress statistics are displayed (no ETA).
         elapsed : float
             Number of seconds passed since start.
         **kwargs : dict, optional
@@ -154,8 +160,8 @@ class ProgressBar(tqdm):
 
     def reset(self) -> None:
         """
-        Resets the iteration count to zero for repeated use. Only works for
-        manual mode. For iterables you will need to create a new instance.
+        Resets the iteration count to zero for repeated use. Only works for the
+        manual mode. Create a new instance when using an iterable.
 
         """
         self._iter = 0
@@ -169,6 +175,6 @@ class ProgressBar(tqdm):
         """
         super().close()
 
-    def __del__(self) -> None:  # stop warnings/errors from multiple close calls
+    def __del__(self) -> None:  # stop errors from multiple close calls
         if hasattr(self, 'disable'):
             super().__del__()

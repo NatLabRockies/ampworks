@@ -399,7 +399,7 @@ class Dataset(pd.DataFrame):
         source = ColumnDataSource(data=self[cols])
 
         # Horizontal HTML tooltip to match Plotly's compact single-row layout
-        tooltips = [(x, '$x'), (y, '$y')]
+        tooltips = [(x, "@{" + x + "}"), (y, "@{" + y + "}")]
         for tip in tips:
             tooltips.append((tip, "@{" + tip + "}"))
 

@@ -79,7 +79,7 @@ class DqdvFitter:
     @property
     def neg(self) -> pd.DataFrame:
         """
-        Get or set the negative electrode dataframe.
+        The negative electrode dataframe.
 
         Columns must include 'Ah' for capacity and 'Volts' for the half-cell
         voltage. All 'Ah' values must be positive, and there must be a zero
@@ -99,7 +99,7 @@ class DqdvFitter:
     @property
     def pos(self) -> pd.DataFrame:
         """
-        Get or set the positive electrode dataframe.
+        The positive electrode dataframe.
 
         Columns must include 'Ah' for capacity and 'Volts' for the half-cell
         voltage. All 'Ah' values must be positive, and there must be a zero
@@ -119,7 +119,7 @@ class DqdvFitter:
     @property
     def cell(self) -> pd.DataFrame:
         """
-        Get or set the full cell dataframe.
+        The full cell dataframe.
 
         Columns must include 'Ah' for capacity and 'Volts' for the full-cell
         voltage. All 'Ah' values must be positive, and there must be a zero
@@ -146,9 +146,11 @@ class DqdvFitter:
     @property
     def cost_terms(self) -> list[str]:
         """
-        Get or set which terms are included in the constrained fit's cost
-        function. Options are 'voltage', 'dqdv', and/or 'dvdq'. You can also
-        set to 'all' to conveniently select all three cost terms.
+        The terms to include in the constrained fit's cost function.
+
+        Options are `{'voltage', 'dqdv', 'dvdq'}`. Use a string for a single
+        term or a sequence of strings for multiple terms. Setting to `'all'`
+        provides a shortcut to include all three terms.
 
         """
         return self._cost_terms
@@ -174,7 +176,7 @@ class DqdvFitter:
             raise ValueError("cost_terms has at least one invalid value. It"
                              f" can only be 'all' or a subset of {options}.")
 
-        self._cost_terms = value
+        self._cost_terms = list(set(value))  # ensure no duplicates
 
     def _check_dataframe(self, df: pd.DataFrame, which: str) -> pd.DataFrame:
         """

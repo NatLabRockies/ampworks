@@ -7,7 +7,7 @@
 [![pypi-downloads](https://static.pepy.tech/personalized-badge/ampworks?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=BRIGHTGREEN&left_text=pypi|downloads)](https://pepy.tech/projects/ampworks)
 
 ## Summary
-`ampworks` is a collection of tools designed to visualize and process experimental battery data. It provides routines for degradation mode analysis, parameter extraction from common protocols (e.g., GITT, ICI, etc.), and more. These routines provide key properties for life and physics-based models (e.g., SPM and P2D). Graphical user interfaces (GUIs) are available for some of the analyses. See a full list of the GUI-based applications by running `ampworks -h` in your terminal after installation. 
+`ampworks` is a collection of tools designed to visualize and process experimental battery data. It provides routines for degradation mode analysis, parameter extraction from common protocols (e.g., GITT, ICI, HPPC, capacity checks, etc.), and more. These routines streamline experimental data processing and analysis, and can be used to provide key properties for life, physics-based (e.g., SPM and P2D), and machine leanring models. Graphical user interfaces (GUIs) are available for some of the analyses. See a full list of the GUI-based applications by running `ampworks -h` in your terminal after installation. 
 
 Note: `ampworks` is in early development. The API may change as it matures.
 
@@ -25,12 +25,12 @@ For those interested in setting up a developer and/or editable version of this s
 ## Get Started
 The best way to get started is by exploring the online [documentation](https://ampworks.readthedocs.io) and the repository's `examples` folder. The software includes a `datasets` module with practice/example datasets that can be used to learn and test various routines.
 
-Current examples are limited in the documentation and are mostly present in docstrings. Even the repository's `examples` folder currently has a limited amount of examples. However, if you are interested in seeing an example or any specific functionality, please feel free to submit an issue and request one be added to the documentation. When present, user requests for specific examples will be prioritized over developer-chosen examples.
+Current examples are limited in the documentation and are mostly present in docstrings. Even the repository's `examples` folder currently has a limited amount of examples. However, if you are interested in seeing an example for any specific functionality, please feel free to submit an issue and request one be added to the documentation. When present, user requests for specific examples will be prioritized over developer-chosen examples.
 
 **Notes:**
-* If you are new to Python, check out [Spyder IDE](https://www.spyder-ide.org/). Spyder is a powerful interactive development environment (IDE) that can make programming in Python more approachable to new users.
-* Another friendly option for getting started in Python is to use [Jupyter Notebooks](https://jupyter.org/). We write our examples in Jupyter Notebooks since they support both markdown blocks for explanations and executable code blocks.
-* Python, Spyder, and Jupyter Notebooks can be setup using [Anaconda](https://www.anaconda.com/download/success). Anaconda provides a convenient way for new users to get started with Python due to its friendly graphical installer and environment manager.
+* `ampworks` is compatible will all interactive development environments. However, due to the interactive nature of some plots and interfaces, we recommend using it in notebooks.
+* One friendly option for getting started with notebooks and Python is to use [Jupyter Notebooks](https://jupyter.org/). We write our examples in Jupyter Notebooks since they support both markdown blocks for explanations and executable code blocks.
+* Python and Jupyter Notebooks can be setup using [Anaconda](https://www.anaconda.com/download/success). Anaconda provides a convenient way for new users to get started with Python due to its friendly graphical installer and environment manager.
 
 ## Citing this Work
 This work was authored by researchers at the National Laboratory of the Rockies (NLR). If you use use this package in your work, please include the following citation:

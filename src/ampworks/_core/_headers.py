@@ -75,7 +75,7 @@ q_names = ['capacity', 'amphours', 'cap']
 q_units = ['ah', 'ahr', 'amphr', 'mah', 'mahr', 'mamphr']
 
 e_names = ['energy', 'watthours', 'ener']
-e_units = ['wh', 'whr', 'watthr']
+e_units = ['wh', 'whr', 'watthr', 'uwatthr']
 
 HEADER_ALIASES = {
     'Seconds': format_alias(t_names, t_units),
@@ -279,10 +279,13 @@ def standardize_headers(
 
     unit_factors = {
         'Amps': {
-            ('ma', 'mamps', 'milliamps'): 0.001,
+            ('ma', 'mamps', 'milliamps'): 1e-3,
         },
         'Ah': {
-            ('mah', 'mahr', 'mamphr'): 0.001,
+            ('mah', 'mahr', 'mamphr'): 1e-3,
+        },
+        'Wh': {
+            ('uwatthr',): 1e-6,
         },
         'Seconds': {
             ('min', 'mins', 'minute', 'minutes'): 60.0,

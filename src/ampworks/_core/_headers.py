@@ -62,7 +62,8 @@ def strip_chars(string: str | list[str] | None) -> str | list[str] | None:
     return string.lower().translate(transmap).replace('..', '.').strip('.')
 
 
-t_names = ['t', 'time', 'testtime', 'totaltime']
+# construct HEADER_ALIASES dictionary from base names and units
+t_names = ['t', 'time', 'test', 'testtime', 'totaltime']
 t_units = ['s', 'sec', 'seconds', 'min', 'minutes', 'h', 'hrs', 'hours']
 
 i_names = ['i', 'amperage', 'current']
@@ -307,12 +308,12 @@ def standardize_headers(
             if std_header in unit_factors:
                 for units, factor in unit_factors[std_header].items():
                     if any(unit in normalized for unit in units):
-                        df[std_header] = df[std_header].astype(float) * factor
+                        df[std_header] = _astype_float(df[std_header]) * factor
                         break
 
     # Create 'State' data if not present
     if ('State' not in df.columns) and ('Amps' in df.columns):
-        df['Amps'] = df['Amps'].astype(float)
+        df['Amps'] = _astype_float(df['Amps'])
 
         df['State'] = 'R'
         df.loc[df['Amps'] > 0, 'State'] = 'C'
@@ -323,7 +324,7 @@ def standardize_headers(
         rename_bitrode = {'REST': 'R', 'DCHG': 'D', 'CHRG': 'C'}
         df['State'] = df['State'].replace(rename_bitrode)
 
-        df['Amps'] = df['Amps'].astype(float)
+        df['Amps'] = _astype_float(df['Amps'])
         df['State'] = df['State'].astype(str)
 
         sign = df['State'].map({'R': 0.0, 'C': 1.0, 'D': -1.0}).fillna(1.0)
@@ -355,9 +356,7 @@ def standardize_headers(
             elif std_header in ['Cycle', 'Step']:
                 df[std_header] = df[std_header].astype('Int64')
             else:
-                df[std_header] = df[std_header].replace('#', '', regex=True)
-                df[std_header] = df[std_header].replace(',', '', regex=True)
-                df[std_header] = pd.to_numeric(df[std_header], errors='coerce')
+                df[std_header] = _astype_float(df[std_header])
         else:
             missing.append(std_header)
 
@@ -391,3 +390,29 @@ def standardize_headers(
                  f" Existing are {set(df.columns)}.")
 
     return df
+
+
+def _astype_float(series: pd.Series) -> pd.Series:
+    """
+    Convert a pandas Series to float, coercing errors.
+
+    If the series is already numeric, just ensure it's a float. Otherwise, try
+    to convert to a string, strip commas (thousands separators) and hash symbols
+    before coercing to numeric. Any non-convertible values will become NaN.
+
+    Parameters
+    ----------
+    series : pd.Series
+        Input Series to convert.
+
+    Returns
+    -------
+    series : pd.Series
+        Converted Series with float dtype.
+
+    """
+    if pd.api.types.is_numeric_dtype(series):
+        return series.astype(float)
+
+    series = series.astype(str).replace('[,#]', '', regex=True)
+    return pd.to_numeric(series, errors='coerce').astype(float)

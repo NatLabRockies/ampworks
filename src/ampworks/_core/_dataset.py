@@ -303,7 +303,8 @@ class Dataset(pd.DataFrame):
             _apply_plotly_style, _render_plotly,
         )
 
-        hover = {} if tips is None else {col: True for col in tips}
+        tips = set(tips).difference(x, y) if tips is not None else set()
+        hover = {col: True for col in tips} if tips else {}
 
         kind = kind.lower()
 
@@ -388,20 +389,18 @@ class Dataset(pd.DataFrame):
             BOKEH_CONFIG, _apply_bokeh_style, _render_bokeh,
         )
 
-        if tips is None:
-            tips = []
-
-        kind = kind.lower()
-
-        color = '#636EFA'  # adopt color from plotly's default
-
-        cols = [x, y] + tips
-        source = ColumnDataSource(data=self[cols])
-
         # Horizontal HTML tooltip to match Plotly's compact single-row layout
+        tips = set(tips).difference(x, y) if tips is not None else set()
+
         tooltips = [(x, "@{" + x + "}"), (y, "@{" + y + "}")]
         for tip in tips:
             tooltips.append((tip, "@{" + tip + "}"))
+
+        kind = kind.lower()
+        color = '#636EFA'  # adopt color from plotly's default
+
+        cols = [x, y] + list(tips)
+        source = ColumnDataSource(data=self[cols])
 
         fig = figure(
             x_axis_label=x,

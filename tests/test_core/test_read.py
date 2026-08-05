@@ -76,6 +76,7 @@ def test_read_custom_aliases(extension):
     aliases2 = amp.HeaderAliases(
         Seconds={'elapsed_s': 0.5},
         Amps={'amps_raw': lambda x: 2.0 * x},
+        Cycle=['CycleNumber', 'CycleNum'],
         extend_defaults=True,
     )
     data2 = reader(file, aliases=aliases2)

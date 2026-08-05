@@ -33,8 +33,8 @@ def _format_default_alias(
     Returns
     -------
     aliases : Dict[str, float]
-        Aliases mapped to their conversion factor. Includes unit-only,
-        name-only (base unit, factor 1.0), and name.unit forms.
+        Aliases mapped to their conversion factor. Includes unit-only, name-only
+        (base unit, factor 1.0), and name.unit forms.
 
     """
     aliases = dict(units)
@@ -488,7 +488,7 @@ def _format_user_alias(
         formatted[k] = float(v)
 
     if extend_defaults:
-        formatted = {**defaults, **formatted}
+        formatted = {**defaults, **formatted}  # adopt user's if duplicate keys
 
     return formatted
 

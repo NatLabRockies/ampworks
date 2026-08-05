@@ -3,7 +3,7 @@ from __future__ import annotations
 import textwrap
 
 from warnings import warn
-from typing import TYPE_CHECKING, Set, Dict, Sequence, Callable, Generator
+from typing import TYPE_CHECKING, Set, Dict, Sequence, Callable
 
 import pandas as pd
 
@@ -269,13 +269,6 @@ class HeaderAliases:
         """Return standardized header names supported by the alias set."""
         return list(self.__slots__)
 
-    def items(
-        self,
-    ) -> Generator[tuple[str, AliasMap | AliasSet], None, None]:  # noqa: E501
-        """Iterate over `(std_header, aliases (map or set))` pairs."""
-        for slot in self.__slots__:
-            yield (slot, getattr(self, slot))
-
 
 def header_matches(
     headers: list[str],
@@ -468,13 +461,14 @@ def _format_user_alias(
 
     # handle AliasSet options
     if std_header in ['Cycle', 'Step', 'State', 'DateTime']:
-        _check_type(f"{std_header}", alias, (str, Sequence, None))
-
+        _check_type(f"{std_header}", alias, (Sequence, None))
         if isinstance(alias, str):
-            alias = _strip_chars([alias])
-        else:
-            _check_inner_type(f"{std_header}", alias, str)
-            alias = _strip_chars(alias)
+            raise TypeError(
+                f"{std_header} alias must be Sequence[str], but got str."
+            )
+
+        _check_inner_type(f"{std_header}", alias, str)
+        alias = _strip_chars(alias)
 
         formatted = set(alias)
         if extend_defaults:

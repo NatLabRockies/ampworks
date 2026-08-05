@@ -63,6 +63,7 @@ def test_read_custom_aliases(extension):
         Seconds={'elapsed_s': None},
         Amps={'amps_raw': None},
         Volts=None,
+        Cycle=['CycleNumber', 'CycleNum'],
         extend_defaults=False,
     )
     data1 = reader(file, aliases=aliases1, extra_columns={'Meta': 'string'})

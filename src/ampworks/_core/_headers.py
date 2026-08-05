@@ -136,23 +136,23 @@ class HeaderAliases:
         Parameters
         ----------
         Seconds : AliasMap or None, optional
-            Seconds column aliases, with converters, for standardization.
+            Time column aliases and converters. None uses internal defaults.
         Amps : AliasMap or None, optional
-            Amps column aliases, with converters, for standardization.
+            Current column aliases and converters. None uses internal defaults.
         Volts : AliasMap or None, optional
-            Volts column aliases, with converters, for standardization.
+            Voltage column aliases and converters. None uses internal defaults.
         Cycle : AliasSet or None, optional
-            Cycle column aliases for standardization.
+            Cycle column aliases. None uses internal defaults.
         Step : AliasSet or None, optional
-            Step column aliases for standardization.
+            Step column aliases. None uses internal defaults.
         State : AliasSet or None, optional
-            State column aliases for standardization.
+            State column aliases. None uses internal defaults.
         Ah : AliasMap or None, optional
-            Ah column aliases, with converters, for standardization.
+            Capacity column aliases and converters. None uses internal defaults.
         Wh : AliasMap or None, optional
-            Wh column aliases, with converters, for standardization.
+            Energy column aliases and converters. None uses internal defaults.
         DateTime : AliasSet or None, optional
-            DateTime column aliases for standardization.
+            DateTime column aliases. None uses internal defaults.
         extend_defaults : bool or Sequence[str], optional
             How to augment or override default aliases. True extends defaults.
             False (default) replaces defaults with provided values. To extend
@@ -162,13 +162,21 @@ class HeaderAliases:
 
         Notes
         -----
-        Aliases are given as either an `AliasMap` or `AliasSet` depending on if
-        the value may or may not need unit conversions. An `AliasMap` defines a
-        mapping from alias names (keys) to unit conversions (values). Converters
-        can either be a multiplicative factor (float) or callable with signature
-        `f(float) -> float`. When unit conversion is not needed, the value can
-        be either `1.0` or `None`. For aliases that never require conversion, an
-        `AliasSet` is used, which is simply a string or list of strings.
+        All aliases default to `None`, which uses internal defaults. When not
+        using the defaults, provided aliases must be given an `AliasMap` for any
+        fields which may require unit conversions, or an `AliasSet` for fields
+        which don't require unit conversions.
+
+        An `AliasMap` is just a dictionary where the keys are the alias names
+        and values are converters. A converter can be a float if the conversion
+        is just a multiplicative factor, or a callable like `f(float) -> float`
+        if the conversion is more complex. When no conversion is needed, the
+        value can be either `None` or `1.0`.
+
+        An `AliasSet` is used for a few of the fields which don't require unit
+        conversion (e.g., Cycle, Step, and State). For these fields, simply
+        provide a list of the alias names. Even if you want to enforce only one
+        alias, it must still be provided as a list of one item.
 
         Examples
         --------
@@ -260,7 +268,7 @@ class HeaderAliases:
         raise KeyError(f"{key} not found in {type(self).__name__}")
 
     def __repr__(self) -> str:  # pragma: no cover
-        data = {k: v for k, v in self.items()}
+        data = {k: self[k] for k in self.keys()}
         summary = "\n".join([f"{k}={v!r}," for k, v in data.items()])
         summary = textwrap.indent(summary, " " * 4)
         return f"{type(self).__name__}(\n{summary}\n)"
@@ -453,6 +461,26 @@ def _format_user_alias(
     alias: AliasSet | AliasMap | None,
     extend_defaults: bool,
 ):
+    """
+    Format user-provided aliases (AliasMap or AliasSet types) to be used in the
+    `standardize_headers` function.
+
+    Parameters
+    ----------
+    std_header : str
+        One of the standard header alias names, from DEFAULT_ALIASES keys.
+    alias : AliasSet or AliasMap or None
+        User-provided alias mapping or set. If None, defaults are used.
+    extend_defaults : bool
+        Whether or not to extend the current alias's defaults. If not extended,
+        the user-provided values replace the internal defaults.
+
+    Returns
+    -------
+    formatted : AliasMap or AliasSet
+        The formatted (and optionally extended) alias for `std_header`.
+
+    """
     from ampworks._checks import _check_type, _check_inner_type
 
     defaults = DEFAULT_ALIASES[std_header].copy()

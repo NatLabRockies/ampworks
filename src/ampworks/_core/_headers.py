@@ -351,30 +351,28 @@ def standardize_headers(
     # Match as-imported headers with standardized headers
     for std_header in aliases.keys():
         for raw_header in data.columns:
+
+            # Store column if there is a match, and doesn't already exist
             normalized = _strip_chars(raw_header)
             if normalized not in aliases[std_header]:
                 continue
+            if std_header in df.columns:
+                continue
 
-            if std_header not in df.columns:
-                df[std_header] = data[raw_header]
+            df[std_header] = data[raw_header]
 
-                if not isinstance(aliases[std_header], dict):
-                    continue
+            # Standardize units using the alias's converter, if any
+            if not isinstance(aliases[std_header], dict):
+                continue
 
-                # Standardize units using the alias's converter, if any
-                converter = aliases[std_header][normalized]
-                df[std_header] = _astype_float(df[std_header])
-                if converter is None:
-                    continue
-                elif callable(converter):
-                    df[std_header] = df[std_header].apply(converter)
-                elif isinstance(converter, float):
-                    df[std_header] = df[std_header] * converter
-                else:
-                    raise TypeError(
-                        f"Invalid alias converter type {type(converter)} for"
-                        f" {std_header}, found under the key {raw_header}."
-                    )
+            converter = aliases[std_header][normalized]
+            df[std_header] = _astype_float(df[std_header])
+            if (converter is None) or (converter == 1.0):
+                continue
+            elif callable(converter):
+                df[std_header] = df[std_header].apply(converter)
+            else:
+                df[std_header] = df[std_header] * converter
 
     # Create 'State' data if not present
     if ('State' not in df.columns) and ('Amps' in df.columns):

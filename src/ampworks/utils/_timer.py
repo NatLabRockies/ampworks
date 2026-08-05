@@ -100,7 +100,7 @@ class Timer:
         summary = "\n".join([f"{k}={v!r}," for k, v in data.items()])
         summary = textwrap.indent(summary, " " * 4)
 
-        return f"{self.__class__.__name__}(\n{summary}\n)"
+        return f"{type(self).__name__}(\n{summary}\n)"
 
     def __enter__(self) -> Timer:
         """Store start time when entering a context block."""

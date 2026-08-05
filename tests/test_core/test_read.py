@@ -5,6 +5,7 @@ from warnings import filterwarnings
 import pytest
 import pandas as pd
 import ampworks as amp
+import numpy.testing as npt
 
 
 @pytest.mark.parametrize('extension', ['.csv', '.txt', '.xls', '.xlsx'])
@@ -56,15 +57,40 @@ def test_read_custom_aliases(extension):
 
     reader = all_readers[extension]
 
-    # Aliases with str, list[str], and None
-    aliases = amp.HeaderAliases(
-        Seconds='elapsed_s',
-        Amps=['amps_raw'],
+    # aliases without conversion or None (use defaults)
+    # extend_defaults=False, so Seconds and Amps override defaults
+    aliases1 = amp.HeaderAliases(
+        Seconds={'elapsed_s': None},
+        Amps={'amps_raw': None},
         Volts=None,
+        extend_defaults=False,
     )
+    data1 = reader(file, aliases=aliases1, extra_columns={'Meta': 'string'})
 
-    data = reader(file, aliases=aliases, extra_columns={'Meta': 'string'})
+    assert data1['Meta'].to_list() == ['a', 'b']
+    assert pd.api.types.is_string_dtype(data1['Meta'])
+    assert set(['Seconds', 'Amps', 'Volts', 'Meta']).issubset(data1.columns)
 
-    assert data['Meta'].to_list() == ['a', 'b']
-    assert pd.api.types.is_string_dtype(data['Meta'])
-    assert set(['Seconds', 'Amps', 'Volts', 'Meta']).issubset(data.columns)
+    # aliases with conversion functions and extend_defaults
+    aliases2 = amp.HeaderAliases(
+        Seconds={'elapsed_s': 0.5},
+        Amps={'amps_raw': lambda x: 2.0 * x},
+        extend_defaults=True,
+    )
+    data2 = reader(file, aliases=aliases2)
+
+    npt.assert_allclose(data2['Seconds'], 0.5*data1['Seconds'])
+    npt.assert_allclose(data2['Amps'], 2.0*data1['Amps'])
+
+    # aliases with conversion functions and subset extend_defaults, including
+    # spurious 'Volts' which is not in the override aliases anyway...
+    aliases3 = amp.HeaderAliases(
+        Seconds={'elapsed_s': 0.5},
+        Amps={'amps_raw': lambda x: 2.0 * x},
+        extend_defaults=['Seconds', 'Amps', 'Volts'],
+    )
+    data3 = reader(file, aliases=aliases3)
+
+    # data2 and data3 must match because extend_defaults doesn't matter here
+    # since the test files use the aliased headers instead of defaults
+    assert data2.equals(data3)

@@ -15,30 +15,32 @@ AliasMap = Dict[str, float | Callable[[float], float] | None]
 
 
 # construct HEADER_ALIASES dictionary from base names and unit->factor maps
-def _format_default_alias(
-    names: Sequence[str],
-    units: Dict[str, float],
-) -> Dict[str, float]:
+def _build_default_alias(
+    names: Set[str],
+    units: Dict[str, float] | None,
+) -> AliasSet | AliasMap:
     """
-    Build an alias-to-converter map from names and units.
+    Build a default alias set or map from names and units.
 
     Parameters
     ----------
-    names : Sequence[str]
-        Base signal names.
-    units : Dict[str, float]
-        Mapping of unit label (as used in source files) to the multiplicative
-        factor that converts that unit into the standardized base unit.
+    names : Set[str]
+        Base alias names.
+    units : Dict[str, float] or None
+        Mapping of unit label (key) and conversion factor (value) to the base
+        unit (i.e., after standardization). If None, only build AliasSet.
 
     Returns
     -------
-    aliases : Dict[str, float]
-        Aliases mapped to their conversion factor. Includes unit-only, name-only
-        (base unit, factor 1.0), and name.unit forms.
+    aliases : AliasSet or AliasMap
+        Alias set or map for given names and units. If units is not None, the
+        map keys include name only, unit only, and name.unit variants.
 
     """
-    aliases = dict(units)
+    if units is None:
+        return set(names)
 
+    aliases = dict(units)
     for name in names:
         aliases[name] = 1.0
         for unit, factor in units.items():
@@ -47,7 +49,7 @@ def _format_default_alias(
     return aliases
 
 
-TIME_NAMES = ['t', 'time', 'test', 'testtime', 'totaltime']
+TIME_NAMES = {'t', 'time', 'test', 'testtime', 'totaltime'}
 TIME_UNITS = {
     's': 1.0,
     'sec': 1.0,
@@ -63,7 +65,7 @@ TIME_UNITS = {
     'hours': 3600.0,
 }
 
-CURRENT_NAMES = ['i', 'amperage', 'current']
+CURRENT_NAMES = {'i', 'amperage', 'current'}
 CURRENT_UNITS = {
     'a': 1.0,
     'amps': 1.0,
@@ -72,14 +74,14 @@ CURRENT_UNITS = {
     'milliamps': 1e-3,
 }
 
-VOLTAGE_NAMES = ['voltage', 'potential', 'ecell']
+VOLTAGE_NAMES = {'voltage', 'potential', 'ecell'}
 VOLTAGE_UNITS = {'v': 1.0, 'volts': 1.0}
 
 STATE_NAMES = {'state', 'md', 'mode'}
 STEP_NAMES = {'step', 'ns', 'stepindex'}
 CYCLE_NAMES = {'cycle', 'cyc', 'cycleindex', 'cyclenumber', 'cyclec', 'cyclep'}
 
-CAPACITY_NAMES = ['capacity', 'amphours', 'cap']
+CAPACITY_NAMES = {'capacity', 'amphours', 'cap'}
 CAPACITY_UNITS = {
     'ah': 1.0,
     'ahr': 1.0,
@@ -92,18 +94,18 @@ CAPACITY_UNITS = {
 ENERGY_NAMES = {'energy', 'watthours', 'ener'}
 ENERGY_UNITS = {'wh': 1.0, 'whr': 1.0, 'watthr': 1.0, 'uwatthr': 1e-6}
 
-DATE_TIME_NAMES = {'datetime', 'dpttime', 'realtime'}
+DATETIME_NAMES = {'datetime', 'dpttime', 'realtime'}
 
 DEFAULT_ALIASES: Dict[str, AliasSet | AliasMap] = {
-    'Seconds': _format_default_alias(TIME_NAMES, TIME_UNITS),
-    'Amps': _format_default_alias(CURRENT_NAMES, CURRENT_UNITS),
-    'Volts': _format_default_alias(VOLTAGE_NAMES, VOLTAGE_UNITS),
-    'Cycle': CYCLE_NAMES,
-    'Step': STEP_NAMES,
-    'State': STATE_NAMES,
-    'Ah': _format_default_alias(CAPACITY_NAMES, CAPACITY_UNITS),
-    'Wh': _format_default_alias(ENERGY_NAMES, ENERGY_UNITS),
-    'DateTime': DATE_TIME_NAMES,
+    'Seconds': _build_default_alias(TIME_NAMES, TIME_UNITS),
+    'Amps': _build_default_alias(CURRENT_NAMES, CURRENT_UNITS),
+    'Volts': _build_default_alias(VOLTAGE_NAMES, VOLTAGE_UNITS),
+    'Cycle': _build_default_alias(CYCLE_NAMES, None),
+    'Step': _build_default_alias(STEP_NAMES, None),
+    'State': _build_default_alias(STATE_NAMES, None),
+    'Ah': _build_default_alias(CAPACITY_NAMES, CAPACITY_UNITS),
+    'Wh': _build_default_alias(ENERGY_NAMES, ENERGY_UNITS),
+    'DateTime': _build_default_alias(DATETIME_NAMES, None),
 }
 
 REQUIRED_HEADERS = {'Seconds', 'Amps', 'Volts'}
@@ -218,11 +220,10 @@ class HeaderAliases:
 
         All of the above examples focus on values that may or may not need to be
         converted to new units. There are also fields which never require unit
-        conversion, which are given as a string or list of strings instead of by
-        a mapping:
+        conversion, which are given as a list of strings instead of by a map:
 
         >>> aliases = amp.HeaderAliases(
-        ...     Cycle='CycleNumber',
+        ...     Cycle=['CycleNumber'],
         ...     Step=['StepIndex', 'StepNumber'],
         ...     extend_defaults=True,
         ... )

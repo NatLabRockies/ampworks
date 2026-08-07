@@ -3,94 +3,112 @@ from __future__ import annotations
 import textwrap
 
 from warnings import warn
-from typing import TYPE_CHECKING, Generator, Sequence
+from typing import TYPE_CHECKING, Set, Dict, Sequence, Callable
 
 import pandas as pd
 
 if TYPE_CHECKING:  # pragma: no cover
     from ampworks import Dataset
 
+AliasSet = Set[str] | Sequence[str]
+AliasMap = Dict[str, float | Callable[[float], float] | None]
 
-def format_alias(names: Sequence[str], units: Sequence[str]) -> list[str]:
+
+# construct HEADER_ALIASES dictionary from base names and unit->factor maps
+def _build_default_alias(
+    names: Set[str],
+    units: Dict[str, float] | None,
+) -> AliasSet | AliasMap:
     """
-    Build alias strings from names and units.
+    Build a default alias set or map from names and units.
 
     Parameters
     ----------
-    names : Sequence[str]
-        Base signal names.
-    units : Sequence[str]
-        Unit labels used in the source files.
+    names : Set[str]
+        Base alias names.
+    units : Dict[str, float] or None
+        Mapping of unit label (key) and conversion factor (value) to the base
+        unit (i.e., after standardization). If None, only build AliasSet.
 
     Returns
     -------
-    aliases : list[str]
-        Alias strings containing unit-only, name-only, and name.unit forms.
+    aliases : AliasSet or AliasMap
+        Alias set or map for given names and units. If units is not None, the
+        map keys include name only, unit only, and name.unit variants.
 
     """
-    aliases = list(units)
+    if units is None:
+        return set(names)
 
+    aliases = dict(units)
     for name in names:
-        aliases.append(name)
-        for unit in units:
-            aliases.append(f"{name}.{unit}")
+        aliases[name] = 1.0
+        for unit, factor in units.items():
+            aliases[f"{name}.{unit}"] = factor
 
     return aliases
 
 
-def strip_chars(string: str | list[str] | None) -> str | list[str] | None:
-    """
-    Normalize header text for matching.
-
-    Parameters
-    ----------
-    string : str or list[str] or None
-        Header text to normalize.
-
-    Returns
-    -------
-    stripped : str or list[str] or None
-        Lowercased text with common separators removed.
-
-    """
-    if string is None:
-        return None
-    if isinstance(string, list):
-        return [strip_chars(s) for s in string]
-
-    transmap = str.maketrans('[(/,', '....', ' _-#<>)]')
-    return string.lower().translate(transmap).replace('..', '.').strip('.')
-
-
-# construct HEADER_ALIASES dictionary from base names and units
-t_names = ['t', 'time', 'test', 'testtime', 'totaltime']
-t_units = ['s', 'sec', 'seconds', 'min', 'minutes', 'h', 'hrs', 'hours']
-
-i_names = ['i', 'amperage', 'current']
-i_units = ['a', 'amps', 'ma', 'milliamps']
-
-v_names = ['voltage', 'potential', 'ecell']
-v_units = ['v', 'volts']
-
-q_names = ['capacity', 'amphours', 'cap']
-q_units = ['ah', 'ahr', 'amphr', 'mah', 'mahr', 'mamphr']
-
-e_names = ['energy', 'watthours', 'ener']
-e_units = ['wh', 'whr', 'watthr', 'uwatthr']
-
-HEADER_ALIASES = {
-    'Seconds': format_alias(t_names, t_units),
-    'Amps': format_alias(i_names, i_units),
-    'Volts': format_alias(v_names, v_units),
-    'Cycle': ['cycle', 'cyc', 'cycleindex', 'cyclenumber', 'cyclec', 'cyclep'],
-    'Step': ['step', 'ns', 'stepindex'],
-    'State': ['state', 'md', 'mode'],
-    'Ah': format_alias(q_names, q_units),
-    'Wh': format_alias(e_names, e_units),
-    'DateTime': ['datetime', 'dpttime', 'realtime'],
+TIME_NAMES = {'t', 'time', 'test', 'testtime', 'totaltime'}
+TIME_UNITS = {
+    's': 1.0,
+    'sec': 1.0,
+    'seconds': 1.0,
+    'min': 60.0,
+    'mins': 60.0,
+    'minute': 60.0,
+    'minutes': 60.0,
+    'h': 3600.0,
+    'hr': 3600.0,
+    'hrs': 3600.0,
+    'hour': 3600.0,
+    'hours': 3600.0,
 }
 
-REQUIRED_HEADERS = ['Seconds', 'Amps', 'Volts']
+CURRENT_NAMES = {'i', 'amperage', 'current'}
+CURRENT_UNITS = {
+    'a': 1.0,
+    'amps': 1.0,
+    'ma': 1e-3,
+    'mamps': 1e-3,
+    'milliamps': 1e-3,
+}
+
+VOLTAGE_NAMES = {'voltage', 'potential', 'ecell'}
+VOLTAGE_UNITS = {'v': 1.0, 'volts': 1.0}
+
+STATE_NAMES = {'state', 'md', 'mode'}
+STEP_NAMES = {'step', 'ns', 'stepindex'}
+CYCLE_NAMES = {'cycle', 'cyc', 'cycleindex', 'cyclenumber', 'cyclec', 'cyclep'}
+
+CAPACITY_NAMES = {'capacity', 'amphours', 'cap'}
+CAPACITY_UNITS = {
+    'ah': 1.0,
+    'ahr': 1.0,
+    'amphr': 1.0,
+    'mah': 1e-3,
+    'mahr': 1e-3,
+    'mamphr': 1e-3,
+}
+
+ENERGY_NAMES = {'energy', 'watthours', 'ener'}
+ENERGY_UNITS = {'wh': 1.0, 'whr': 1.0, 'watthr': 1.0, 'uwatthr': 1e-6}
+
+DATETIME_NAMES = {'datetime', 'dpttime', 'realtime'}
+
+DEFAULT_ALIASES: Dict[str, AliasSet | AliasMap] = {
+    'Seconds': _build_default_alias(TIME_NAMES, TIME_UNITS),
+    'Amps': _build_default_alias(CURRENT_NAMES, CURRENT_UNITS),
+    'Volts': _build_default_alias(VOLTAGE_NAMES, VOLTAGE_UNITS),
+    'Cycle': _build_default_alias(CYCLE_NAMES, None),
+    'Step': _build_default_alias(STEP_NAMES, None),
+    'State': _build_default_alias(STATE_NAMES, None),
+    'Ah': _build_default_alias(CAPACITY_NAMES, CAPACITY_UNITS),
+    'Wh': _build_default_alias(ENERGY_NAMES, ENERGY_UNITS),
+    'DateTime': _build_default_alias(DATETIME_NAMES, None),
+}
+
+REQUIRED_HEADERS = {'Seconds', 'Amps', 'Volts'}
 
 
 class HeaderAliases:
@@ -102,55 +120,112 @@ class HeaderAliases:
     def __init__(
         self,
         *,
-        Seconds: str | list[str] | None = None,
-        Amps: str | list[str] | None = None,
-        Volts: str | list[str] | None = None,
-        Cycle: str | list[str] | None = None,
-        Step: str | list[str] | None = None,
-        State: str | list[str] | None = None,
-        Ah: str | list[str] | None = None,
-        Wh: str | list[str] | None = None,
-        DateTime: str | list[str] | None = None,
+        Seconds: AliasMap | None = None,
+        Amps: AliasMap | None = None,
+        Volts: AliasMap | None = None,
+        Cycle: AliasSet = None,
+        Step: AliasSet = None,
+        State: AliasSet = None,
+        Ah: AliasMap | None = None,
+        Wh: AliasMap | None = None,
+        DateTime: AliasSet | None = None,
+        extend_defaults: bool | Sequence[str] = False,
     ) -> None:
         """
-        A container that allows users to specify custom header aliases for their
-        data. These are used to automatically find and standardize columns when
-        loading data. `ampworks` uses default aliases for any headers that are
-        not provided here.
+        A container to hold header alias and conversion definitions to get data
+        into a standard format. Provide your own aliases, or use defaults.
 
         Parameters
         ----------
-        Seconds : str or list[str] or None, optional
-            Aliases for the standardized Seconds column.
-        Amps : str or list[str] or None, optional
-            Aliases for the standardized Amps column.
-        Volts : str or list[str] or None, optional
-            Aliases for the standardized Volts column.
-        Cycle : str or list[str] or None, optional
-            Aliases for the standardized Cycle column.
-        Step : str or list[str] or None, optional
-            Aliases for the standardized Step column.
-        State : str or list[str] or None, optional
-            Aliases for the standardized State column.
-        Ah : str or list[str] or None, optional
-            Aliases for the standardized Ah column.
-        Wh : str or list[str] or None, optional
-            Aliases for the standardized Wh column.
-        DateTime : str or list[str] or None, optional
-            Aliases for the standardized DateTime column.
+        Seconds : AliasMap or None, optional
+            Time column aliases and converters. None uses internal defaults.
+        Amps : AliasMap or None, optional
+            Current column aliases and converters. None uses internal defaults.
+        Volts : AliasMap or None, optional
+            Voltage column aliases and converters. None uses internal defaults.
+        Cycle : AliasSet or None, optional
+            Cycle column aliases. None uses internal defaults.
+        Step : AliasSet or None, optional
+            Step column aliases. None uses internal defaults.
+        State : AliasSet or None, optional
+            State column aliases. None uses internal defaults.
+        Ah : AliasMap or None, optional
+            Capacity column aliases and converters. None uses internal defaults.
+        Wh : AliasMap or None, optional
+            Energy column aliases and converters. None uses internal defaults.
+        DateTime : AliasSet or None, optional
+            DateTime column aliases. None uses internal defaults.
+        extend_defaults : bool or Sequence[str], optional
+            How to augment or override default aliases. True extends defaults.
+            False (default) replaces defaults with provided values. To extend
+            some while replacing others, supply a list of which field names to
+            extend, others will be replaced, where the field names are the
+            attribute names of the class (e.g., 'Seconds', 'Amps', etc.).
+
+        Notes
+        -----
+        All aliases default to `None`, which uses internal defaults. When not
+        using the defaults, provided aliases must be given an `AliasMap` for any
+        fields which may require unit conversions, or an `AliasSet` for fields
+        which don't require unit conversions.
+
+        An `AliasMap` is just a dictionary where the keys are the alias names
+        and values are converters. A converter can be a float if the conversion
+        is just a multiplicative factor, or a callable like `f(float) -> float`
+        if the conversion is more complex. When no conversion is needed, the
+        value can be either `None` or `1.0`.
+
+        An `AliasSet` is used for a few of the fields which don't require unit
+        conversion (e.g., Cycle, Step, and State). For these fields, simply
+        provide a list of the alias names. Even if you want to enforce only one
+        alias, it must still be provided as a list of one item.
 
         Examples
         --------
-        The following example shows how to use `HeaderAliases` to specify custom
-        aliases. Any inputs that are skipped will use a list of defaults. Note
-        that you can provide a single alias or many for each standard header. Be
+        The following examples show how to use `HeaderAliases` to specify custom
+        aliases. Any inputs that are skipped will use a list of defaults. Be
         aware that all parameters must be provided as keywords to avoid improper
         ordering.
 
+        Plain aliases can use `None` if unit conversion is not needed:
+
         >>> import ampworks as amp
         >>> aliases = amp.HeaderAliases(
-        ...     Seconds='elapsed_s',
-        ...     Amps=['current_amps', 'current_a'],
+        ...     Seconds={'elapsed_s': None},
+        ...     Amps={'current_amps': None, 'current_a': None},
+        ... )
+
+        If a column's units don't match the standardized unit, use the value to
+        specify the conversion factor or function. Factors (float) multiply the
+        source value to convert to the standard unit. For example, `s = 60*min`:
+
+        >>> aliases = amp.HeaderAliases(Seconds={'elapsed_min': 60.0})
+
+        Converters can also be arbitrary callables like `f(float) -> float`:
+
+        >>> aliases = amp.HeaderAliases(Volts={'v_mv': lambda x: x / 1000})
+
+        Use `extend_defaults` to add to the built-in defaults instead of fully
+        replacing them, either for all provided fields or for select fields:
+
+        >>> aliases = amp.HeaderAliases(
+        ...     Seconds={'elapsed_s': None},
+        ...     extend_defaults=True,
+        ... )
+        >>> aliases = amp.HeaderAliases(
+        ...     Seconds={'elapsed_s': None},
+        ...     Amps={'current_a': None},
+        ...     extend_defaults=['Seconds'],
+        ... )
+
+        All of the above examples focus on values that may or may not need to be
+        converted to new units. There are also fields which never require unit
+        conversion, which are given as a list of strings instead of by a map:
+
+        >>> aliases = amp.HeaderAliases(
+        ...     Cycle=['CycleNumber'],
+        ...     Step=['StepIndex', 'StepNumber'],
+        ...     extend_defaults=True,
         ... )
 
         """
@@ -168,43 +243,40 @@ class HeaderAliases:
             'DateTime': DateTime,
         }
 
-        # convert inputs to list[str] or use defaults if None
-        def make_list_or_default(key, value):
-            if value is None:
-                return HEADER_ALIASES[key]
-            if isinstance(value, str):
-                return strip_chars([value])
-            return strip_chars(value)
+        _check_type('extend_defaults', extend_defaults, (bool, Sequence))
+        if isinstance(extend_defaults, Sequence):
+            _check_inner_type('extend_defaults', extend_defaults, str)
+            extend_fields = set(extend_defaults)
+        else:
+            extend_fields = set(params) if extend_defaults else set()
+
+        invalid = extend_fields - set(params)
+        if invalid:
+            raise ValueError(
+                f"'extend_defaults' has invalid field(s) {invalid}. Expected a"
+                f" subset of {list(params.keys())}.",
+            )
 
         # loop over fields and add to class instance
         for name, value in params.items():
+            extend = name in extend_fields
+            setattr(self, name, _format_user_alias(name, value, extend))
 
-            _check_type(name, value, (str, list, None))
-            value = make_list_or_default(name, value)
-            _check_inner_type(name, value, str)
-
-            setattr(self, name, value)
-
-    def __getitem__(self, key: str) -> list[str]:
-        """Return aliases for a standardized header name."""
+    def __getitem__(self, key: str) -> AliasMap | AliasSet:  # noqa: E501
+        """Return the alias map or set for a standardized header name."""
         if key in self.__slots__:
             return getattr(self, key)
-        raise KeyError(f"{key} not found in {self.__class__.__name__}")
+        raise KeyError(f"{key} not found in {type(self).__name__}")
 
     def __repr__(self) -> str:  # pragma: no cover
-        data = {k: v for k, v in self.items()}
+        data = {k: self[k] for k in self.keys()}
         summary = "\n".join([f"{k}={v!r}," for k, v in data.items()])
         summary = textwrap.indent(summary, " " * 4)
-        return f"{self.__class__.__name__}(\n{summary}\n)"
+        return f"{type(self).__name__}(\n{summary}\n)"
 
     def keys(self) -> list[str]:
         """Return standardized header names supported by the alias set."""
         return list(self.__slots__)
-
-    def items(self) -> Generator[tuple[str, list[str]], None, None]:
-        """Iterate over `(std_header, aliases)` pairs."""
-        for slot in self.__slots__:
-            yield (slot, getattr(self, slot))
 
 
 def header_matches(
@@ -230,7 +302,7 @@ def header_matches(
         True when all target headers are matched.
 
     """
-    normalized = strip_chars(headers)
+    normalized = _strip_chars(headers)
 
     checks = {}
     for key in targets:
@@ -242,7 +314,7 @@ def header_matches(
 def standardize_headers(
     data: pd.DataFrame,
     aliases: HeaderAliases | None = None,
-    extra_columns: dict[str, type | None] | None = None,
+    extra_columns: Dict[str, type | None] | None = None,
 ) -> Dataset:
     """
     Map source columns to `ampworks` standards.
@@ -254,7 +326,7 @@ def standardize_headers(
     aliases : HeaderAliases or None, optional
         Alias mapping used to identify standardized columns. If None, defaults
         are used.
-    extra_columns : dict[str, type or None] or None, optional
+    extra_columns : Dict[str, type or None] or None, optional
         Extra source columns to keep in output using exact source names as
         keys. Values define cast type. Use None to keep inferred dtype.
 
@@ -278,38 +350,31 @@ def standardize_headers(
 
     df = Dataset()
 
-    unit_factors = {
-        'Amps': {
-            ('ma', 'mamps', 'milliamps'): 1e-3,
-        },
-        'Ah': {
-            ('mah', 'mahr', 'mamphr'): 1e-3,
-        },
-        'Wh': {
-            ('uwatthr',): 1e-6,
-        },
-        'Seconds': {
-            ('min', 'mins', 'minute', 'minutes'): 60.0,
-            ('h', 'hr', 'hrs', 'hour', 'hours'): 3600.0,
-        },
-    }
-
     # Match as-imported headers with standardized headers
     for std_header in aliases.keys():
         for raw_header in data.columns:
-            normalized = strip_chars(raw_header)
+
+            # Store column if there is a match, and doesn't already exist
+            normalized = _strip_chars(raw_header)
             if normalized not in aliases[std_header]:
                 continue
+            if std_header in df.columns:
+                continue
 
-            if std_header not in df.columns:
-                df[std_header] = data[raw_header]
+            df[std_header] = data[raw_header]
 
-            # Standardize units
-            if std_header in unit_factors:
-                for units, factor in unit_factors[std_header].items():
-                    if any(unit in normalized for unit in units):
-                        df[std_header] = _astype_float(df[std_header]) * factor
-                        break
+            # Standardize units using the alias's converter, if any
+            if not isinstance(aliases[std_header], dict):
+                continue
+
+            converter = aliases[std_header][normalized]
+            df[std_header] = _astype_float(df[std_header])
+            if (converter is None) or (converter == 1.0):
+                continue
+            elif callable(converter):
+                df[std_header] = df[std_header].apply(converter)
+            else:
+                df[std_header] = df[std_header] * converter
 
     # Create 'State' data if not present
     if ('State' not in df.columns) and ('Amps' in df.columns):
@@ -335,7 +400,7 @@ def standardize_headers(
         ah_headers = ['charge' + header for header in aliases['Ah']]
         wh_headers = ['charge' + header for header in aliases['Wh']]
         for raw_header in data.columns:
-            normalized = strip_chars(raw_header)
+            normalized = _strip_chars(raw_header)
             if normalized in ah_headers:
                 df['Ah'] = data[raw_header]
                 discharge_ah = data[raw_header.replace('Charge', 'Discharge')]
@@ -392,13 +457,101 @@ def standardize_headers(
     return df
 
 
+def _format_user_alias(
+    std_header: str,
+    alias: AliasSet | AliasMap | None,
+    extend_defaults: bool,
+):
+    """
+    Format user-provided aliases (AliasMap or AliasSet types) to be used in the
+    `standardize_headers` function.
+
+    Parameters
+    ----------
+    std_header : str
+        One of the standard header alias names, from DEFAULT_ALIASES keys.
+    alias : AliasSet or AliasMap or None
+        User-provided alias mapping or set. If None, defaults are used.
+    extend_defaults : bool
+        Whether or not to extend the current alias's defaults. If not extended,
+        the user-provided values replace the internal defaults.
+
+    Returns
+    -------
+    formatted : AliasMap or AliasSet
+        The formatted (and optionally extended) alias for `std_header`.
+
+    """
+    from ampworks._checks import _check_type, _check_inner_type
+
+    defaults = DEFAULT_ALIASES[std_header].copy()
+    if alias is None:
+        return defaults
+
+    # handle AliasSet options
+    if std_header in ['Cycle', 'Step', 'State', 'DateTime']:
+        _check_type(f"{std_header}", alias, (Sequence, None))
+        if isinstance(alias, str):
+            raise TypeError(
+                f"{std_header} alias must be Sequence[str], but got str."
+            )
+
+        _check_inner_type(f"{std_header}", alias, str)
+        alias = _strip_chars(alias)
+
+        formatted = set(alias)
+        if extend_defaults:
+            formatted.update(defaults)
+
+        return formatted
+
+    # handle AliasMap options
+    _check_type(f"{std_header}", alias, (dict, None))
+    _check_inner_type(f"{std_header}", alias.keys(), str)
+
+    formatted = {_strip_chars(k): v for k, v in alias.items()}
+    for k, v in formatted.items():
+        if (v is None) or callable(v):
+            continue
+
+        formatted[k] = float(v)
+
+    if extend_defaults:
+        formatted = {**defaults, **formatted}  # adopt user's if duplicate keys
+
+    return formatted
+
+
+def _strip_chars(string: str | list[str] | None) -> str | list[str] | None:
+    """
+    Normalize header aliases text for matching.
+
+    Parameters
+    ----------
+    string : str or list[str] or None
+        Header text to normalize.
+
+    Returns
+    -------
+    stripped : str or list[str] or None
+        Lowercased text with common separators removed.
+
+    """
+    if string is None:
+        return None
+    if isinstance(string, list):
+        return [_strip_chars(s) for s in string]
+
+    transmap = str.maketrans('[(/,', '....', ' _-#<>)]')
+    return string.lower().translate(transmap).replace('..', '.').strip('.')
+
+
 def _astype_float(series: pd.Series) -> pd.Series:
     """
     Convert a pandas Series to float, coercing errors.
 
-    If the series is already numeric, just ensure it's a float. Otherwise, try
-    to convert to a string, strip commas (thousands separators) and hash symbols
-    before coercing to numeric. Any non-convertible values will become NaN.
+    If numeric, ensures a float. Else, convert to a string, strip commas and
+    hash symbols, then coerce to numeric. Non-convertible values become NaN.
 
     Parameters
     ----------

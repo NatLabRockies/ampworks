@@ -1,13 +1,18 @@
 """
 Summary
 =======
-`ampworks` is a collection of tools designed to visualize and process
-experimental battery data. It provides routines for degradation mode analysis,
-parameter extraction from common protocols (e.g., GITT, ICI, etc.), and more.
-These routines provide key properties for life and physics-based models (e.g.,
-SPM and P2D). Graphical user interfaces (GUIs) are available for some of the
-analyses. See a list of the GUI-based applications by running `ampworks -h`
-in your terminal after installation.
+`ampworks` is a toolkit for visualizing, processing, and standardizing
+experimental battery data. It reads raw cycler exports (CSV, tab-delimited, and
+Excel files) and standardizes headers, units, sign conventions, and formatting
+into a consistent `Dataset` structure, making it easy to validate, clean, and
+compare data regardless of source. Built-in routines cover degradation mode
+analysis, protocol-specific parameter extraction (e.g., GITT, ICI, HPPC,
+capacity checks), and more, streamlining the process of going from raw data to
+insight. The same standardized outputs can also feed downstream applications,
+such as life models, physics-based models (e.g., SPM and P2D), and machine
+learning workflows. Graphical user interfaces (GUIs) are available for some of
+the analyses. See a full list of the GUI-based applications by running
+`ampworks -h` in your terminal after installation.
 
 Note: `ampworks` is in early development. The API may change as it matures.
 

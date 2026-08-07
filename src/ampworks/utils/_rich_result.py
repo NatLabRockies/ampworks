@@ -113,7 +113,7 @@ class RichResult(dict):
         if self.keys():
             return '\n' + _format_dict(self, sorter=sorter) + '\n'
         else:
-            return self.__class__.__name__ + '()'
+            return type(self).__name__ + '()'
 
     def __dir__(self):
         """List available attributes, corresponding to dictionary keys."""

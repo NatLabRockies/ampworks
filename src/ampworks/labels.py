@@ -115,7 +115,7 @@ class _RangeLabel:
         self.cycles = cycles
 
     def __repr__(self) -> str:  # pragma: no cover
-        classname = self.__class__.__name__
+        classname = type(self).__name__
         if self.steps is not None:
             return f"{classname}(label={self.label!r}, steps={self.steps!r})"
         else:

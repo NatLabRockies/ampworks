@@ -3,6 +3,7 @@
 ## [Unreleased](https://github.com/NatLabRockies/ampworks)
 
 ### New Features
+- Allow unit overrides to `HeaderAliases` to help ensure self-consistent standardizations ([#32](https://github.com/NatLabRockies/ampworks/pull/32))
 - New `interactive_plotly` and `interactive_bokeh` methods with `kind` line/scatter option ([#31](https://github.com/NatLabRockies/ampworks/pull/31))
 - New hidden `auxiliary` module for repeated logic across package (only for devs, for now) ([#30](https://github.com/NatLabRockies/ampworks/pull/30))
 

@@ -1,8 +1,8 @@
 # ampworks
 
-[![ci](https://github.com/NatLabRockies/ampworks/actions/workflows/ci.yml/badge.svg)](https://github.com/NatLabRockies/ampworks/actions/workflows/ci.yml) &nbsp;
+[![ci-tests](https://github.com/NatLabRockies/ampworks/actions/workflows/ci.yml/badge.svg)](https://github.com/NatLabRockies/ampworks/workflows/ci.yml) &nbsp;
 [![license](https://img.shields.io/badge/license-BSD--3-blue.svg)](https://github.com/NatLabRockies/ampworks/blob/main/LICENSE) &nbsp;
-[![codecov](https://codecov.io/gh/NatLabRockies/ampworks/graph/badge.svg?token=O6PP2KXSEV)](https://codecov.io/gh/NatLabRockies/ampworks) &nbsp;
+[![codecov](https://codecov.io/gh/NatLabRockies/ampworks/graph/badge.svg?token=O6PP2KXSEV)](https://codecov.io/gh/NatLabRockies/ampworks) <br>
 [![pypi](https://img.shields.io/pypi/v/ampworks)](https://pypi.org/project/ampworks) &nbsp;
 [![pypi-downloads](https://static.pepy.tech/personalized-badge/ampworks?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=BRIGHTGREEN&left_text=pypi|downloads)](https://pepy.tech/projects/ampworks)
 

@@ -17,6 +17,8 @@ None.
 - Extra tabs in some `.txt` files were creating read errors, now ignore ragged columns ([#31](https://github.com/NatLabRockies/ampworks/pull/31))
 
 ### Chores
+- Move all hidden methods and functions to end of classes and files for consistency ([#33](https://github.com/NatLabRockies/ampworks/pull/33))
+- Add `tool.coverage` to `pyproject.toml` for excluding common statements ([#33](https://github.com/NatLabRockies/ampworks/pull/33))
 - Use base class `_RangeLabel` for both cycle and section labels ([#29](https://github.com/NatLabRockies/ampworks/pull/29))
 
 ## [v0.1.0](https://github.com/NatLabRockies/ampworks/tree/v0.1.0)

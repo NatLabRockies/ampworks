@@ -6,7 +6,7 @@ import pandas as pd
 
 from ampworks.utils import RichTable, RichResult
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from typing import Self
     from pathlib import Path
 

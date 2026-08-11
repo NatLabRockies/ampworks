@@ -13,7 +13,7 @@ from __future__ import annotations
 from numbers import Integral
 from typing import Sequence, TYPE_CHECKING
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ampworks import Dataset
 
 __all__ = [
@@ -114,7 +114,7 @@ class _RangeLabel:
         self.steps = steps
         self.cycles = cycles
 
-    def __repr__(self) -> str:  # pragma: no cover
+    def __repr__(self) -> str:
         classname = type(self).__name__
         if self.steps is not None:
             return f"{classname}(label={self.label!r}, steps={self.steps!r})"

@@ -87,7 +87,7 @@ class Timer:
         self._stop = 0.
         self._display = display
 
-    def __repr__(self) -> str:  # pragma: no cover
+    def __repr__(self) -> str:
         """Quick representation of the timer showing name, time, and units."""
         elapsed = self._converter[self._units](self.elapsed_time)
         elapsed_string = f"{elapsed} {self._units}"

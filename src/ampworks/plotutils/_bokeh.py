@@ -7,7 +7,7 @@ from tempfile import NamedTemporaryFile
 from IPython.display import display, HTML
 from bokeh import io as bk_io, models as bk_m
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from bokeh.plotting import figure as BokehFigure
 
 __all__ = [

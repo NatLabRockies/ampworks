@@ -7,7 +7,7 @@ import pandas as pd
 
 from scipy.stats import linregress
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ampworks import Dataset
 
 

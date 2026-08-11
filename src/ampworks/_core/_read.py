@@ -8,78 +8,9 @@ from typing import TYPE_CHECKING, Sequence
 import pandas as pd
 import polars as pl
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from os import PathLike
     from ampworks import Dataset, HeaderAliases
-
-
-def _read_delimited(
-    filepath: PathLike,
-    delimiter: str,
-    aliases: HeaderAliases,
-    extra_columns: dict[str, type | None] | None,
-) -> Dataset:
-    r"""
-    Generic internal reader for delimited files. Used for shared logic between
-    the csv and txt readers.
-
-    Parameters
-    ----------
-    filepath : PathLike
-        Path to the file, including extension.
-    delimiter : str
-        Delimiter to use for parsing the file. For example, `','` for csv files
-        and `'\t'` for tab-delimited files.
-    aliases : HeaderAliases or None, optional
-        Column alias mapping for the header standardization. If None (default),
-        a set of internal default aliases is used.
-    extra_columns : dict[str, type or None] or None, optional
-        Additional columns to include in the standardized dataset. Include both
-        the exact source column names and their corresponding data types in a
-        dictionary. Use value None to keep pandas-inferred dtype. The `type` is
-        also compatible with pandas dtypes, e.g., `'string'`, `'Int64'`, etc.
-
-    Returns
-    -------
-    data : Dataset
-        Standardized battery dataset.
-
-    """
-    from ampworks import Dataset, HeaderAliases
-    from ampworks._checks import _check_type
-    from ampworks._core._headers import (
-        standardize_headers, header_matches, REQUIRED_HEADERS,
-    )
-
-    if aliases is None:
-        aliases = HeaderAliases()
-
-    _check_type('aliases', aliases, HeaderAliases)
-
-    options = {
-        'ignore_errors': True,
-        'separator': delimiter,
-        'truncate_ragged_lines': True,
-    }
-
-    skip_rows = None
-    with open(filepath, encoding='latin1') as datafile:
-        reader = csv.reader(datafile, delimiter=delimiter)
-
-        for idx, line in enumerate(reader):
-            if header_matches(line, REQUIRED_HEADERS, aliases):
-                skip_rows = idx
-                break
-
-    if skip_rows is not None:
-        options['skip_rows'] = skip_rows
-        df = pl.read_csv(filepath, **options).to_pandas()
-        return standardize_headers(df, aliases, extra_columns)
-
-    warn(f"No valid aliases found for {REQUIRED_HEADERS} in {filepath}."
-         " Returning empty dataset.")
-
-    return Dataset()
 
 
 def read_csv(
@@ -414,3 +345,72 @@ def read_excel(
         return single
 
     return datasets
+
+
+def _read_delimited(
+    filepath: PathLike,
+    delimiter: str,
+    aliases: HeaderAliases,
+    extra_columns: dict[str, type | None] | None,
+) -> Dataset:
+    r"""
+    Generic internal reader for delimited files. Used for shared logic between
+    the csv and txt readers.
+
+    Parameters
+    ----------
+    filepath : PathLike
+        Path to the file, including extension.
+    delimiter : str
+        Delimiter to use for parsing the file. For example, `','` for csv files
+        and `'\t'` for tab-delimited files.
+    aliases : HeaderAliases or None, optional
+        Column alias mapping for the header standardization. If None (default),
+        a set of internal default aliases is used.
+    extra_columns : dict[str, type or None] or None, optional
+        Additional columns to include in the standardized dataset. Include both
+        the exact source column names and their corresponding data types in a
+        dictionary. Use value None to keep pandas-inferred dtype. The `type` is
+        also compatible with pandas dtypes, e.g., `'string'`, `'Int64'`, etc.
+
+    Returns
+    -------
+    data : Dataset
+        Standardized battery dataset.
+
+    """
+    from ampworks import Dataset, HeaderAliases
+    from ampworks._checks import _check_type
+    from ampworks._core._headers import (
+        standardize_headers, header_matches, REQUIRED_HEADERS,
+    )
+
+    if aliases is None:
+        aliases = HeaderAliases()
+
+    _check_type('aliases', aliases, HeaderAliases)
+
+    options = {
+        'ignore_errors': True,
+        'separator': delimiter,
+        'truncate_ragged_lines': True,
+    }
+
+    skip_rows = None
+    with open(filepath, encoding='latin1') as datafile:
+        reader = csv.reader(datafile, delimiter=delimiter)
+
+        for idx, line in enumerate(reader):
+            if header_matches(line, REQUIRED_HEADERS, aliases):
+                skip_rows = idx
+                break
+
+    if skip_rows is not None:
+        options['skip_rows'] = skip_rows
+        df = pl.read_csv(filepath, **options).to_pandas()
+        return standardize_headers(df, aliases, extra_columns)
+
+    warn(f"No valid aliases found for {REQUIRED_HEADERS} in {filepath}."
+         " Returning empty dataset.")
+
+    return Dataset()

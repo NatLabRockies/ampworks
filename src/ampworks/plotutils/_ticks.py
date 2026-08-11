@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from numpy import atleast_1d
 from matplotlib.ticker import AutoMinorLocator
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from matplotlib.axes import Axes
 
 

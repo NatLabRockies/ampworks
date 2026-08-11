@@ -11,225 +11,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from scipy.integrate import cumulative_trapezoid
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ampworks import Dataset
-
-
-def _plot_pulses(data: Dataset, **fig_kw) -> None:
-    """
-    Plot voltage profile with detected pulses highlighted.
-
-    Parameters
-    ----------
-    data : Dataset
-        Input Dataset with 'Hours', 'Amps', 'Volts', 'DisPulse', 'ChgPulse',
-        and 'StepTime'columns. These can all be added using _detect_pulses().
-    **fig_kw : dict, optional
-        Additional keyword arguments to use when plotting. A full list of names,
-        types, descriptions, and defaults is given below.
-    figsize : (int, int) or None, optional
-        Figure size (width, height) in pixels. Set either dimension to None for
-        responsiveness. In Jupyter, only width can resize; height is fixed. The
-        default is (800, 500).
-    save : str or None, optional
-        Path to save the plot as HTML. If not in a Jupyter notebook and save is
-        None, a temporary file is still created and is opened in the browser.
-
-    """
-    from ampworks.plotutils._plotly import PLOTLY_TEMPLATE, _render_plotly
-
-    save = fig_kw.get('save', None)
-    figsize = fig_kw.get('figsize', (800, 500))
-
-    # Two-row subplot with shared x-axis
-    fig = make_subplots(
-        rows=2, cols=1, shared_xaxes=True,
-        row_heights=[0.3, 0.7], vertical_spacing=0.05,
-    )
-
-    # Detect appropriate units for current
-    max_current = data['Amps'].abs().max()
-    if max_current >= 1e-1:
-        ycol, yunits = 'Amps', 'A'
-    elif max_current >= 1e-4:
-        ycol, yunits = 'milliAmps', 'mA'
-        data[ycol] = data['Amps'] * 1e3
-    else:
-        ycol, yunits = 'microAmps', 'uA'
-        data[ycol] = data['Amps'] * 1e6
-
-    # Full current and voltage traces
-    current = px.line(data, x='Hours', y=ycol)
-    current.data[0].update(line_color='black')
-
-    voltage = px.line(data, x='Hours', y='Volts')
-    voltage.data[0].update(line_color='black')
-
-    fig.add_trace(current.data[0], row=1, col=1)
-    fig.add_trace(voltage.data[0], row=2, col=1)
-
-    fig.update_xaxes(title_text='Hours', row=2, col=1)
-    fig.update_yaxes(title_text=ycol, row=1, col=1)
-    fig.update_yaxes(title_text='Volts', row=2, col=1)
-
-    # Add shaded pulses and markers
-    for pulse, color in zip(['DisPulse', 'ChgPulse'], ['red', 'blue']):
-
-        for idx, g in data.groupby(pulse, dropna=True):
-            t0, t1 = g['Hours'].iloc[0], g['Hours'].iloc[-1]
-            i0, i1 = g[ycol].iloc[0], g[ycol].iloc[-1]
-            v0, v1 = g['Volts'].iloc[0], g['Volts'].iloc[-1]
-
-            trel0, trel1 = g['StepTime'].iloc[0], g['StepTime'].iloc[-1]
-
-            hover_amps = (
-                f"StepTime: %{{customdata:.3f}} s<br>"
-                f"Current: %{{y:.3f}} {yunits}"
-            )
-            hover_volts = (
-                "StepTime: %{customdata:.3f} s<br>"
-                "Voltage: %{y:.3f} V"
-            )
-            customdata = [trel0, trel1]
-
-            fig.add_vrect(
-                x0=t0, x1=t1,  row=1, col=1,
-                fillcolor=color, opacity=0.3, line_width=0,
-            )
-            fig.add_trace(go.Scatter(
-                x=[t0, t1], y=[i0, i1], name=pulse + f"{idx}",
-                mode='markers', marker=dict(color=color, size=8),
-                hovertemplate=hover_amps, customdata=customdata,
-            ), row=1, col=1)
-
-            fig.add_vrect(
-                x0=t0, x1=t1, row=2, col=1,
-                fillcolor=color, opacity=0.3, line_width=0,
-            )
-            fig.add_trace(go.Scatter(
-                x=[t0, t1], y=[v0, v1], name=pulse + f"{idx}",
-                mode='markers', marker=dict(color=color, size=8),
-                hovertemplate=hover_volts, customdata=customdata,
-            ), row=2, col=1)
-
-    # Adjust layout and styling; then save and display
-    fig.update_layout(template=PLOTLY_TEMPLATE, showlegend=False)
-    _render_plotly(fig=fig, figsize=figsize, save=save)
-
-
-def _detect_pulses(
-    data: Dataset,
-    tmin: float = 0.,
-    tmax: float = 20.,
-    steps: list[int] | None = None,
-    plot: bool = False,
-    **fig_kw,
-) -> Dataset:
-    """
-    Detect charge and discharge pulses in the input Dataset. Optionally plot
-    the voltage profile with detected pulses highlighted.
-
-    Parameters
-    ----------
-    data : Dataset
-        Input Dataset with 'Seconds', 'Volts', and 'Amps' columns.
-    tmin : float, optional
-        Minimum pulse duration in seconds, by default 0. Any non-rest segments
-        shorter than this will be ignored.
-    tmax : float, optional
-        Maximum pulse duration in seconds, by default 20. Any non-rest segments
-        longer than this will be ignored.
-    steps : list[int] or None, optional
-        Explicit list of step numbers associated with HPPC pulses. If None,
-        pulses are autodetected based on state transitions. Requires a 'Step'
-        column in 'data'. Defaults to None.
-    plot : bool, optional
-        Whether to plot the current and voltage profiles with detected pulses
-        highlighted, by default False.
-    **fig_kw : dict, optional
-        Additional keyword arguments to use when plotting. A full list of names,
-        types, descriptions, and defaults is given below.
-    figsize : (int, int) or None, optional
-        Figure size (width, height) in pixels. Set either dimension to None for
-        responsiveness. In Jupyter, only width can resize; height is fixed. The
-        default is (800, 500).
-    save : str or None, optional
-        Path to save the plot as HTML. If not in a Jupyter notebook and save is
-        None, a temporary file is still created and is opened in the browser.
-
-    Returns
-    -------
-    data : amp.Dataset
-        A copy of the input Dataset with additional columns: 'Hours', 'State',
-        'Ah', 'SOC', 'Segment', 'StepTime', 'DisPulse', 'ChgPulse'.
-
-    """
-    from ampworks._auxiliary import _infer_state
-
-    df = data.copy()
-    df = df.reset_index(drop=True)
-
-    df['Seconds'] -= df['Seconds'].min()
-    df['Hours'] = df['Seconds'] / 3600.
-
-    # Create State column
-    _infer_state(df)
-
-    # Add Ah and SOC columns
-    is_net_charge = df['Volts'].iloc[0] < df['Volts'].iloc[-1]
-    sign = +1 if is_net_charge else -1
-
-    df['Ah'] = cumulative_trapezoid(sign*df['Amps'], df['Hours'], initial=0.)
-
-    if is_net_charge:
-        df['SOC'] = df['Ah'] / df['Ah'].max()
-    else:
-        df['SOC'] = 1. - df['Ah'] / df['Ah'].max()
-
-    # Create 'Step' column to group by State and Step
-    shifted_state = df['State'].shift(fill_value=df['State'].iloc[0])
-    df['Segment'] = (df['State'] != shifted_state).cumsum()
-
-    groups = df.groupby(['State', 'Segment'])
-    df['StepTime'] = np.nan
-
-    # Loop over (State, Step) groups to locate charge/discharge pulses
-    df['DisPulse'] = pd.NA
-    df['ChgPulse'] = pd.NA
-
-    dis_count = 1
-    chg_count = 1
-
-    for (state, _), g in groups:
-
-        idx = g.index
-        if idx[0] != df.index[0]:
-            idx = np.hstack([idx[0] - 1, idx], dtype=int)
-
-        steptime = df.loc[idx, 'Seconds'] - df.loc[idx[0], 'Seconds']
-
-        before, after = idx[0], idx[-1] + 1
-        if (state == 'R') or (steptime.max() > tmax):
-            continue
-        elif any(df.loc[[before, after], 'State'] != 'R'):
-            continue
-        elif (steps is not None) and (g['Step'].unique()[0] not in steps):
-            continue
-
-        if (state == 'D') and (steptime.max() >= tmin):
-            df.loc[idx, 'StepTime'] = steptime
-            df.loc[idx, 'DisPulse'] = dis_count
-            dis_count += 1
-        elif (state == 'C') and (steptime.max() >= tmin):
-            df.loc[idx, 'StepTime'] = steptime
-            df.loc[idx, 'ChgPulse'] = chg_count
-            chg_count += 1
-
-    # Plot, if requested
-    if plot:
-        _plot_pulses(df, **fig_kw)
-
-    return df
 
 
 def extract_impedance(
@@ -453,3 +236,220 @@ def extract_impedance(
     impedance.rename(columns=rename, inplace=True)
 
     return impedance
+
+
+def _plot_pulses(data: Dataset, **fig_kw) -> None:
+    """
+    Plot voltage profile with detected pulses highlighted.
+
+    Parameters
+    ----------
+    data : Dataset
+        Input Dataset with 'Hours', 'Amps', 'Volts', 'DisPulse', 'ChgPulse',
+        and 'StepTime'columns. These can all be added using _detect_pulses().
+    **fig_kw : dict, optional
+        Additional keyword arguments to use when plotting. A full list of names,
+        types, descriptions, and defaults is given below.
+    figsize : (int, int) or None, optional
+        Figure size (width, height) in pixels. Set either dimension to None for
+        responsiveness. In Jupyter, only width can resize; height is fixed. The
+        default is (800, 500).
+    save : str or None, optional
+        Path to save the plot as HTML. If not in a Jupyter notebook and save is
+        None, a temporary file is still created and is opened in the browser.
+
+    """
+    from ampworks.plotutils._plotly import PLOTLY_TEMPLATE, _render_plotly
+
+    save = fig_kw.get('save', None)
+    figsize = fig_kw.get('figsize', (800, 500))
+
+    # Two-row subplot with shared x-axis
+    fig = make_subplots(
+        rows=2, cols=1, shared_xaxes=True,
+        row_heights=[0.3, 0.7], vertical_spacing=0.05,
+    )
+
+    # Detect appropriate units for current
+    max_current = data['Amps'].abs().max()
+    if max_current >= 1e-1:
+        ycol, yunits = 'Amps', 'A'
+    elif max_current >= 1e-4:
+        ycol, yunits = 'milliAmps', 'mA'
+        data[ycol] = data['Amps'] * 1e3
+    else:
+        ycol, yunits = 'microAmps', 'uA'
+        data[ycol] = data['Amps'] * 1e6
+
+    # Full current and voltage traces
+    current = px.line(data, x='Hours', y=ycol)
+    current.data[0].update(line_color='black')
+
+    voltage = px.line(data, x='Hours', y='Volts')
+    voltage.data[0].update(line_color='black')
+
+    fig.add_trace(current.data[0], row=1, col=1)
+    fig.add_trace(voltage.data[0], row=2, col=1)
+
+    fig.update_xaxes(title_text='Hours', row=2, col=1)
+    fig.update_yaxes(title_text=ycol, row=1, col=1)
+    fig.update_yaxes(title_text='Volts', row=2, col=1)
+
+    # Add shaded pulses and markers
+    for pulse, color in zip(['DisPulse', 'ChgPulse'], ['red', 'blue']):
+
+        for idx, g in data.groupby(pulse, dropna=True):
+            t0, t1 = g['Hours'].iloc[0], g['Hours'].iloc[-1]
+            i0, i1 = g[ycol].iloc[0], g[ycol].iloc[-1]
+            v0, v1 = g['Volts'].iloc[0], g['Volts'].iloc[-1]
+
+            trel0, trel1 = g['StepTime'].iloc[0], g['StepTime'].iloc[-1]
+
+            hover_amps = (
+                f"StepTime: %{{customdata:.3f}} s<br>"
+                f"Current: %{{y:.3f}} {yunits}"
+            )
+            hover_volts = (
+                "StepTime: %{customdata:.3f} s<br>"
+                "Voltage: %{y:.3f} V"
+            )
+            customdata = [trel0, trel1]
+
+            fig.add_vrect(
+                x0=t0, x1=t1,  row=1, col=1,
+                fillcolor=color, opacity=0.3, line_width=0,
+            )
+            fig.add_trace(go.Scatter(
+                x=[t0, t1], y=[i0, i1], name=pulse + f"{idx}",
+                mode='markers', marker=dict(color=color, size=8),
+                hovertemplate=hover_amps, customdata=customdata,
+            ), row=1, col=1)
+
+            fig.add_vrect(
+                x0=t0, x1=t1, row=2, col=1,
+                fillcolor=color, opacity=0.3, line_width=0,
+            )
+            fig.add_trace(go.Scatter(
+                x=[t0, t1], y=[v0, v1], name=pulse + f"{idx}",
+                mode='markers', marker=dict(color=color, size=8),
+                hovertemplate=hover_volts, customdata=customdata,
+            ), row=2, col=1)
+
+    # Adjust layout and styling; then save and display
+    fig.update_layout(template=PLOTLY_TEMPLATE, showlegend=False)
+    _render_plotly(fig=fig, figsize=figsize, save=save)
+
+
+def _detect_pulses(
+    data: Dataset,
+    tmin: float = 0.,
+    tmax: float = 20.,
+    steps: list[int] | None = None,
+    plot: bool = False,
+    **fig_kw,
+) -> Dataset:
+    """
+    Detect charge and discharge pulses in the input Dataset. Optionally plot
+    the voltage profile with detected pulses highlighted.
+
+    Parameters
+    ----------
+    data : Dataset
+        Input Dataset with 'Seconds', 'Volts', and 'Amps' columns.
+    tmin : float, optional
+        Minimum pulse duration in seconds, by default 0. Any non-rest segments
+        shorter than this will be ignored.
+    tmax : float, optional
+        Maximum pulse duration in seconds, by default 20. Any non-rest segments
+        longer than this will be ignored.
+    steps : list[int] or None, optional
+        Explicit list of step numbers associated with HPPC pulses. If None,
+        pulses are autodetected based on state transitions. Requires a 'Step'
+        column in 'data'. Defaults to None.
+    plot : bool, optional
+        Whether to plot the current and voltage profiles with detected pulses
+        highlighted, by default False.
+    **fig_kw : dict, optional
+        Additional keyword arguments to use when plotting. A full list of names,
+        types, descriptions, and defaults is given below.
+    figsize : (int, int) or None, optional
+        Figure size (width, height) in pixels. Set either dimension to None for
+        responsiveness. In Jupyter, only width can resize; height is fixed. The
+        default is (800, 500).
+    save : str or None, optional
+        Path to save the plot as HTML. If not in a Jupyter notebook and save is
+        None, a temporary file is still created and is opened in the browser.
+
+    Returns
+    -------
+    data : amp.Dataset
+        A copy of the input Dataset with additional columns: 'Hours', 'State',
+        'Ah', 'SOC', 'Segment', 'StepTime', 'DisPulse', 'ChgPulse'.
+
+    """
+    from ampworks._auxiliary import _infer_state
+
+    df = data.copy()
+    df = df.reset_index(drop=True)
+
+    df['Seconds'] -= df['Seconds'].min()
+    df['Hours'] = df['Seconds'] / 3600.
+
+    # Create State column
+    _infer_state(df)
+
+    # Add Ah and SOC columns
+    is_net_charge = df['Volts'].iloc[0] < df['Volts'].iloc[-1]
+    sign = +1 if is_net_charge else -1
+
+    df['Ah'] = cumulative_trapezoid(sign*df['Amps'], df['Hours'], initial=0.)
+
+    if is_net_charge:
+        df['SOC'] = df['Ah'] / df['Ah'].max()
+    else:
+        df['SOC'] = 1. - df['Ah'] / df['Ah'].max()
+
+    # Create 'Step' column to group by State and Step
+    shifted_state = df['State'].shift(fill_value=df['State'].iloc[0])
+    df['Segment'] = (df['State'] != shifted_state).cumsum()
+
+    groups = df.groupby(['State', 'Segment'])
+    df['StepTime'] = np.nan
+
+    # Loop over (State, Step) groups to locate charge/discharge pulses
+    df['DisPulse'] = pd.NA
+    df['ChgPulse'] = pd.NA
+
+    dis_count = 1
+    chg_count = 1
+
+    for (state, _), g in groups:
+
+        idx = g.index
+        if idx[0] != df.index[0]:
+            idx = np.hstack([idx[0] - 1, idx], dtype=int)
+
+        steptime = df.loc[idx, 'Seconds'] - df.loc[idx[0], 'Seconds']
+
+        before, after = idx[0], idx[-1] + 1
+        if (state == 'R') or (steptime.max() > tmax):
+            continue
+        elif any(df.loc[[before, after], 'State'] != 'R'):
+            continue
+        elif (steps is not None) and (g['Step'].unique()[0] not in steps):
+            continue
+
+        if (state == 'D') and (steptime.max() >= tmin):
+            df.loc[idx, 'StepTime'] = steptime
+            df.loc[idx, 'DisPulse'] = dis_count
+            dis_count += 1
+        elif (state == 'C') and (steptime.max() >= tmin):
+            df.loc[idx, 'StepTime'] = steptime
+            df.loc[idx, 'ChgPulse'] = chg_count
+            chg_count += 1
+
+    # Plot, if requested
+    if plot:
+        _plot_pulses(df, **fig_kw)
+
+    return df

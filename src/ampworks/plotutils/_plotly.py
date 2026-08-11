@@ -6,7 +6,7 @@ from tempfile import NamedTemporaryFile
 
 import plotly.graph_objects as go
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from plotly.graph_objs._figure import Figure as PlotlyFigure
 
 __all__ = [

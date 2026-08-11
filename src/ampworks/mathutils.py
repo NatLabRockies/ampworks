@@ -15,7 +15,7 @@ __all__ = [
     'aggregate_over_x',
 ]
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ampworks import Dataset
 
 

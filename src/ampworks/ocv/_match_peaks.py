@@ -7,7 +7,7 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.integrate import cumulative_trapezoid
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ampworks.dqdv import DqdvSpline
 
 

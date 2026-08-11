@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Set, Dict, Sequence, Callable
 
 import pandas as pd
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ampworks import Dataset
 
 AliasSet = Set[str] | Sequence[str]
@@ -268,7 +268,7 @@ class HeaderAliases:
             return getattr(self, key)
         raise KeyError(f"{key} not found in {type(self).__name__}")
 
-    def __repr__(self) -> str:  # pragma: no cover
+    def __repr__(self) -> str:
         data = {k: self[k] for k in self.keys()}
         summary = "\n".join([f"{k}={v!r}," for k, v in data.items()])
         summary = textwrap.indent(summary, " " * 4)

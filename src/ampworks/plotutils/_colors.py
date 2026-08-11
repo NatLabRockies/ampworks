@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 import matplotlib as mpl
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from numpy import ndarray
 
 

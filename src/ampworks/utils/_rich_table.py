@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from pathlib import Path
     from typing import Any, Self, Sequence
     from pandas import Series, DataFrame
@@ -67,7 +67,9 @@ class RichTable:
             table = CustomTable(df)  # valid, no errors raised
 
         """
-        self._validate_columns(df)
+        from ampworks._checks import _check_columns
+        _check_columns(df, set(self._required_cols))
+
         self._df = df.copy()
 
     def __getitem__(self, key: str | list[str]) -> Series | DataFrame:
@@ -92,25 +94,6 @@ class RichTable:
     def __repr__(self) -> str:
         """Return the string representation of the underlying DataFrame."""
         return repr(self._df)
-
-    @classmethod
-    def _validate_columns(cls, df: DataFrame) -> None:
-        """
-        Ensure that all required columns are present.
-
-        Parameters
-        ----------
-        df : pd.DataFrame
-            The input DataFrame to validate during initialization.
-
-        Raises
-        ------
-        ValueError
-            If any columns listed in `_required_cols` are missing.
-
-        """
-        from ampworks._checks import _check_columns
-        _check_columns(df, set(cls._required_cols))
 
     @classmethod
     def from_csv(cls, path: str | Path) -> Self:

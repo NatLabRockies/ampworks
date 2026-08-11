@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ._tables import DegModeTable, DqdvFitTable
 
 

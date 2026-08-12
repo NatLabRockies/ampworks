@@ -44,7 +44,7 @@ import os
 import shutil
 import pathlib
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ampworks import Dataset
 
 __all__ = [

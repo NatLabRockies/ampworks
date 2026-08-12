@@ -72,7 +72,7 @@ __all__ = [
     '_in_interactive',
 ]
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from ampworks import (
         ocv, ici, gitt, dqdv, hppc, utils, labels, datasets, mathutils,
         plotutils,

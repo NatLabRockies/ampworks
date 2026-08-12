@@ -11,7 +11,7 @@ import scipy.optimize as opt
 import matplotlib.pyplot as plt
 import scipy.interpolate as interp
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import numpy.typing as npt
 
     from ampworks.utils import RichResult
@@ -177,144 +177,6 @@ class DqdvFitter:
                              f" can only be 'all' or a subset of {options}.")
 
         self._cost_terms = list(set(value))  # ensure no duplicates
-
-    def _check_dataframe(self, df: pd.DataFrame, which: str) -> pd.DataFrame:
-        """
-        Verify that input dataframes have 'SOC' and 'Volts' columns. The full
-        cell dataset also requires an 'Ah' column.
-
-        Parameters
-        ----------
-        df : pd.DataFrame
-            Data to check for required columns.
-        which : {'neg', 'pos', 'cell'}
-            Which splines to build. Used to track initialization.
-
-        Returns
-        -------
-        df : None or pd.DataFrame
-            None if dataset has not yet been initialized. Otherwise, pass the
-            error checks and return the input DataFrame.
-
-        Raises
-        ------
-        TypeError
-            The 'df' input must be type pd.DataFrame.
-        ValueError
-            'df' is missing columns, required={'SOC', 'Volts'} for electrode
-            datasets and {'Ah', 'SOC', 'Volts'} for full cell datasets.
-
-        """
-        self._initialized[which] = False
-
-        required = {'SOC', 'Volts'}
-        if which == 'cell':
-            required.add('Ah')
-
-        if df is None:
-            pass
-        elif not isinstance(df, pd.DataFrame):
-            raise TypeError(f"'{which}' must be type pd.DataFrame.")
-        elif not required.issubset(df.columns):
-            raise ValueError(f"'{which}' is missing columns, {required=}.")
-
-        return df
-
-    def _build_splines(self, df: pd.DataFrame, which: str) -> Callable:
-        """
-        Generate OCV interpolation functions.
-
-        Parameters
-        ----------
-        df : pd.DataFrame
-            Data with 'SOC' and 'Volts' columns.
-        which : {'neg', 'pos', 'cell'}
-            Which splines to build. Used to track initialization.
-
-        Returns
-        -------
-        ocv, dvdq : tuple[Callable]
-            Spline interpolations for ocv and dvdq.
-
-        """
-        if df is None:
-            return None, None
-
-        _, mask = np.unique(df.SOC, return_index=True)
-
-        df = df.iloc[mask].reset_index(drop=True)
-        df = df.sort_values('SOC').reset_index(drop=True)
-
-        # make sure neg has decreasing voltage with increasing SOC and pos/cell
-        # have increasing so all splines are in reference to full-cell SOC.
-        flip_soc = {
-            'neg': lambda v0, v1: v0 < v1,
-            'pos': lambda v0, v1: v0 > v1,
-            'cell': lambda v0, v1: v0 > v1,
-        }
-
-        v0, v1 = df.Volts.iloc[0], df.Volts.iloc[-1]
-
-        if flip_soc[which](v0, v1):
-            df['SOC'] = 1.0 - df['SOC']
-
-        df = df.sort_values('SOC').reset_index(drop=True)
-
-        # build splines
-        ocv = interp.make_splrep(df.SOC, df.Volts)
-        dvdq = ocv.derivative()
-
-        self._initialized[which] = True
-
-        return ocv, dvdq
-
-    def _check_initialized(self, func_name: str) -> None:
-        """
-        Check that the instance is fully initialized, will all splines and
-        data for 'neg', 'pos', and 'cell'. If any is missing raise an error.
-
-        Parameters
-        ----------
-        func_name : str
-            Name of function performing check.
-
-        Raises
-        ------
-        RuntimeError
-            Can't run any functions until all data is available.
-
-        """
-        missing = [d for d, flag in self._initialized.items() if not flag]
-        if missing:
-            raise RuntimeError(f"Can't run '{func_name}' until all data is"
-                               f" available. Missing {missing} data.")
-
-    def _err_func(self, params: npt.ArrayLike) -> float:
-        """
-        The cost function for 'grid_search' and 'constrained_fit'.
-
-        Parameters
-        ----------
-        params : ArrayLike, shape(n,)
-            Array for xn0, xn1, xp0, xp1, and optionally iR.
-
-        Returns
-        -------
-        err_total : float
-            Total error based on a combination of cost_terms.
-
-        """
-        errs = self.err_terms(params)
-
-        err_total = 0.  # faster when MAPE is fractional, so use (*1e-2) below
-        if 'voltage' in self.cost_terms:
-            err_total += errs['volt_err']*1e-2
-        if 'dqdv' in self.cost_terms:
-            err_total += errs['dqdv_err']*1e-2
-        if 'dvdq' in self.cost_terms:
-            err_total += errs['dvdq_err']*1e-2
-
-        return err_total
 
     def get_ocv(self, which: str, soc: npt.ArrayLike) -> npt.ArrayLike:
         """
@@ -877,3 +739,141 @@ class DqdvFitter:
 
         if return_axs:
             return [ax1, twin, ax2, ax3]
+
+    def _check_dataframe(self, df: pd.DataFrame, which: str) -> pd.DataFrame:
+        """
+        Verify that input dataframes have 'SOC' and 'Volts' columns. The full
+        cell dataset also requires an 'Ah' column.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Data to check for required columns.
+        which : {'neg', 'pos', 'cell'}
+            Which splines to build. Used to track initialization.
+
+        Returns
+        -------
+        df : None or pd.DataFrame
+            None if dataset has not yet been initialized. Otherwise, pass the
+            error checks and return the input DataFrame.
+
+        Raises
+        ------
+        TypeError
+            The 'df' input must be type pd.DataFrame.
+        ValueError
+            'df' is missing columns, required={'SOC', 'Volts'} for electrode
+            datasets and {'Ah', 'SOC', 'Volts'} for full cell datasets.
+
+        """
+        self._initialized[which] = False
+
+        required = {'SOC', 'Volts'}
+        if which == 'cell':
+            required.add('Ah')
+
+        if df is None:
+            pass
+        elif not isinstance(df, pd.DataFrame):
+            raise TypeError(f"'{which}' must be type pd.DataFrame.")
+        elif not required.issubset(df.columns):
+            raise ValueError(f"'{which}' is missing columns, {required=}.")
+
+        return df
+
+    def _build_splines(self, df: pd.DataFrame, which: str) -> Callable:
+        """
+        Generate OCV interpolation functions.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Data with 'SOC' and 'Volts' columns.
+        which : {'neg', 'pos', 'cell'}
+            Which splines to build. Used to track initialization.
+
+        Returns
+        -------
+        ocv, dvdq : tuple[Callable]
+            Spline interpolations for ocv and dvdq.
+
+        """
+        if df is None:
+            return None, None
+
+        _, mask = np.unique(df.SOC, return_index=True)
+
+        df = df.iloc[mask].reset_index(drop=True)
+        df = df.sort_values('SOC').reset_index(drop=True)
+
+        # make sure neg has decreasing voltage with increasing SOC and pos/cell
+        # have increasing so all splines are in reference to full-cell SOC.
+        flip_soc = {
+            'neg': lambda v0, v1: v0 < v1,
+            'pos': lambda v0, v1: v0 > v1,
+            'cell': lambda v0, v1: v0 > v1,
+        }
+
+        v0, v1 = df.Volts.iloc[0], df.Volts.iloc[-1]
+
+        if flip_soc[which](v0, v1):
+            df['SOC'] = 1.0 - df['SOC']
+
+        df = df.sort_values('SOC').reset_index(drop=True)
+
+        # build splines
+        ocv = interp.make_splrep(df.SOC, df.Volts)
+        dvdq = ocv.derivative()
+
+        self._initialized[which] = True
+
+        return ocv, dvdq
+
+    def _check_initialized(self, func_name: str) -> None:
+        """
+        Check that the instance is fully initialized, will all splines and
+        data for 'neg', 'pos', and 'cell'. If any is missing raise an error.
+
+        Parameters
+        ----------
+        func_name : str
+            Name of function performing check.
+
+        Raises
+        ------
+        RuntimeError
+            Can't run any functions until all data is available.
+
+        """
+        missing = [d for d, flag in self._initialized.items() if not flag]
+        if missing:
+            raise RuntimeError(f"Can't run '{func_name}' until all data is"
+                               f" available. Missing {missing} data.")
+
+    def _err_func(self, params: npt.ArrayLike) -> float:
+        """
+        The cost function for 'grid_search' and 'constrained_fit'.
+
+        Parameters
+        ----------
+        params : ArrayLike, shape(n,)
+            Array for xn0, xn1, xp0, xp1, and optionally iR.
+
+        Returns
+        -------
+        err_total : float
+            Total error based on a combination of cost_terms.
+
+        """
+        errs = self.err_terms(params)
+
+        err_total = 0.  # faster when MAPE is fractional, so use (*1e-2) below
+        if 'voltage' in self.cost_terms:
+            err_total += errs['volt_err']*1e-2
+        if 'dqdv' in self.cost_terms:
+            err_total += errs['dqdv_err']*1e-2
+        if 'dvdq' in self.cost_terms:
+            err_total += errs['dvdq_err']*1e-2
+
+        return err_total

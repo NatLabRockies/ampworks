@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from scipy.integrate import cumulative_trapezoid
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     import ampworks as amp
 
 __all__ = [

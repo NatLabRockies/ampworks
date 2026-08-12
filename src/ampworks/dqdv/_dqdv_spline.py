@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import make_splrep
 from scipy.integrate import cumulative_trapezoid
 
-if TYPE_CHECKING:  # pragma: no cover
+if TYPE_CHECKING:
     from typing import Self
     import ampworks as amp
     import numpy.typing as npt

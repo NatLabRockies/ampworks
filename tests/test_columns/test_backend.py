@@ -13,247 +13,198 @@ from ampworks.columns._backend import (
 
 
 @pytest.fixture
-def repeated_steps():
-    """Step 1 and Step 2 alternate twice, all within a single cycle."""
-    return amp.Dataset({
-        'Step': [1, 1, 2, 2, 1, 1],
-        'Cycle': [1, 1, 1, 1, 1, 1],
-    })
-
-
-@pytest.fixture
-def two_cycle_repeats():
+def two_cycles():
     """The repeated_steps pattern repeated a second time in a new cycle."""
     return amp.Dataset({
         'Step': [1, 1, 2, 2, 1, 1, 1, 1, 2, 2, 1, 1],
         'Cycle': [1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2],
+        'ExpectedFast': [1, 1, 2, 2, 3, 3, 3, 3, 4, 4, 5, 5],
+        'ExpectedCycle': [1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 2, 2],
+        'ExpectedGlobal': [1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3],
     })
 
 
 @pytest.fixture
-def two_step_current():
+def two_step_ahwh():
     """Two steps, each with its own constant current, uniform 1 s spacing."""
     return amp.Dataset({
         'Step': [1, 1, 1, 2, 2, 2],
         'Seconds': [0., 1., 2., 3., 4., 5.],
         'Amps': [1., 1., 1., -2., -2., -2.],
+        'Expected': np.array([0., 1., 2., 0., 2., 4.]) / 3600.,
+        'ExpCumulative': np.array([0., 1., 2., 1.5, -0.5, -2.5]) / 3600.,
+        'ExpThroughput': np.array([0., 1., 2., 3.5, 5.5, 7.5]) / 3600.,
     })
 
 
 REST_STEP = amp.Dataset({  # includes a rest step between active segments
-    'Ah': [0, 1, 3, 7, 0, 0, 0, 0, 2, 3],
+    'Ah': [0., 1., 3., 7., 0., 0., 0., 0., 2., 3.],
     'State1': ['C', 'C', 'C', 'C', 'R', 'R', 'R', 'C', 'C', 'C'],
     'State2': ['C', 'C', 'C', 'C', 'R', 'R', 'R', 'D', 'D', 'D'],
     'State3': ['D', 'D', 'D', 'D', 'R', 'R', 'R', 'C', 'C', 'C'],
     'State4': ['D', 'D', 'D', 'D', 'R', 'R', 'R', 'D', 'D', 'D'],
-    'CumulativeAh1': [0, 1, 3, 7, 7, 7, 7, 7, 9, 10],
-    'CumulativeAh2': [0, 1, 3, 7, 7, 7, 7, 7, 5, 4],
-    'CumulativeAh3': [0, -1, -3, -7, -7, -7, -7, -7, -5, -4],
-    'CumulativeAh4': [0, -1, -3, -7, -7, -7, -7, -7, -9, -10],
-    'ThroughputAh': [0, 1, 3, 7, 7, 7, 7, 7, 9, 10],
+    'CumulativeAh1': [0., 1., 3., 7., 7., 7., 7., 7., 9., 10.],
+    'CumulativeAh2': [0., 1., 3., 7., 7., 7., 7., 7., 5., 4.],
+    'CumulativeAh3': [0., -1., -3., -7., -7., -7., -7., -7., -5., -4.],
+    'CumulativeAh4': [0., -1., -3., -7., -7., -7., -7., -7., -9., -10.],
+    'ThroughputAh': [0., 1., 3., 7., 7., 7., 7., 7., 9., 10.],
 })
 
 NO_REST = amp.Dataset({  # goes directly from one active step to another
-    'Ah': [0, 1, 3, 7, 0, 2, 3],
+    'Ah': [0., 1., 3., 7., 0., 2., 3.],
     'State1': ['C', 'C', 'C', 'C', 'C', 'C', 'C'],
     'State2': ['C', 'C', 'C', 'C', 'D', 'D', 'D'],
     'State3': ['D', 'D', 'D', 'D', 'C', 'C', 'C'],
     'State4': ['D', 'D', 'D', 'D', 'D', 'D', 'D'],
-    'CumulativeAh1': [0, 1, 3, 7, 7, 9, 10],
-    'CumulativeAh2': [0, 1, 3, 7, 7, 5, 4],
-    'CumulativeAh3': [0, -1, -3, -7, -7, -5, -4],
-    'CumulativeAh4': [0, -1, -3, -7, -7, -9, -10],
-    'ThroughputAh': [0, 1, 3, 7, 7, 9, 10],
+    'CumulativeAh1': [0., 1., 3., 7., 7., 9., 10.],
+    'CumulativeAh2': [0., 1., 3., 7., 7., 5., 4.],
+    'CumulativeAh3': [0., -1., -3., -7., -7., -5., -4.],
+    'CumulativeAh4': [0., -1., -3., -7., -7., -9., -10.],
+    'ThroughputAh': [0., 1., 3., 7., 7., 9., 10.],
 })
 
 
 class TestInstanceNums:
 
-    def test_dense_rank_within_group(self, repeated_steps):
-        result = _instance_nums(
-            repeated_steps,
-            which='Step',
-            cycle_alias=None,
-            cycle_resets=False,
-        )
-        npt.assert_array_equal(result.to_numpy(), [1, 1, 1, 1, 2, 2])
-
-    def test_fast_returns_raw_changeover_counts(self, repeated_steps):
-        result = _instance_nums(
-            repeated_steps,
-            which='Step',
-            cycle_alias=None,
-            cycle_resets=False,
-            fast=True,
-        )
-        npt.assert_array_equal(result.to_numpy(), [1, 1, 2, 2, 3, 3])
-
-    def test_cycle_resets_requires_cycle_alias(self, two_cycle_repeats):
-        with pytest.raises(ValueError, match='cycle_alias'):
-            _instance_nums(
-                two_cycle_repeats,
-                which='Step',
-                cycle_alias=None,
-                cycle_resets=True,
-            )
-
-    def test_cycle_resets_false_is_global(self, two_cycle_repeats):
-        result = _instance_nums(
-            two_cycle_repeats,
-            which='Step',
-            cycle_alias=None,
-            cycle_resets=False,
-        )
-        expected = [1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3]
-        npt.assert_array_equal(result.to_numpy(), expected)
-
-    def test_cycle_resets_true_restarts_per_cycle(self, two_cycle_repeats):
-        result = _instance_nums(
-            two_cycle_repeats,
-            which='Step',
-            cycle_alias='Cycle',
-            cycle_resets=True,
-        )
-        expected = [1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 2, 2]
-        npt.assert_array_equal(result.to_numpy(), expected)
-
-    def test_fast_with_cycle_resets_warns_and_ignores_reset(
-        self, two_cycle_repeats,
-    ):
+    def test_fast_option(self, two_cycles):
+        # warn when requesting both fast and cycle_resets
         with pytest.warns(UserWarning, match='fast=True'):
             result = _instance_nums(
-                two_cycle_repeats,
+                two_cycles,
                 which='Step',
                 cycle_alias=None,
                 cycle_resets=True,
                 fast=True,
             )
 
-        # cycle boundary alone isn't a changeover in 'Step', so it merges with
-        # the following block since raw only reacts to 'which' value changes
-        expected = [1, 1, 2, 2, 3, 3, 3, 3, 4, 4, 5, 5]
-        npt.assert_array_equal(result.to_numpy(), expected)
+        assert result.equals(two_cycles['ExpectedFast'])
+
+    def test_cycle_resets_requires_cycle_alias(self, two_cycles):
+        with pytest.raises(ValueError, match='cycle_alias'):
+            _instance_nums(
+                two_cycles,
+                which='Step',
+                cycle_alias=None,
+                cycle_resets=True,
+                fast=False,
+            )
+
+    def test_cycle_resets_true(self, two_cycles):
+        result = _instance_nums(
+            two_cycles,
+            which='Step',
+            cycle_alias='Cycle',
+            cycle_resets=True,
+            fast=False,
+        )
+
+        assert result.equals(two_cycles['ExpectedCycle'])
+
+    def test_cycle_resets_false_is_global(self, two_cycles):
+        result = _instance_nums(
+            two_cycles,
+            which='Step',
+            cycle_alias=None,
+            cycle_resets=False,
+            fast=False,
+        )
+
+        assert result.equals(two_cycles['ExpectedGlobal'])
 
 
 class TestAhWh:
 
-    def test_missing_columns_raises(self, two_step_current):
-        with pytest.raises(ValueError):
+    def test_missing_columns_raises(self, two_step_ahwh):
+        with pytest.raises(ValueError, match='Missing'):
             _ah_wh(
-                two_step_current,
+                two_step_ahwh,
                 which='Step',
-                col_name='Ah',
                 seconds_alias='Missing',
                 value_alias='Amps',
             )
 
-    def test_resets_and_integrates_per_group(self, two_step_current):
+    def test_using_amps_for_ah(self, two_step_ahwh):
         result = _ah_wh(
-            two_step_current,
+            two_step_ahwh,
             which='Step',
-            col_name='Ah',
             seconds_alias='Seconds',
             value_alias='Amps',
         )
 
-        expected = np.array([0., 1., 2., 0., -2., -4.]) / 3600.
-        npt.assert_allclose(result['Ah'].to_numpy(), expected)
+        npt.assert_allclose(result.to_numpy(), two_step_ahwh['Expected'])
 
-    def test_returns_copy(self, two_step_current):
+    def test_using_watts_for_wh(self, two_step_ahwh):
+        two_step_ahwh['Watts'] = 10 * two_step_ahwh['Amps']
+
         result = _ah_wh(
-            two_step_current,
+            two_step_ahwh,
             which='Step',
-            col_name='Ah',
             seconds_alias='Seconds',
-            value_alias='Amps',
+            value_alias='Watts',
         )
-        assert result is not two_step_current
-        assert 'Ah' not in two_step_current.columns
+
+        npt.assert_allclose(result.to_numpy(), 10 * two_step_ahwh['Expected'])
 
 
 class TestAhWhCumulative:
 
-    def test_invalid_method_raises(self, two_step_current):
+    def test_invalid_method_raises(self, two_step_ahwh):
         with pytest.raises(ValueError, match='method'):
             _ah_wh_cumulative(
-                two_step_current,
-                method_options={'integral', 'ah_column'},
+                two_step_ahwh,
                 method='bogus',
-                col_name='Result',
                 seconds_alias='Seconds',
                 value_alias='Amps',
                 state_alias='State',
                 valueh_alias='Ah',
             )
 
-    def test_integral_method_does_not_require_state_column(
-        self,
-        two_step_current,
-    ):
-        # state_alias/valueh_alias are unused (and absent) for 'integral'
+    def test_integral_method_against_expected(self, two_step_ahwh):
         result = _ah_wh_cumulative(
-            two_step_current,
-            method_options={'integral', 'ah_column'},
+            two_step_ahwh,
             method='integral',
-            col_name='Result',
             seconds_alias='Seconds',
             value_alias='Amps',
             state_alias='State',
             valueh_alias='Ah',
         )
 
-        hours = np.array([0., 1., 2., 3., 4., 5.]) / 3600.
-        amps = np.array([1., 1., 1., -2., -2., -2.])
-        expected = np.concatenate([[0.], np.cumsum(
-            (amps[1:] + amps[:-1]) / 2 * np.diff(hours)
-        )])
-        npt.assert_allclose(result['Result'].to_numpy(), expected)
+        npt.assert_allclose(result.to_numpy(), two_step_ahwh['ExpCumulative'])
 
     @pytest.mark.parametrize('data', [REST_STEP, NO_REST])
-    @pytest.mark.parametrize('n', [1, 2, 3, 4])
-    def test_ah_column_matches_hand_verified_values(self, data, n):
-        result = _ah_wh_cumulative(
-            data,
-            method_options={'integral', 'ah_column'},
-            method='ah_column',
-            col_name='Result',
-            seconds_alias='Seconds',
-            value_alias='Amps',
-            state_alias=f'State{n}',
-            valueh_alias='Ah',
-        )
+    def test_column_method_against_expected(self, data):
 
-        expected = data[f'CumulativeAh{n}'].to_numpy()
-        npt.assert_allclose(result['Result'].to_numpy(), expected)
+        for n in range(1, 5):
+            result = _ah_wh_cumulative(
+                data,
+                method='column',
+                seconds_alias='Seconds',
+                value_alias='Amps',
+                state_alias=f'State{n}',
+                valueh_alias='Ah',
+            )
 
-    def test_ah_column_negative_value_raises(self):
-        data = amp.Dataset({
-            'Ah': [0., -1., 2.],
-            'State': ['C', 'C', 'C'],
-        })
+            expected = data[f"CumulativeAh{n}"].to_numpy()
+            npt.assert_allclose(result.to_numpy(), expected)
+
+    def test_column_method_negative_ah_raises(self):
+        data = amp.Dataset({'Ah': [0., -1., 2.], 'State': ['C', 'C', 'C']})
         with pytest.raises(ValueError, match='non-negative'):
             _ah_wh_cumulative(
                 data,
-                method_options={'integral', 'ah_column'},
-                method='ah_column',
-                col_name='Result',
+                method='column',
                 seconds_alias='Seconds',
                 value_alias='Amps',
                 state_alias='State',
                 valueh_alias='Ah',
             )
 
-    def test_ah_column_invalid_state_raises(self):
-        data = amp.Dataset({
-            'Ah': [0., 1., 2.],
-            'State': ['C', 'X', 'C'],
-        })
+    def test_column_method_invalid_state_raises(self):
+        data = amp.Dataset({'Ah': [0., 1., 2.], 'State': ['C', 'X', 'C']})
         with pytest.raises(ValueError, match='State'):
             _ah_wh_cumulative(
                 data,
-                method_options={'integral', 'ah_column'},
-                method='ah_column',
-                col_name='Result',
+                method='column',
                 seconds_alias='Seconds',
                 value_alias='Amps',
                 state_alias='State',
@@ -263,31 +214,27 @@ class TestAhWhCumulative:
 
 class TestAhWhThroughput:
 
-    def test_invalid_method_raises(self, two_step_current):
+    def test_invalid_method_raises(self, two_step_ahwh):
         with pytest.raises(ValueError, match='method'):
             _ah_wh_throughput(
-                two_step_current,
-                method_options={'integral', 'ah_column'},
+                two_step_ahwh,
                 method='bogus',
-                col_name='Result',
                 seconds_alias='Seconds',
                 value_alias='Amps',
                 valueh_alias='Ah',
             )
 
-    def test_integral_uses_absolute_value(self, two_step_current):
+    def test_integral_uses_absolute_value(self, two_step_ahwh):
         result = _ah_wh_throughput(
-            two_step_current,
-            method_options={'integral', 'ah_column'},
+            two_step_ahwh,
             method='integral',
-            col_name='Result',
             seconds_alias='Seconds',
             value_alias='Amps',
             valueh_alias='Ah',
         )
 
         # throughput must be monotonically non-decreasing, regardless of sign
-        values = result['Result'].to_numpy()
+        values = result.to_numpy()
         assert np.all(np.diff(values) >= 0)
         assert values[-1] > 0
 
@@ -295,25 +242,21 @@ class TestAhWhThroughput:
     def test_ah_column_matches_hand_verified_values(self, data):
         result = _ah_wh_throughput(
             data,
-            method_options={'integral', 'ah_column'},
-            method='ah_column',
-            col_name='Result',
+            method='column',
             seconds_alias='Seconds',
             value_alias='Amps',
             valueh_alias='Ah',
         )
 
         expected = data['ThroughputAh'].to_numpy()
-        npt.assert_allclose(result['Result'].to_numpy(), expected)
+        npt.assert_allclose(result.to_numpy(), expected)
 
     def test_ah_column_negative_value_raises(self):
         data = amp.Dataset({'Ah': [0., -1., 2.]})
         with pytest.raises(ValueError, match='non-negative'):
             _ah_wh_throughput(
                 data,
-                method_options={'integral', 'ah_column'},
-                method='ah_column',
-                col_name='Result',
+                method='column',
                 seconds_alias='Seconds',
                 value_alias='Amps',
                 valueh_alias='Ah',

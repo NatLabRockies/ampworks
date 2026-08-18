@@ -129,25 +129,25 @@ def download_all(
 
     """
     from ampworks._checks import _check_literal
-    
+
     format = format.lower().lstrip()
     _check_literal('format', format, {'csv', 'parquet', 'txt', 'xlsx'})
-    
+
     path = pathlib.Path(path or '.').joinpath('ampworks_datasets')
     path.mkdir(parents=True, exist_ok=True)
 
     # just copy if default parquet, return stops from executing further
-    if format == 'parquet':  
+    if format == 'parquet':
         shutil.copytree(RESOURCES, path, dirs_exist_ok=True)
         return
-    
+
     # read and write to alternative format if not parquet
     writers = {
         'csv': lambda df, p: df.to_csv(p, index=False),
         'txt': lambda df, p: df.to_csv(p, sep='\t', index=False),
         'xlsx': lambda df, p: df.to_excel(p, index=False),
     }
-    
+
     for file in pathlib.Path(RESOURCES).glob('*.parquet'):
         df = pd.read_parquet(file)
         writers[format](df, path / f"{file.stem}.{format}")
@@ -191,7 +191,7 @@ def load_datasets(*names: str) -> Dataset:
 
     """
     from ampworks import Dataset
-    
+
     available = list_datasets()
 
     if len(names) == 0:
@@ -206,7 +206,7 @@ def load_datasets(*names: str) -> Dataset:
     datasets = []
     for name in names:
         df = pd.read_parquet(RESOURCES.joinpath(name))
-        
+
         ds = Dataset(df)
         datasets.append(ds)
 

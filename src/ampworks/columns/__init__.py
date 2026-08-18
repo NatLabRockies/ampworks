@@ -7,7 +7,7 @@ All default arguments assume datasets have already been standardized using
 :func:`~ampworks.standardize_headers`, so most functions work with no extra
 arguments. However, alias parameters are available to override column names
 when needed.
-    
+
 """
 from ._labels import (
     StepLabel,

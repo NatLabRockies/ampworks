@@ -148,7 +148,7 @@ def extract_impedance(
     from ampworks._checks import _check_columns
 
     # Validate required columns
-    _check_columns(data, {'Seconds', 'Volts', 'Amps'})
+    _check_columns(data, ['Seconds', 'Volts', 'Amps'])
 
     # Ensure consistency when 'steps' is provided
     if (steps is not None) and ('Step' not in data.columns):

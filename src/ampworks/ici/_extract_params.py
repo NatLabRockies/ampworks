@@ -115,7 +115,7 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
     from ampworks._checks import _check_columns, _check_only_one
     from ampworks._auxiliary import _infer_state, _calc_soc, _calc_relative_time
 
-    _check_columns(data, {'Seconds', 'Amps', 'Volts'})
+    _check_columns(data, ['Seconds', 'Amps', 'Volts'])
 
     charging = any(data['Amps'] > 0.)
     discharging = any(data['Amps'] < 0.)

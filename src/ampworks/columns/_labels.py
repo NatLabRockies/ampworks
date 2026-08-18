@@ -12,20 +12,21 @@ if TYPE_CHECKING:
 
 class StepLabel:
     """Label container for a single step."""
+
     __slots__ = ('label', 'step_num')
 
     def __init__(self, label: str, step_num: Integral) -> None:
         """
         Mapping steps to human-readable labels can be useful sharing data. Use
         this container to create labels, then apply with `add_step_labels`.
-        
+
         Parameters
         ----------
         label : str
             The label for a given step.
         step_num : int
             Step number associated with the label.
-           
+
         See Also
         --------
         ~ampworks.columns.add_step_labels : Add step labels to a dataset.
@@ -45,15 +46,16 @@ class StepLabel:
 
         self.label = label
         self.step_num = step_num
-        
+
     def __repr__(self) -> str:
         return f"StepLabel(label={self.label}, step_num={self.step_num})"
 
 
 class SegmentLabel:
     """Label container for segments of steps or cycles."""
+
     __slots__ = ('label', 'step_nums', 'cycle_nums')
-    
+
     def __init__(
         self,
         label: str,
@@ -64,7 +66,7 @@ class SegmentLabel:
         """
         Mapping steps to human-readable labels can be useful sharing data. Use
         this container to create labels, then apply with `add_segment_labels`.
-        
+
         We use "segment" here abstractly for describing sections of data defined
         by multiple steps or cycles. These labels can be used to describe cycles
         or for higher-level labels, e.g., reference performance tests (RPTs)
@@ -80,17 +82,17 @@ class SegmentLabel:
         cycle_nums : Sequence[int] or None, optional
             Cycle number(s) associated with the label, by default None. You must
             provide either `step_nums` or `cycle_nums`, not both.
-        
+
         See Also
         --------
         ~ampworks.columns.add_segment_labels : Add segment labels to a dataset.
-            
+
         Notes
         -----
         `step_nums` or `cycle_nums` must be given, but not both. Use `step_nums`
         to apply a label to all cycles that contain those steps, or `cycle_nums`
         for labeling all steps in the specified cycles.
-        
+
         Examples
         --------
         Below we define segment labels for HPPC and capacity check cycles. A
@@ -124,7 +126,7 @@ class SegmentLabel:
         name = 'step_nums' if self.step_nums is not None else 'cycle_nums'
         val = self.step_nums if self.step_nums is not None else self.cycle_nums
         return f"SegmentLabel(label={self.label}, {name}={val})"
-        
+
 
 def add_step_labels(
     data: Dataset,
@@ -137,7 +139,7 @@ def add_step_labels(
 ) -> Dataset:
     """
     Add step labels to a dataset.
-    
+
     Use `StepLabel` to construct readable labels for some (or all) steps in your
     data and then apply them with this function.
 
@@ -160,17 +162,17 @@ def add_step_labels(
     -------
     ds : Dataset
         A modified copy of the input data, with a step labels column.
-    
+
     See Also
     --------
     ~ampworks.columns.StepLabel : Container to define step labels.
-    
+
     Notes
     -----
     Using `reset=False` allows step labels to be added to an existing column.
     While this preserves any existing labels, it also allows overwriting labels
     if new steps are given that overlap with existing, already-labeled rows.
-    
+
     Examples
     --------
     Below we create three labels for steps 1, 5, and 6 in the dataset. They are
@@ -187,19 +189,19 @@ def add_step_labels(
     _chk._check_columns(data, [step_alias])
     _chk._check_type('step_labels', step_labels, Sequence)
     _chk._check_inner_type('step_labels', step_labels, StepLabel)
-    
+
     ds = data.copy()
     ds[step_alias] = ds[step_alias].astype(int)
-    
+
     if reset or (col_name not in ds.columns):
         ds[col_name] = default
     else:
         # avoid restrictive existing categories from a prior call
         ds[col_name] = ds[col_name].astype(object)
-    
+
     for s in step_labels:
         ds.loc[ds[step_alias] == s.step_num, col_name] = s.label
-        
+
     ds[col_name] = ds[col_name].astype('category')
     return ds
 
@@ -216,7 +218,7 @@ def add_segment_labels(
 ) -> Dataset:
     """
     Add segment labels to a dataset.
-    
+
     Use `SegmentLabel` to construct readable labels for some (or all) segments
     in your data and then apply them with this function.
 
@@ -243,17 +245,17 @@ def add_segment_labels(
     -------
     ds : Dataset
         A modified copy of the input data, with a segments labels column.
-    
+
     See Also
     --------
     ~ampworks.columns.SegmentLabel : Container to define segment labels.
-    
+
     Notes
     -----
     Using `reset=False` allows segment labels to be added to an existing column.
     While this preserves any existing labels, it also allows overwriting labels
     if new segments are given that overlap with existing, already-labeled rows.
-    
+
     Examples
     --------
     Below we create two new columns for `CycleLabel` and `SegmentLabel`. The
@@ -292,7 +294,7 @@ def add_segment_labels(
     if needs_cycle_alias:
         _chk._check_columns(data, [cycle_alias])
         ds[cycle_alias] = ds[cycle_alias].astype(int)
-        
+
     if reset or (col_name not in ds.columns):
         ds[col_name] = default
     else:
@@ -302,7 +304,7 @@ def add_segment_labels(
     for s in segment_labels:
         which_alias = step_alias if s.step_nums is not None else cycle_alias
         which_nums = s.step_nums if s.step_nums is not None else s.cycle_nums
-        
+
         ds.loc[ds[which_alias].isin(which_nums), col_name] = s.label
 
     ds[col_name] = ds[col_name].astype('category')
@@ -318,7 +320,7 @@ def add_state(
 ) -> Dataset:
     """
     Add a state column based on sign of current.
-    
+
     States are 'C' for charge (positive current), 'D' for discharge (negative
     current), and 'R' for rest (zero current). Note that correctly detecting
     rests requires that the current is exactly zero. Consider using a threshold
@@ -341,17 +343,17 @@ def add_state(
     -------
     ds : Dataset
         A modified copy of the input data, with a state column.
-        
+
     See Also
     --------
     ~ampworks.Dataset.zero_below : Zero-out small currents to detect rests.
-    
+
     Notes
     -----
     Using `which=None` determines the state for each row individually, without
     considering any groupings. However, this can lead to a single step being
     assigned multiple states if the current changes sign within that step.
-    
+
     The alternative is to use a column that defines groups where the state is
     constant, such as within a step. However, during this grouping, if it is
     determined that the current changes sign within a group, the state is set to
@@ -359,51 +361,51 @@ def add_state(
     states to a group. If you know the state of these unknown rows, you can
     manually set them after adding the state column. See the examples below for
     how to do this.
-    
+
     Examples
     --------
     Below we add a state column to a dataset using default settings. Prior to
     this, the 'Amps' column is zeroed below 1e-8 A to ensure that rests states
     are correctly detected.
-    
+
     >>> data = amp.Dataset(...)
     >>> data = data.zero_below('Amps', threshold=1e-8)
     >>> ds = add_state(data)
-    
+
     Alternative to the thresholding approach, if you know which steps in your
     data are rests, you can zero them out directly by applying a mask to the
     'Amps' column, as demonstrated below.
-    
+
     >>> data = amp.Dataset(...)
     >>> data.loc[data['Step'].isin([1, 3, 11, 13, 21, 23]), 'Amps'] = 0.0
     >>> ds = add_state(data)
-    
+
     You can check to see if any states ended up being assigned the `'Unknown'`
     value, which indicates that the current changed sign within a group by
     filtering.
-    
+
     >>> unknown_states = ds[ds['State'] == 'Unknown']
     >>> print(unknown_states[['Cycle', 'Step']].drop_duplicates())
-    
+
     Once you know which groups have unknown states, you can manually set them to
     the correct value by applying a mask to the state column, as demonstrated.
-    
+
     >>> ds.loc[(ds['Cycle'] == 1) & ds['Step'].isin([5, 7]), 'State'] = 'C'
     >>> ds.loc[(ds['Cycle'] == 2) & ds['Step'].isin([9, 15]), 'State'] = 'D'
     >>> ds.loc[(ds['Cycle'] == 3) & ds['Step'].isin([17, 19]), 'State'] = 'R'
-        
+
     """
     check_columns = [which, amps_alias] if which is not None else [amps_alias]
 
     _chk._check_columns(data, check_columns)
-    
+
     ds = data.copy()
-    
+
     if which is None:
         ds[col_name] = 'R'
         ds.loc[ds[amps_alias] > 0, col_name] = 'C'
         ds.loc[ds[amps_alias] < 0, col_name] = 'D'
-        
+
     else:
         instance_nums = _instance_nums(
             data=ds,
@@ -421,12 +423,12 @@ def add_state(
         all_zero = groups.transform(lambda x: (x == 0).all())
 
         ds[col_name] = 'Unknown'
-        
+
         # assign rests last b/c all_charge, all_discharge also true for rests
         ds.loc[all_discharge, col_name] = 'D'
         ds.loc[all_charge, col_name] = 'C'
         ds.loc[all_zero, col_name] = 'R'
-    
+
     ds[col_name] = ds[col_name].astype('category')
     return ds
 
@@ -444,21 +446,21 @@ def add_control_mode(
 ) -> Dataset:
     r"""
     Add a control mode column to a dataset.
-    
+
     Control modes are 'CC' for constant current, 'CV' for constant voltage, 'CP'
     for constant power, or 'Rest' for Rest. The control modes are determined by
     checking segments to see if the current, voltage, and/or power is near
     constant within a given relative tolerance. Rests are detected for segments
     where current is exactly zero. Note that the 'CP' mode is only included when
     `watts_alias` is not `None`.
-    
+
     The near constant check is considered satisfied when the following is true
     for all values in a segment:
-    
+
     .. math::
-    
+
         ({\rm max} - {\rm min}) \le ({\rm rtol} \times {\rm mean})
-    
+
     Parameters
     ----------
     data : Dataset
@@ -486,42 +488,42 @@ def add_control_mode(
     -------
     ds : Dataset
         A modified copy of the input data, with a control mode column.
-        
+
     See Also
     --------
     ~ampworks.columns.add_state : Add a state column using the sign of current.
     ~ampworks.columns.add_power : Add a power column using current and voltage.
-        
+
     Examples
     --------
     Below we add a control mode column to a dataset using default settings.
-    
+
     >>> data = amp.Dataset(...)
     >>> ds = add_control_mode(data)
-    
+
     If you want to include 'CP' mode detection, supply the name of the power
     column to `watts_alias`. If needed, you can also add a power column first,
     using :func:`~ampworks.columns.add_power`. In case you are missing a step
     column, use a different column to detect mode changes (e.g., 'State'). A
     state column can also be added if missing from your data using the function
     :func:`~ampworks.columns.add_state`. We demonstrate this case below.
-    
+
     >>> data = amp.Dataset(...)
     >>> ds = add_state(data)
     >>> ds = add_power(ds)
     >>> ds = add_control_mode(ds, which='State', watts_alias='Watts')
-    
+
     """
     check_columns = [which, amps_alias, volts_alias]
     mode_map = {amps_alias: 'CC', volts_alias: 'CV'}
     if watts_alias is not None:
         check_columns.append(watts_alias)
         mode_map[watts_alias] = 'CP'
-        
+
     _chk._check_columns(data, check_columns)
-    
+
     ds = data.copy()
-            
+
     instance_nums = _instance_nums(
         data=ds,
         which=which,
@@ -538,11 +540,11 @@ def add_control_mode(
 
     matches = (maximum - minimum) <= rtol * mean
     matches = matches.rename(columns=mode_map)
-    
+
     # take column name of match, ignoring rows with multiple matches
     count = matches.sum(axis=1)  # number of matches per row
     ds[col_name] = matches.idxmax(axis=1).where(count == 1, other=default)
-    
+
     # override rests - where multiple conditions exist, but have meaning
     rests = (
         ds[amps_alias]
@@ -550,8 +552,8 @@ def add_control_mode(
         .groupby([ds[which], instance_nums])
         .transform('all')
     )
-    
+
     ds.loc[rests, col_name] = 'Rest'
-    
+
     ds[col_name] = ds[col_name].astype('category')
     return ds

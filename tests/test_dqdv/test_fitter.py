@@ -9,7 +9,7 @@ def datasets():
 
     data = {}
     for name in dqdv_datasets:
-        key = name.removeprefix('dqdv/').removesuffix('.csv')
+        key = name.removeprefix('dqdv/').removesuffix('.parquet')
         key = key.replace('_smooth', '_s')
         key = key.replace('_rough', '_r')
 

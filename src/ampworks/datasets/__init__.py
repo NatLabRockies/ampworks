@@ -37,12 +37,13 @@ ICI datasets:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-from warnings import catch_warnings, filterwarnings
+from typing import TYPE_CHECKING, Literal
 
 import os
 import shutil
 import pathlib
+
+import pandas as pd
 
 if TYPE_CHECKING:
     from ampworks import Dataset
@@ -84,7 +85,6 @@ def list_datasets(*modules: str) -> list[str]:
     available datasets. The first example lists all datasets, while the second
     and third examples filter the list by module name.
 
-    >>> from ampworks.datasets import list_datasets
     >>> names = list_datasets()
     >>> print(names)
 
@@ -111,7 +111,10 @@ def list_datasets(*modules: str) -> list[str]:
     return names
 
 
-def download_all(path: str | os.PathLike | None = None) -> None:
+def download_all(
+    path: str | os.PathLike | None = None,
+    format: Literal['csv', 'parquet', 'txt', 'xlsx'] = 'parquet',
+) -> None:
     """
     Copy example datasets into a local directory.
 
@@ -121,12 +124,33 @@ def download_all(path: str | os.PathLike | None = None) -> None:
         Path to parent directory where a new `ampworks_datasets` folder will
         be created and example datasets will be copied to. If None (default),
         the current working directory is used.
+    format : Literal['csv', 'parquet', 'txt', 'xlsx'], optional
+        Format for the downloaded files, default is 'parquet'.
 
     """
+    from ampworks._checks import _check_literal
+    
+    format = format.lower().lstrip()
+    _check_literal('format', format, {'csv', 'parquet', 'txt', 'xlsx'})
+    
     path = pathlib.Path(path or '.').joinpath('ampworks_datasets')
     path.mkdir(parents=True, exist_ok=True)
 
-    shutil.copytree(RESOURCES, path, dirs_exist_ok=True)
+    # just copy if default parquet, return stops from executing further
+    if format == 'parquet':  
+        shutil.copytree(RESOURCES, path, dirs_exist_ok=True)
+        return
+    
+    # read and write to alternative format if not parquet
+    writers = {
+        'csv': lambda df, p: df.to_csv(p, index=False),
+        'txt': lambda df, p: df.to_csv(p, sep='\t', index=False),
+        'xlsx': lambda df, p: df.to_excel(p, index=False),
+    }
+    
+    for file in pathlib.Path(RESOURCES).glob('*.parquet'):
+        df = pd.read_parquet(file)
+        writers[format](df, path / f"{file.stem}.{format}")
 
 
 def load_datasets(*names: str) -> Dataset:
@@ -137,7 +161,7 @@ def load_datasets(*names: str) -> Dataset:
     ----------
     *names : str
         One or more dataset names to load. Check `list_datasets()` for available
-        filenames. Note that including the '.csv' extension is optional.
+        filenames. Note that including the '.parquet' extension is optional.
 
     Returns
     -------
@@ -153,31 +177,27 @@ def load_datasets(*names: str) -> Dataset:
     Examples
     --------
     In the following example, the `load_datasets` function is used to load a
-    single HPPC dataset and the optional `.csv` extension is included. The names
-    of the available datasets can be found using the `list_datasets` function.
+    single HPPC dataset and the optional `.parquet` extension is included. The
+    names for available datasets can be found using `list_datasets`.
 
-    >>> from ampworks.datasets import load_datasets
-    >>> hppc_data = load_datasets('hppc/hppc_discharge.csv')
-    >>> print(hppc_data)
+    >>> hppc_data = load_datasets('hppc/hppc_discharge.parquet')
 
     In the next example, two ICI datasets are loaded at once by providing their
-    names. Here, the `.csv` extensions is omitted, but the function internally
-    appends it as needed. The returned datasets are provided in the same order
-    as the given names.
+    names. Here, the `.parquet` extensions is omitted, but the function appends
+    it as needed. The returned datasets are provided in the same order as the
+    given names.
 
     >>> ici_c, ici_d = load_datasets('ici/ici_charge', 'ici/ici_discharge')
-    >>> print(ici_c)
-    >>> print(ici_d)
 
     """
-    from ampworks import read_csv
-
+    from ampworks import Dataset
+    
     available = list_datasets()
 
     if len(names) == 0:
         raise ValueError("At least one dataset name must be given.")
 
-    names = [n + '.csv' if not n.endswith('.csv') else n for n in names]
+    names = [n + '.parquet' if not n.endswith('.parquet') else n for n in names]
 
     not_available = [n for n in names if n not in available]
     if not_available:
@@ -185,11 +205,10 @@ def load_datasets(*names: str) -> Dataset:
 
     datasets = []
     for name in names:
-        with catch_warnings():
-            filterwarnings('ignore', message='.*No valid aliases.*')
-            data = read_csv(RESOURCES.joinpath(name))
-
-        datasets.append(data)
+        df = pd.read_parquet(RESOURCES.joinpath(name))
+        
+        ds = Dataset(df)
+        datasets.append(ds)
 
     if len(datasets) == 1:
         return datasets[0]

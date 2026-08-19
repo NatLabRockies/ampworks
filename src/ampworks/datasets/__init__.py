@@ -38,12 +38,13 @@ ICI datasets:
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
+from warnings import catch_warnings, filterwarnings
 
 import os
 import shutil
 import pathlib
 
-import pandas as pd
+import polars as pl
 
 if TYPE_CHECKING:
     from ampworks import Dataset
@@ -113,10 +114,14 @@ def list_datasets(*modules: str) -> list[str]:
 
 def download_all(
     path: str | os.PathLike | None = None,
-    format: Literal['csv', 'parquet', 'txt', 'xlsx'] = 'parquet',
+    format: Literal['csv', 'parquet', 'txt'] = 'parquet',
 ) -> None:
     """
     Copy example datasets into a local directory.
+
+    To keep storage requirements low and read speeds high, we store all example
+    datasets internally in Parquet format. However, datasets can optionally be
+    downloaded in alternative formats (csv or txt) using the `format` argument.
 
     Parameters
     ----------
@@ -124,14 +129,24 @@ def download_all(
         Path to parent directory where a new `ampworks_datasets` folder will
         be created and example datasets will be copied to. If None (default),
         the current working directory is used.
-    format : Literal['csv', 'parquet', 'txt', 'xlsx'], optional
+    format : Literal['csv', 'parquet', 'txt'], optional
         Format for the downloaded files, default is 'parquet'.
+
+    Examples
+    --------
+    In the following we download all example datasets in all available formats
+    to the current working directory. Note that the consecutive calls do not
+    overwrite existing folders or files.
+
+    >>> download_all(format='parquet')
+    >>> download_all(format='csv')
+    >>> download_all(format='txt')
 
     """
     from ampworks._checks import _check_literal
 
-    format = format.lower().lstrip()
-    _check_literal('format', format, {'csv', 'parquet', 'txt', 'xlsx'})
+    format = format.strip().lower()
+    _check_literal('format', format, {'csv', 'parquet', 'txt'})
 
     path = pathlib.Path(path or '.').joinpath('ampworks_datasets')
     path.mkdir(parents=True, exist_ok=True)
@@ -143,14 +158,15 @@ def download_all(
 
     # read and write to alternative format if not parquet
     writers = {
-        'csv': lambda df, p: df.to_csv(p, index=False),
-        'txt': lambda df, p: df.to_csv(p, sep='\t', index=False),
-        'xlsx': lambda df, p: df.to_excel(p, index=False),
+        'csv': lambda df, p: df.write_csv(p),
+        'txt': lambda df, p: df.write_csv(p, separator='\t'),
     }
 
-    for file in pathlib.Path(RESOURCES).glob('*.parquet'):
-        df = pd.read_parquet(file)
-        writers[format](df, path / f"{file.stem}.{format}")
+    for file in pathlib.Path(RESOURCES).rglob('*.parquet'):
+        df = pl.read_parquet(file)
+        out_path = path / f"{file.parent.name}" / f"{file.stem}.{format}"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        writers[format](df, out_path)
 
 
 def load_datasets(*names: str) -> Dataset:
@@ -190,7 +206,7 @@ def load_datasets(*names: str) -> Dataset:
     >>> ici_c, ici_d = load_datasets('ici/ici_charge', 'ici/ici_discharge')
 
     """
-    from ampworks import Dataset
+    from ampworks import standardize_headers
 
     available = list_datasets()
 
@@ -205,9 +221,12 @@ def load_datasets(*names: str) -> Dataset:
 
     datasets = []
     for name in names:
-        df = pd.read_parquet(RESOURCES.joinpath(name))
+        df = pl.read_parquet(RESOURCES.joinpath(name))
 
-        ds = Dataset(df)
+        with catch_warnings():
+            filterwarnings('ignore', message='No valid aliases found for')
+            ds = standardize_headers(df.to_pandas())
+
         datasets.append(ds)
 
     if len(datasets) == 1:

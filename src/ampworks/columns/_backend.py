@@ -66,10 +66,10 @@ def _instance_nums(
 
     Notes
     -----
-    When `fast=True`, the cycle resets are ignored, even if requested. This is
-    useful for quickly generating instance numbers in cases where it is not
-    important to know that an instance is the first or Nth occurrence globally or
-    within a cycle. Instead, the instance numbers are monotonically increasing,
+    When `fast=True`, cycle resets are always ignored, even if requested. This
+    is useful for quickly generating instance numbers in cases where it is not
+    important to know that an instance is the first or Nth occurrence globally
+    or within a cycle. Instead, instance numbers are monotonically increasing,
     and only indicate when a new instance is detected, not the number of times
     that group has been seen before.
 

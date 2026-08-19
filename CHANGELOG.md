@@ -14,6 +14,7 @@
 
 ### Optimizations
 - Vectorize `add_state`, `_ah_wh`, and remove `.transform` from `_instance_nums` ([#34](https://github.com/NatLabRockies/ampworks/pull/34))
+- Move backend datasets for examples and tests to `.parquet` formats ([#34](https://github.com/NatLabRockies/ampworks/pull/34))
 
 ### Bug Fixes
 - Extra tabs in some `.txt` files were creating read errors, now ignore ragged columns ([#31](https://github.com/NatLabRockies/ampworks/pull/31))

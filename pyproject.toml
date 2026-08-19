@@ -60,7 +60,7 @@ version = { attr = "ampworks.__version__" }
 where = ["src"]
 
 [tool.setuptools.package-data]
-"*" = ["*.yaml", ".yml", "*.csv", "*.css"]
+"*" = ["*.yaml", ".yml", "*.csv", "*.css", ".parquet"]
 
 [tool.ruff]
 line-length = 80

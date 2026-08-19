@@ -13,6 +13,14 @@ from ._labels import (
     add_state,
     add_control_mode,
 )
+from ._rates import (
+    add_power,
+    add_c_rate,
+)
+from ._sequencing import (
+    add_instance_nums,
+    add_relative_time,
+)
 
 __all__ = [
     'StepLabel',
@@ -21,4 +29,8 @@ __all__ = [
     'add_segment_labels',
     'add_state',
     'add_control_mode',
+    'add_power',
+    'add_c_rate',
+    'add_instance_nums',
+    'add_relative_time',
 ]

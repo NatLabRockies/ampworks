@@ -17,8 +17,8 @@ class StepLabel:
 
     def __init__(self, label: str, step_num: Integral) -> None:
         """
-        Mapping steps to human-readable labels can be useful sharing data. Use
-        this container to create labels, then apply with `add_step_labels`.
+        Container mapping a step number to a human-readable label, for use with
+        `add_step_labels`.
 
         Parameters
         ----------
@@ -33,8 +33,7 @@ class StepLabel:
 
         Examples
         --------
-        Step labels only require a string label and integer step number. They
-        can be simple or detailed. Below we define three with varying detail.
+        Labels can be as simple or detailed as needed:
 
         >>> step1 = StepLabel('Rest', 1)
         >>> step2 = StepLabel('1C CC Charge until 4.2V', 2)
@@ -64,13 +63,9 @@ class SegmentLabel:
         cycle_nums: Sequence[Integral] | None = None,
     ) -> None:
         """
-        Mapping steps to human-readable labels can be useful sharing data. Use
-        this container to create labels, then apply with `add_segment_labels`.
-
-        We use "segment" here abstractly for describing sections of data defined
-        by multiple steps or cycles. These labels can be used to describe cycles
-        or for higher-level labels, e.g., reference performance tests (RPTs)
-        that can include multiple types of cycles.
+        Container mapping step or cycle numbers to a human-readable label, for
+        use with `add_segment_labels`. "Segment" refers broadly to any section
+        defined by steps or cycles, e.g., an RPT spanning several cycle types.
 
         Parameters
         ----------
@@ -89,16 +84,14 @@ class SegmentLabel:
 
         Notes
         -----
-        `step_nums` or `cycle_nums` must be given, but not both. Use `step_nums`
-        to apply a label to all cycles that contain those steps, or `cycle_nums`
-        for labeling all steps in the specified cycles.
+        Exactly one of `step_nums`/`cycle_nums` is required. `step_nums` labels
+        every cycle containing those steps; `cycle_nums` labels every step
+        within those cycles.
 
         Examples
         --------
-        Below we define segment labels for HPPC and capacity check cycles. A
-        higher-level label for RPTs is also defined, which could be added under
-        a different column name to indicate the full RPT segment, containing
-        both capacity check and HPPC cycles every 50 cycles.
+        Labels for HPPC and capacity-check cycles, plus a higher-level RPT
+        label (e.g., under a separate column) spanning both every 50 cycles:
 
         >>> hppcs = SegmentLabel('HPPC', step_nums=range(4, 12))
         >>> cap_checks = SegmentLabel('Capacity Check', step_nums=[1, 2])
@@ -169,15 +162,12 @@ def add_step_labels(
 
     Notes
     -----
-    Using `reset=False` allows step labels to be added to an existing column.
-    While this preserves any existing labels, it also allows overwriting labels
-    if new steps are given that overlap with existing, already-labeled rows.
+    With `reset=False`, new labels are layered onto any existing column,
+    overwriting only the steps you relabel.
 
     Examples
     --------
-    Below we create three labels for steps 1, 5, and 6 in the dataset. They are
-    then applied using this function. Note that steps not in the list of labels
-    are given the default label of 'Unlabeled'.
+    Steps not included in `step_labels` get the `default` label:
 
     >>> data = amp.Dataset(...)
     >>> step1 = StepLabel('Rest', 1)
@@ -252,18 +242,15 @@ def add_segment_labels(
 
     Notes
     -----
-    Using `reset=False` allows segment labels to be added to an existing column.
-    While this preserves any existing labels, it also allows overwriting labels
-    if new segments are given that overlap with existing, already-labeled rows.
+    With `reset=False`, new labels are layered onto any existing column,
+    overwriting only the segments you relabel.
 
     Examples
     --------
-    Below we create two new columns for `CycleLabel` and `SegmentLabel`. The
-    first column labels all HPPC and capacity check cycles. The second column
-    then labels the full RPT segment, which contains both capacity check and
-    HPPC cycles, every 50 cycles. Note that since the `CycleLabel` name is used
-    twice, we ensure `reset=False` on the second call to avoid losing the first
-    set of HPPC labels.
+    Two new columns are created below: `CycleLabel` labels HPPC and capacity
+    check cycles, while `SegmentLabel` labels the full RPT (both cycle types,
+    every 50 cycles). `reset=False` on the second call preserves the HPPC
+    labels already written to `CycleLabel`.
 
     >>> data = amp.Dataset(...)
     >>> hppcs = SegmentLabel('HPPC', step_nums=range(4, 12))
@@ -319,12 +306,11 @@ def add_state(
     amps_alias: str = 'Amps',
 ) -> Dataset:
     """
-    Add a state column based on sign of current.
+    Add a state column based on current.
 
-    States are 'C' for charge (positive current), 'D' for discharge (negative
-    current), and 'R' for rest (zero current). Note that correctly detecting
-    rests requires that the current is exactly zero. Consider using a threshold
-    to zero-out small currents if this is an issue.
+    States are 'C' (charge, current > 0), 'D' (discharge, current < 0), or 'R'
+    (rest, current == 0). Detecting rests requires exactly zero current. Use a
+    threshold to zero out small noise if needed.
 
     Parameters
     ----------
@@ -350,49 +336,29 @@ def add_state(
 
     Notes
     -----
-    Using `which=None` determines the state for each row individually, without
-    considering any groupings. However, this can lead to a single step being
-    assigned multiple states if the current changes sign within that step.
-
-    The alternative is to use a column that defines groups where the state is
-    constant, such as within a step. However, during this grouping, if it is
-    determined that the current changes sign within a group, the state is set to
-    `'Unknown'` for all rows in that group. This is to avoid assigning incorrect
-    states to a group. If you know the state of these unknown rows, you can
-    manually set them after adding the state column. See the examples below for
-    how to do this.
+    With `which=None`, state is set per row, which can split a single step
+    across multiple states if current changes sign mid-step. Grouping by
+    `which` (e.g., 'Step') avoids that, but assigns `'Unknown'` to any group
+    whose current changes sign, rather than guessing; relabel these manually
+    if needed (see Examples). Be aware that detection of state within groups
+    allows for tapering current to zero, so constant-voltage steps that have
+    a constant charge or discharge state, but have currents that taper to zero,
+    are still detected.
 
     Examples
     --------
-    Below we add a state column to a dataset using default settings. Prior to
-    this, the 'Amps' column is zeroed below 1e-8 A to ensure that rests states
-    are correctly detected.
+    Zero out noise before adding a state column so rests are detected correctly:
 
     >>> data = amp.Dataset(...)
     >>> data = data.zero_below('Amps', threshold=1e-8)
     >>> ds = add_state(data)
 
-    Alternative to the thresholding approach, if you know which steps in your
-    data are rests, you can zero them out directly by applying a mask to the
-    'Amps' column, as demonstrated below.
+    Any group whose current changes sign is labeled 'Unknown'. Find and relabel
+    these manually if you know the correct state:
 
-    >>> data = amp.Dataset(...)
-    >>> data.loc[data['Step'].isin([1, 3, 11, 13, 21, 23]), 'Amps'] = 0.0
-    >>> ds = add_state(data)
-
-    You can check to see if any states ended up being assigned the `'Unknown'`
-    value, which indicates that the current changed sign within a group by
-    filtering.
-
-    >>> unknown_states = ds[ds['State'] == 'Unknown']
-    >>> print(unknown_states[['Cycle', 'Step']].drop_duplicates())
-
-    Once you know which groups have unknown states, you can manually set them to
-    the correct value by applying a mask to the state column, as demonstrated.
-
+    >>> unknown = ds[ds['State'] == 'Unknown'][['Cycle', 'Step']]
+    >>> print(unknown.drop_duplicates())
     >>> ds.loc[(ds['Cycle'] == 1) & ds['Step'].isin([5, 7]), 'State'] = 'C'
-    >>> ds.loc[(ds['Cycle'] == 2) & ds['Step'].isin([9, 15]), 'State'] = 'D'
-    >>> ds.loc[(ds['Cycle'] == 3) & ds['Step'].isin([17, 19]), 'State'] = 'R'
 
     """
     check_columns = [which, amps_alias] if which is not None else [amps_alias]
@@ -417,10 +383,14 @@ def add_state(
 
         groups = ds.groupby([which, instance_nums])[amps_alias]
 
-        # check if all values in a group are positive, negative, or zero
-        all_discharge = groups.transform(lambda x: (x <= 0).all())
-        all_charge = groups.transform(lambda x: (x >= 0).all())
-        all_zero = groups.transform(lambda x: (x == 0).all())
+        # a group is 'C'/'D' when its min/max never cross zero; both bounds
+        # sitting exactly at zero implies every value in the group is zero
+        group_min = groups.transform('min')
+        group_max = groups.transform('max')
+
+        all_charge = group_min >= 0
+        all_discharge = group_max <= 0
+        all_zero = all_charge & all_discharge
 
         ds[col_name] = 'Unknown'
 
@@ -447,19 +417,19 @@ def add_control_mode(
     r"""
     Add a control mode column to a dataset.
 
-    Control modes are 'CC' for constant current, 'CV' for constant voltage, 'CP'
-    for constant power, or 'Rest' for Rest. The control modes are determined by
-    checking segments to see if the current, voltage, and/or power is near
-    constant within a given relative tolerance. Rests are detected for segments
-    where current is exactly zero. Note that the 'CP' mode is only included when
-    `watts_alias` is not `None`.
+    Control modes are 'CC', 'CV', 'CP' (only checked if `watts_alias` is given),
+    or 'Rest' (current exactly zero). A mode is assigned when its signal is
+    constant within `rtol` over a group. If there are no matches or multiple
+    matches, the `default` is used instead.
 
-    The near constant check is considered satisfied when the following is true
-    for all values in a segment:
+    A signal is "constant" within a group when:
 
     .. math::
 
         ({\rm max} - {\rm min}) \le ({\rm rtol} \times {\rm mean})
+
+    where max, min, and mean are in reference to current, voltage, and power to
+    detect 'CC', 'CV', and 'CP' (optionally), respectively.
 
     Parameters
     ----------
@@ -501,12 +471,9 @@ def add_control_mode(
     >>> data = amp.Dataset(...)
     >>> ds = add_control_mode(data)
 
-    If you want to include 'CP' mode detection, supply the name of the power
-    column to `watts_alias`. If needed, you can also add a power column first,
-    using :func:`~ampworks.columns.add_power`. In case you are missing a step
-    column, use a different column to detect mode changes (e.g., 'State'). A
-    state column can also be added if missing from your data using the function
-    :func:`~ampworks.columns.add_state`. We demonstrate this case below.
+    For 'CP' detection, add a `Watts` column and pass it as `watts_alias`. If
+    `Step` is unavailable, group by another constant-per-segment column instead
+    (e.g., `State`):
 
     >>> data = amp.Dataset(...)
     >>> ds = add_state(data)

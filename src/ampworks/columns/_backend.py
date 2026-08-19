@@ -66,12 +66,9 @@ def _instance_nums(
 
     Notes
     -----
-    When `fast=True`, cycle resets are always ignored, even if requested. This
-    is useful for quickly generating instance numbers in cases where it is not
-    important to know that an instance is the first or Nth occurrence globally
-    or within a cycle. Instead, instance numbers are monotonically increasing,
-    and only indicate when a new instance is detected, not the number of times
-    that group has been seen before.
+    With `fast=True`, cycle resets are ignored and the result is just a
+    monotonically increasing changeover counter, not a per-group occurrence
+    count.
 
     """
     first = data[which].iloc[0]
@@ -93,7 +90,8 @@ def _instance_nums(
         data
         .assign(_raw=raw)
         .groupby(grouping)['_raw']
-        .transform(lambda x: x.rank(method='dense').astype(int))
+        .rank(method='dense')
+        .astype(int)
     )
 
     return instance_nums
@@ -123,7 +121,19 @@ def _ah_wh(
     Returns
     -------
     ahwh : Series
-        The Ah or Wh values for each row in the dataset.
+        Non-negative Ah or Wh values for each row, integrated from the absolute
+        value of current or power and reset to zero at the start of each group.
+
+    See Also
+    --------
+    _ah_wh_cumulative : Signed, non-resetting cumulative Ah or Wh.
+    _ah_wh_throughput : Absolute, non-resetting throughput Ah or Wh.
+
+    Notes
+    -----
+    Values are always non-negative so that the result stays compatible with
+    the `'column'` method of `_ah_wh_cumulative`/`_ah_wh_throughput`, which
+    requires a non-negative Ah/Wh column that only decreases at resets.
 
     """
     _chk._check_columns(data, [which, seconds_alias, value_alias])
@@ -136,17 +146,21 @@ def _ah_wh(
         fast=True,
     )
 
-    def _integrate_group(g):
-        x = g[seconds_alias] / 3600  # seconds to hours
-        y = g[value_alias].abs()
-        value = cumulative_trapezoid(y=y, x=x, initial=0)
-        return pd.Series(value, index=g.index)
+    # integrate once over full series, then re-reference groups to their starts
+    x = data[seconds_alias] / 3600  # seconds to hours
+    y = data[value_alias].abs()
 
-    ahwh = (
-        data
-        .groupby([which, instance_nums], group_keys=False)
-        .apply(_integrate_group)
+    cumulative = pd.Series(
+        cumulative_trapezoid(y=y, x=x, initial=0),
+        index=data.index,
     )
+    offsets = (
+        cumulative
+        .groupby([data[which], instance_nums])
+        .transform('first')
+    )
+
+    ahwh = cumulative - offsets
 
     return ahwh
 
@@ -176,12 +190,18 @@ def _ah_wh_cumulative(
     state_alias : str
         Name of the column containing the state, with values of {'C', 'D', 'R'}.
     valueh_alias : str
-        Name of the column containing ampere-hour or watt-hour values.
+        Name of the column containing ampere-hour or watt-hour values. Only
+        used for `method='column'`, which requires non-negative values that
+        only decrease at resets (e.g., as produced by `_ah_wh`).
 
     Returns
     -------
     ahwh : Series
         Cumulative Ah or Wh values for each row in the dataset.
+
+    See Also
+    --------
+    _ah_wh : Produces a compatible non-negative, reset-at-group-start column.
 
     """
     method = method.lower()
@@ -252,12 +272,18 @@ def _ah_wh_throughput(
     value_alias : str
         Name of the column containing current in amps or power in watts.
     valueh_alias : str
-        Name of the column containing ampere-hour or watt-hour values.
+        Name of the column containing ampere-hour or watt-hour values. Only
+        used for `method='column'`, which requires non-negative values that
+        only decrease at resets (e.g., as produced by `_ah_wh`).
 
     Returns
     -------
     ahwh : Series
         Throughput Ah or Wh values for each row in the dataset.
+
+    See Also
+    --------
+    _ah_wh : Produces a compatible non-negative, reset-at-group-start column.
 
     """
     method = method.lower()

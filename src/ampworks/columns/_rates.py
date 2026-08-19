@@ -82,11 +82,6 @@ def add_c_rate(
     ds : Dataset
         A modified copy of the input data, with a C-rate column.
 
-    Notes
-    -----
-    No unit conversion is performed; `amps_alias` and `amps_1c` just need to
-    share consistent units.
-
     Examples
     --------
     Below we add a C-rate column to a dataset using default settings and a 1C
@@ -96,8 +91,7 @@ def add_c_rate(
     >>> ds = add_c_rate(data, amps_1c=1.0)
 
     If your analysis requires a positive definition of C-rate, regardless of
-    the sign of the current, use `ds['CRate'].abs()` in your downstream
-    processing.
+    the sign of the current, use `ds['CRate'].abs()` in downstream processes.
 
     """
     _chk._check_columns(data, [amps_alias])

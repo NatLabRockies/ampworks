@@ -3,7 +3,7 @@
 ## [Unreleased](https://github.com/NatLabRockies/ampworks)
 
 ### New Features
-- Add `add_power`, `add_c_rate`, `add_instance_nums`, and `add_relative_time` to the `columns` module ([#35](https://github.com/NatLabRockies/ampworks/pull/35))
+- Add `_rate` and `_sequencing` submodules to the `columns` for power, C-rate, etc ([#35](https://github.com/NatLabRockies/ampworks/pull/35))
 - Add new `columns` module and move toward new API with `add_*` functions ([#34](https://github.com/NatLabRockies/ampworks/pull/34))
 - Allow unit overrides to `HeaderAliases` to help ensure self-consistent standardizations ([#32](https://github.com/NatLabRockies/ampworks/pull/32))
 - New `interactive_plotly` and `interactive_bokeh` methods with `kind` line/scatter option ([#31](https://github.com/NatLabRockies/ampworks/pull/31))

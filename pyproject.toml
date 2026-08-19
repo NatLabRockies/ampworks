@@ -66,6 +66,9 @@ where = ["src"]
 line-length = 80
 exclude = ["build", "docs", "images", "reports"]
 
+[tool.ruff.format]
+quote-style = "preserve"
+
 [tool.ruff.lint]
 preview = true
 select = [

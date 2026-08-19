@@ -23,10 +23,10 @@ def add_instance_nums(
 
     Instance numbers uniquely identify repeated occurrences of a group. For
     example, if a single HPPC cycle contains ten discharge pulses that all
-    share the same step number (e.g., 5), instance numbers label them 1
-    through 10. Numbering can reset every cycle or stay globally unique,
-    depending on `cycle_resets`. Numbering is 1-based, so the first instance
-    of a group is always 1, not 0.
+    share the same step number (e.g., 5), instance numbers label them 1 through
+    10. Numbering can reset every cycle or stay globally unique, depending on
+    `cycle_resets`. Numbering is 1-based, so the first instance of a group is
+    always 1, not 0.
 
     Parameters
     ----------
@@ -63,23 +63,24 @@ def add_instance_nums(
 
     Notes
     -----
-    With `fast=True`, cycle resets are ignored and the result is just a
-    monotonically increasing changeover counter, not a per-group occurrence
-    count. This is cheaper when you only need to detect a new instance, not
-    know it's specifically the first or Nth occurrence.
+    With `fast=True`, all group resets are ignored and result in a monotonically
+    increasing changeover counter, not a per-group occurrence count. This is
+    computationally cheaper when you only need to detect a new instance, and do
+    not care whether it's specifically the first or Nth occurrence.
 
     Examples
     --------
-    Below we add an instance numbers column to a dataset using default
-    settings, then use it to analyze a repeated step (e.g., step 5).
+    Below we add an instance numbers column to a dataset using default settings,
+    then use it to construct groups for downstream analysis on the instances of
+    step 5.
 
     >>> data = amp.Dataset(...)
     >>> ds = add_instance_nums(data)
     >>> step5 = ds[ds['Step'] == 5]
     >>> groups = step5.groupby('InstanceNum')
 
-    Instance numbers also make it easy to pull metrics for just the first
-    occurrence of a repeated step within each cycle:
+    Instance numbers can also make it easy to pull metrics/statistics for any
+    Nth occurrence of a repeated step within each cycle:
 
     >>> first_means = step5[step5['InstanceNum'] == 1].groupby('Cycle').mean()
 
@@ -137,13 +138,13 @@ def add_relative_time(
 
     You may want relative time to reset on changes in State instead of Step,
     e.g., to get relative times for charge/discharge/rest segments that span
-    multiple steps (a CCCV charge, or a rest split across steps for varying
-    time resolution). Use a different `which` column to control this:
+    multiple steps (e.g., a CCCV charge). Use a different `which` column to
+    control this:
 
     >>> ds = add_relative_time(data, which='State')
 
-    The time column also doesn't need to be in seconds. If you already have
-    another time column, use it via `time_alias`:
+    The time column also doesn't need to be in seconds. If you have another time
+    column, use it via `time_alias`:
 
     >>> ds['Hours'] = ds['Seconds'] / 3600.0
     >>> ds = add_relative_time(data, time_alias='Hours')

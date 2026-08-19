@@ -37,12 +37,14 @@ ICI datasets:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from warnings import catch_warnings, filterwarnings
 
 import os
 import shutil
 import pathlib
+
+import polars as pl
 
 if TYPE_CHECKING:
     from ampworks import Dataset
@@ -84,7 +86,6 @@ def list_datasets(*modules: str) -> list[str]:
     available datasets. The first example lists all datasets, while the second
     and third examples filter the list by module name.
 
-    >>> from ampworks.datasets import list_datasets
     >>> names = list_datasets()
     >>> print(names)
 
@@ -111,9 +112,16 @@ def list_datasets(*modules: str) -> list[str]:
     return names
 
 
-def download_all(path: str | os.PathLike | None = None) -> None:
+def download_all(
+    path: str | os.PathLike | None = None,
+    format: Literal['csv', 'parquet', 'txt'] = 'parquet',
+) -> None:
     """
     Copy example datasets into a local directory.
+
+    To keep storage requirements low and read speeds high, we store all example
+    datasets internally in Parquet format. However, datasets can optionally be
+    downloaded in alternative formats (csv or txt) using the `format` argument.
 
     Parameters
     ----------
@@ -121,12 +129,44 @@ def download_all(path: str | os.PathLike | None = None) -> None:
         Path to parent directory where a new `ampworks_datasets` folder will
         be created and example datasets will be copied to. If None (default),
         the current working directory is used.
+    format : Literal['csv', 'parquet', 'txt'], optional
+        Format for the downloaded files, default is 'parquet'.
+
+    Examples
+    --------
+    In the following we download all example datasets in all available formats
+    to the current working directory. Note that the consecutive calls do not
+    overwrite existing folders or files.
+
+    >>> download_all(format='parquet')
+    >>> download_all(format='csv')
+    >>> download_all(format='txt')
 
     """
+    from ampworks._checks import _check_literal
+
+    format = format.strip().lower()
+    _check_literal('format', format, {'csv', 'parquet', 'txt'})
+
     path = pathlib.Path(path or '.').joinpath('ampworks_datasets')
     path.mkdir(parents=True, exist_ok=True)
 
-    shutil.copytree(RESOURCES, path, dirs_exist_ok=True)
+    # just copy if default parquet, return stops from executing further
+    if format == 'parquet':
+        shutil.copytree(RESOURCES, path, dirs_exist_ok=True)
+        return
+
+    # read and write to alternative format if not parquet
+    writers = {
+        'csv': lambda df, p: df.write_csv(p),
+        'txt': lambda df, p: df.write_csv(p, separator='\t'),
+    }
+
+    for file in pathlib.Path(RESOURCES).rglob('*.parquet'):
+        df = pl.read_parquet(file)
+        out_path = path / f"{file.parent.name}" / f"{file.stem}.{format}"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        writers[format](df, out_path)
 
 
 def load_datasets(*names: str) -> Dataset:
@@ -137,7 +177,7 @@ def load_datasets(*names: str) -> Dataset:
     ----------
     *names : str
         One or more dataset names to load. Check `list_datasets()` for available
-        filenames. Note that including the '.csv' extension is optional.
+        filenames. Note that including the '.parquet' extension is optional.
 
     Returns
     -------
@@ -153,31 +193,27 @@ def load_datasets(*names: str) -> Dataset:
     Examples
     --------
     In the following example, the `load_datasets` function is used to load a
-    single HPPC dataset and the optional `.csv` extension is included. The names
-    of the available datasets can be found using the `list_datasets` function.
+    single HPPC dataset and the optional `.parquet` extension is included. The
+    names for available datasets can be found using `list_datasets`.
 
-    >>> from ampworks.datasets import load_datasets
-    >>> hppc_data = load_datasets('hppc/hppc_discharge.csv')
-    >>> print(hppc_data)
+    >>> hppc_data = load_datasets('hppc/hppc_discharge.parquet')
 
     In the next example, two ICI datasets are loaded at once by providing their
-    names. Here, the `.csv` extensions is omitted, but the function internally
-    appends it as needed. The returned datasets are provided in the same order
-    as the given names.
+    names. Here, the `.parquet` extensions is omitted, but the function appends
+    it as needed. The returned datasets are provided in the same order as the
+    given names.
 
     >>> ici_c, ici_d = load_datasets('ici/ici_charge', 'ici/ici_discharge')
-    >>> print(ici_c)
-    >>> print(ici_d)
 
     """
-    from ampworks import read_csv
+    from ampworks import standardize_headers
 
     available = list_datasets()
 
     if len(names) == 0:
         raise ValueError("At least one dataset name must be given.")
 
-    names = [n + '.csv' if not n.endswith('.csv') else n for n in names]
+    names = [n + '.parquet' if not n.endswith('.parquet') else n for n in names]
 
     not_available = [n for n in names if n not in available]
     if not_available:
@@ -185,11 +221,13 @@ def load_datasets(*names: str) -> Dataset:
 
     datasets = []
     for name in names:
-        with catch_warnings():
-            filterwarnings('ignore', message='.*No valid aliases.*')
-            data = read_csv(RESOURCES.joinpath(name))
+        df = pl.read_parquet(RESOURCES.joinpath(name))
 
-        datasets.append(data)
+        with catch_warnings():
+            filterwarnings('ignore', message='No valid aliases found for')
+            ds = standardize_headers(df.to_pandas())
+
+        datasets.append(ds)
 
     if len(datasets) == 1:
         return datasets[0]

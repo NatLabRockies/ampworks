@@ -3,15 +3,18 @@
 ## [Unreleased](https://github.com/NatLabRockies/ampworks)
 
 ### New Features
+- Add new `columns` module and move toward new API with `add_*` functions ([#34](https://github.com/NatLabRockies/ampworks/pull/34))
 - Allow unit overrides to `HeaderAliases` to help ensure self-consistent standardizations ([#32](https://github.com/NatLabRockies/ampworks/pull/32))
 - New `interactive_plotly` and `interactive_bokeh` methods with `kind` line/scatter option ([#31](https://github.com/NatLabRockies/ampworks/pull/31))
 - New hidden `auxiliary` module for repeated logic across package (only for devs, for now) ([#30](https://github.com/NatLabRockies/ampworks/pull/30))
 
 ### Deprecations
+- The `labels` module is fully removed, with functionality moved to `columns` ([#34](https://github.com/NatLabRockies/ampworks/pull/34))
 - `interactive_xy_plot` deprecated in favor of `interactive_plotly` ([#31](https://github.com/NatLabRockies/ampworks/pull/31))
 
 ### Optimizations
-None.
+- Vectorize `add_state`, `_ah_wh`, and remove `.transform` from `_instance_nums` ([#34](https://github.com/NatLabRockies/ampworks/pull/34))
+- Move backend datasets for examples and tests to `.parquet` formats ([#34](https://github.com/NatLabRockies/ampworks/pull/34))
 
 ### Bug Fixes
 - Extra tabs in some `.txt` files were creating read errors, now ignore ragged columns ([#31](https://github.com/NatLabRockies/ampworks/pull/31))

@@ -36,14 +36,6 @@ from ._core import (
     standardize_headers,
 )
 
-from .labels import (
-    LabelSet,
-    StepLabel,
-    CycleLabel,
-    SectionLabel,
-    apply_labels,
-)
-
 __version__ = '0.2.0.dev0'
 
 __all__ = [
@@ -53,18 +45,13 @@ __all__ = [
     'read_table',
     'HeaderAliases',
     'standardize_headers',
-    'LabelSet',
-    'StepLabel',
-    'CycleLabel',
-    'SectionLabel',
-    'apply_labels',
     'ocv',
     'ici',
     'gitt',
     'dqdv',
     'hppc',
     'utils',
-    'labels',
+    'columns',
     'datasets',
     'mathutils',
     'plotutils',
@@ -74,7 +61,7 @@ __all__ = [
 
 if TYPE_CHECKING:
     from ampworks import (
-        ocv, ici, gitt, dqdv, hppc, utils, labels, datasets, mathutils,
+        ocv, ici, gitt, dqdv, hppc, utils, columns, datasets, mathutils,
         plotutils,
     )
 
@@ -87,7 +74,7 @@ _lazy_modules = {
     'dqdv': 'ampworks.dqdv',
     'hppc': 'ampworks.hppc',
     'utils': 'ampworks.utils',
-    'labels': 'ampworks.labels',
+    'columns': 'ampworks.columns',
     'datasets': 'ampworks.datasets',
     'mathutils': 'ampworks.mathutils',
     'plotutils': 'ampworks.plotutils',

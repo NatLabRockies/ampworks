@@ -3,6 +3,7 @@
 ## [Unreleased](https://github.com/NatLabRockies/ampworks)
 
 ### New Features
+- Add `_rate` and `_sequencing` submodules to the `columns` for power, C-rate, etc ([#35](https://github.com/NatLabRockies/ampworks/pull/35))
 - Add new `columns` module and move toward new API with `add_*` functions ([#34](https://github.com/NatLabRockies/ampworks/pull/34))
 - Allow unit overrides to `HeaderAliases` to help ensure self-consistent standardizations ([#32](https://github.com/NatLabRockies/ampworks/pull/32))
 - New `interactive_plotly` and `interactive_bokeh` methods with `kind` line/scatter option ([#31](https://github.com/NatLabRockies/ampworks/pull/31))
@@ -13,6 +14,7 @@
 - `interactive_xy_plot` deprecated in favor of `interactive_plotly` ([#31](https://github.com/NatLabRockies/ampworks/pull/31))
 
 ### Optimizations
+- Vectorize `add_relative_time`, removing a per-group `.transform` callable ([#35](https://github.com/NatLabRockies/ampworks/pull/35))
 - Vectorize `add_state`, `_ah_wh`, and remove `.transform` from `_instance_nums` ([#34](https://github.com/NatLabRockies/ampworks/pull/34))
 - Move backend datasets for examples and tests to `.parquet` formats ([#34](https://github.com/NatLabRockies/ampworks/pull/34))
 

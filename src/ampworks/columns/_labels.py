@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from numbers import Integral
-from typing import TYPE_CHECKING, Sequence
+from numbers import Integral, Real
+from typing import TYPE_CHECKING, Dict, Sequence
+
+import pandas as pd
 
 from ampworks import _checks as _chk
+from ampworks._core._std_head import AMPS, VOLTS, CYCLE, STEP, STATE
 from ampworks.columns._backend import _instance_nums
 
 if TYPE_CHECKING:
@@ -126,7 +129,7 @@ def add_step_labels(
     *,
     step_labels: Sequence[StepLabel],
     col_name: str = 'StepLabel',
-    step_alias: str = 'Step',
+    step_alias: str = STEP,
     reset: bool = False,
     default: str = 'Unlabeled',
 ) -> Dataset:
@@ -145,7 +148,7 @@ def add_step_labels(
     col_name : str, optional
         Name of the column to add, by default 'StepLabel'.
     step_alias : str, optional
-        Name of the column containing step numbers, by default 'Step'.
+        Name of column containing step numbers; defaults to standard name.
     reset : bool, optional
         Whether to reset the column before adding labels, by default False.
     default : str, optional
@@ -176,11 +179,13 @@ def add_step_labels(
     >>> ds = add_step_labels(data, step_labels=[step1, step5, step6])
 
     """
+    from ampworks import Dataset
+
     _chk._check_columns(data, [step_alias])
     _chk._check_type('step_labels', step_labels, Sequence)
     _chk._check_inner_type('step_labels', step_labels, StepLabel)
 
-    ds = data.copy()
+    ds = Dataset(data)
     ds[step_alias] = ds[step_alias].astype(int)
 
     if reset or (col_name not in ds.columns):
@@ -201,8 +206,8 @@ def add_segment_labels(
     *,
     segment_labels: Sequence[SegmentLabel],
     col_name: str = 'SegmentLabel',
-    step_alias: str = 'Step',
-    cycle_alias: str = 'Cycle',
+    step_alias: str = STEP,
+    cycle_alias: str = CYCLE,
     reset: bool = False,
     default: str = 'Unlabeled',
 ) -> Dataset:
@@ -221,10 +226,10 @@ def add_segment_labels(
     col_name : str, optional
         Name of the column to add, by default 'SegmentLabel'.
     step_alias : str, optional
-        Name of the column containing step numbers, by default 'Step'. Only
+        Name of column containing step numbers; defaults to standard name. Only
         used if some segment labels are defined by step numbers.
     cycle_alias : str, optional
-        Name of the column containing cycle numbers, by default 'Cycle'. Only
+        Name of column containing cycle numbers; defaults to standard name. Only
         used if some segment labels are defined by cycle numbers.
     reset : bool, optional
         Whether to reset the column before adding labels, by default False.
@@ -267,10 +272,12 @@ def add_segment_labels(
     ... )
 
     """
+    from ampworks import Dataset
+
     _chk._check_type('segment_labels', segment_labels, Sequence)
     _chk._check_inner_type('segment_labels', segment_labels, SegmentLabel)
 
-    ds = data.copy()
+    ds = Dataset(data)
 
     needs_step_alias = any(s.step_nums is not None for s in segment_labels)
     needs_cycle_alias = any(s.cycle_nums is not None for s in segment_labels)
@@ -301,9 +308,10 @@ def add_segment_labels(
 def add_state(
     data: Dataset,
     *,
-    which: str | None = 'Step',
-    col_name: str = 'State',
-    amps_alias: str = 'Amps',
+    which: str | None = STEP,
+    col_name: str = STATE,
+    amps_alias: str = AMPS,
+    default: str = 'Unknown',
 ) -> Dataset:
     """
     Add a state column based on current.
@@ -318,12 +326,15 @@ def add_state(
         The input dataset.
     which : str or None, optional
         The column used to define groups where the state is constant. Defaults
-        to 'Step', which assumes each step has a constant state. If None, rows
-        are evaluated individually, without groups. See notes for more details.
+        to step-based, which assumes each step has a constant state. If None,
+        rows are treated individually, without groups. See notes for more info.
     col_name : str, optional
-        Name of the column to add, by default 'State'
+        Name of state column to add; defaults to standard name.
     amps_alias : str, optional
-        Name of the column containing current in amps, by default 'Amps'
+        Name of column containing current in amps; defaults to standard name.
+    default : str, optional
+        Default state for rows that do not match any conditions, by default
+        'Unknown'.
 
     Returns
     -------
@@ -338,12 +349,11 @@ def add_state(
     -----
     With `which=None`, state is set per row, which can split a single step
     across multiple states if current changes sign mid-step. Grouping by
-    `which` (e.g., 'Step') avoids that, but assigns `'Unknown'` to any group
-    whose current changes sign, rather than guessing; relabel these manually
-    if needed (see Examples). Be aware that detection of state within groups
-    allows for tapering current to zero, so constant-voltage steps that have
-    a constant charge or discharge state, but have currents that taper to zero,
-    are still detected.
+    `which` avoids that, but assigns `default` to any groups whose current
+    changes signs. Relabel these manually if needed (see Examples). Be aware
+    that detection of state within groups allows for tapering current to zero,
+    so constant-voltage steps that have a constant charge or discharge state,
+    but have currents that taper to zero, are still correctly detected.
 
     Examples
     --------
@@ -353,19 +363,21 @@ def add_state(
     >>> data = data.zero_below('Amps', threshold=1e-8)
     >>> ds = add_state(data)
 
-    Any group whose current changes sign is labeled 'Unknown'. Find and relabel
-    these manually if you know the correct state:
+    Any group whose current changes sign is labeled by `default`, in this case,
+    `'Unknown'`. Find and relabel these manually if you know the correct states:
 
     >>> unknown = ds[ds['State'] == 'Unknown'][['Cycle', 'Step']]
     >>> print(unknown.drop_duplicates())
     >>> ds.loc[(ds['Cycle'] == 1) & ds['Step'].isin([5, 7]), 'State'] = 'C'
 
     """
+    from ampworks import Dataset
+
     check_columns = [which, amps_alias] if which is not None else [amps_alias]
 
     _chk._check_columns(data, check_columns)
 
-    ds = data.copy()
+    ds = Dataset(data)
 
     if which is None:
         ds[col_name] = 'R'
@@ -392,7 +404,7 @@ def add_state(
         all_discharge = group_max <= 0
         all_zero = all_charge & all_discharge
 
-        ds[col_name] = 'Unknown'
+        ds[col_name] = default  # default first, then overwrite with matches
 
         # assign rests last b/c all_charge, all_discharge also true for rests
         ds.loc[all_discharge, col_name] = 'D'
@@ -406,12 +418,12 @@ def add_state(
 def add_control_mode(
     data: Dataset,
     *,
-    which: str = 'Step',
+    which: str = STEP,
     col_name: str = 'ControlMode',
-    amps_alias: str = 'Amps',
-    volts_alias: str = 'Volts',
+    amps_alias: str = AMPS,
+    volts_alias: str = VOLTS,
     watts_alias: str | None = None,
-    rtol: float = 5e-3,
+    rtol: float | Dict[str, float] = 5e-3,
     default: str = 'Unknown',
 ) -> Dataset:
     r"""
@@ -437,19 +449,21 @@ def add_control_mode(
         The input dataset.
     which : str, optional
         The column used to define groups where control mode is constant. The
-        default is 'Step', which assumes each step has a constant control mode.
+        default is step-based, which assumes each step has a constant mode.
     col_name : str, optional
         Name of the column to add, by default 'ControlMode'
     amps_alias : str, optional
-        Name of the column containing current in amps, by default 'Amps'.
+        Name of column containing current in amps; defaults to standard name.
     volts_alias : str, optional
-        Name of the column containing voltage in volts, by default 'Volts'.
+        Name of column containing voltage in volts; defaults to standard name.
     watts_alias : str | None, optional
-        Name of the column containing power in watts. None (default) disables
-        CP mode detection.
-    rtol : float, optional
+        Name of column containing power in watts; None (default) disables CP
+        mode detection.
+    rtol : float or Dict[str, float], optional
         Relative tolerance for detecting constant current, voltage, or power,
-        by default 5e-3.
+        by default 5e-3. To use different tolerances for each mode, pass a
+        dictionary with keys 'CC', 'CV', and/or 'CP' and their corresponding
+        tolerances. In this case needed, but missing keys raise a KeyError.
     default : str, optional
         Default control mode for rows that do not match any mode, or that match
         match more than one, by default 'Unknown'.
@@ -472,8 +486,8 @@ def add_control_mode(
     >>> ds = add_control_mode(data)
 
     For 'CP' detection, add a `Watts` column and pass it as `watts_alias`. If
-    `Step` is unavailable, group by another constant-per-segment column instead
-    (e.g., `State`):
+    steps are unavailable, group by another constant-per-segment column instead,
+    such as state:
 
     >>> data = amp.Dataset(...)
     >>> ds = add_state(data)
@@ -481,15 +495,21 @@ def add_control_mode(
     >>> ds = add_control_mode(ds, which='State', watts_alias='Watts')
 
     """
+    from ampworks import Dataset
+
     check_columns = [which, amps_alias, volts_alias]
     mode_map = {amps_alias: 'CC', volts_alias: 'CV'}
+
+    if isinstance(rtol, Real):
+        rtol = {'CC': rtol, 'CV': rtol, 'CP': rtol}
+
     if watts_alias is not None:
         check_columns.append(watts_alias)
         mode_map[watts_alias] = 'CP'
 
     _chk._check_columns(data, check_columns)
 
-    ds = data.copy()
+    ds = Dataset(data)
 
     instance_nums = _instance_nums(
         data=ds,
@@ -503,9 +523,15 @@ def add_control_mode(
 
     minimum = groups.transform('min')
     maximum = groups.transform('max')
-    mean = groups.transform('mean').abs()
+    mean = groups.transform('mean')
 
-    matches = (maximum - minimum) <= rtol * mean
+    # convert rtol to a series for broadcasting to all columns
+    rtol_series = pd.Series(mode_map).map(rtol)
+    if rtol_series.isnull().any():
+        missing = set(mode_map.values()) - set(rtol.keys())
+        raise KeyError(f"Missing keys in rtol dictionary: {missing}")
+
+    matches = (maximum - minimum) <= (rtol_series * mean).abs()
     matches = matches.rename(columns=mode_map)
 
     # take column name of match, ignoring rows with multiple matches

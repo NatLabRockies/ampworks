@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ampworks import _checks as _chk
+from ampworks._core._std_head import SECONDS, CYCLE, STEP
 from ampworks.columns._backend import _instance_nums
 
 if TYPE_CHECKING:
@@ -12,9 +13,9 @@ if TYPE_CHECKING:
 def add_instance_nums(
     data: Dataset,
     *,
-    which: str = 'Step',
+    which: str = STEP,
     col_name: str = 'InstanceNum',
-    cycle_alias: str = 'Cycle',
+    cycle_alias: str = CYCLE,
     cycle_resets: bool = True,
     fast: bool = False,
 ) -> Dataset:
@@ -33,12 +34,12 @@ def add_instance_nums(
     data : Dataset
         The input dataset.
     which : str, optional
-        The column used to detect and group instances, by default 'Step'.
+        The column used to detect and group instances, step-based by default.
     col_name : str, optional
         Name of the column to add, by default 'InstanceNum'.
     cycle_alias : str, optional
-        Name of the column containing cycle numbers, by default 'Cycle'. Only
-        used if the `cycle_resets` argument is True.
+        Name of the column containing cycle numbers; defaults to standard name.
+        Only used if the `cycle_resets` argument is True.
     cycle_resets : bool, optional
         Whether the instance numbers reset at the start of each cycle. If True
         (default), instance numbers are unique within each cycle, not globally.
@@ -105,9 +106,9 @@ def add_instance_nums(
 def add_relative_time(
     data: Dataset,
     *,
-    which: str = 'Step',
+    which: str = STEP,
     col_name: str = 'StepTime',
-    time_alias: str = 'Seconds',
+    time_alias: str = SECONDS,
 ) -> Dataset:
     """
     Add a relative time column to a dataset.
@@ -118,11 +119,12 @@ def add_relative_time(
         The input dataset.
     which : str, optional
         The column used to define groups where relative time resets to zero.
-        Defaults to 'Step', resetting relative time at the start of each step.
+        Defaults to step-based, resetting at the start of each step.
     col_name : str, optional
-        Name of the column to add, by default 'StepTime'.
+        Name of the relative time column to add, by default 'StepTime'.
     time_alias : str, optional
-        Name of the column containing global time values, by default 'Seconds'.
+        Name of column containing global time values; defaults to the standard
+        name for time in seconds.
 
     Returns
     -------
@@ -146,8 +148,8 @@ def add_relative_time(
     The time column also doesn't need to be in seconds. If you have another time
     column, use it via `time_alias`:
 
-    >>> ds['Hours'] = ds['Seconds'] / 3600.0
-    >>> ds = add_relative_time(data, time_alias='Hours')
+    >>> data['Hours'] = data['Seconds'] / 3600.0
+    >>> ds = add_relative_time(data, col_name='StepTimeHr', time_alias='Hours')
 
     """
     _chk._check_columns(data, [which, time_alias])

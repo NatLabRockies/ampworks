@@ -1,9 +1,12 @@
 import pytest
+import numpy as np
 import pandas as pd
 
 import ampworks as amp
 import ampworks.columns as col
 
+
+# fmt: off
 
 @pytest.fixture
 def label_data():
@@ -81,9 +84,10 @@ def control_data():
         ],
     })
 
+# fmt: on
+
 
 class TestStepLabel:
-
     def test_type_errors(self):
         with pytest.raises(TypeError):  # label should be str
             col.StepLabel(label=1, step_num=1)
@@ -102,7 +106,6 @@ class TestStepLabel:
 
 
 class TestSegmentLabel:
-
     def test_type_errors(self):
         with pytest.raises(TypeError):  # label should be str
             col.SegmentLabel(1, step_nums=[1])
@@ -149,7 +152,6 @@ class TestSegmentLabel:
 
 
 class TestAddStepLabels:
-
     step_labels = [
         col.StepLabel('A', 1),
         col.StepLabel('B', 2),
@@ -207,10 +209,13 @@ class TestAddStepLabels:
 
     def test_reset_false_accumulates_labels(self, label_data):
         first = col.add_step_labels(
-            label_data, step_labels=self.step_labels[:1],
+            label_data,
+            step_labels=self.step_labels[:1],
         )
         second = col.add_step_labels(
-            first, step_labels=self.step_labels[1:], reset=False,
+            first,
+            step_labels=self.step_labels[1:],
+            reset=False,
         )
 
         expected = label_data['ExpectedStep']
@@ -218,12 +223,15 @@ class TestAddStepLabels:
 
     def test_reset_true_clears_labels(self, label_data):
         first = col.add_step_labels(
-            label_data, step_labels=self.step_labels[:1],
+            label_data,
+            step_labels=self.step_labels[:1],
         )
         assert 'A' in first['StepLabel'].astype(str).tolist()
 
         second = col.add_step_labels(
-            first, step_labels=self.step_labels[1:], reset=True,
+            first,
+            step_labels=self.step_labels[1:],
+            reset=True,
         )
         assert 'A' not in second['StepLabel'].astype(str).tolist()
 
@@ -241,7 +249,6 @@ class TestAddStepLabels:
 
 
 class TestAddSegmentLabels:
-
     step_labels1 = [
         col.SegmentLabel('A', step_nums=[1]),
         col.SegmentLabel('B', step_nums=[2]),
@@ -292,14 +299,16 @@ class TestAddSegmentLabels:
 
     def test_step_nums_labeling(self, label_data):
         result1 = col.add_segment_labels(
-            label_data, segment_labels=self.step_labels1,
+            label_data,
+            segment_labels=self.step_labels1,
         )
 
         expected1 = label_data['ExpectedSeg1']
         assert result1['SegmentLabel'].astype(str).equals(expected1)
 
         result2 = col.add_segment_labels(
-            label_data, segment_labels=self.step_labels2,
+            label_data,
+            segment_labels=self.step_labels2,
         )
 
         expected2 = label_data['ExpectedSeg2']
@@ -307,7 +316,8 @@ class TestAddSegmentLabels:
 
     def test_cycle_nums_labeling(self, label_data):
         result = col.add_segment_labels(
-            label_data, segment_labels=self.cycle_labels2,
+            label_data,
+            segment_labels=self.cycle_labels2,
         )
 
         expected = label_data['ExpectedSeg2']
@@ -315,7 +325,8 @@ class TestAddSegmentLabels:
 
     def test_mixed_step_and_cycle_labels(self, label_data):
         result = col.add_segment_labels(
-            label_data, segment_labels=self.mixed_labels3,
+            label_data,
+            segment_labels=self.mixed_labels3,
         )
 
         expected = label_data['ExpectedSeg3']
@@ -364,10 +375,13 @@ class TestAddSegmentLabels:
 
     def test_reset_false_accumulates_labels(self, label_data):
         first = col.add_segment_labels(
-            label_data, segment_labels=self.step_labels1[:1],
+            label_data,
+            segment_labels=self.step_labels1[:1],
         )
         second = col.add_segment_labels(
-            first, segment_labels=self.step_labels1[1:], reset=False,
+            first,
+            segment_labels=self.step_labels1[1:],
+            reset=False,
         )
 
         expected = label_data['ExpectedSeg1']
@@ -375,12 +389,15 @@ class TestAddSegmentLabels:
 
     def test_reset_true_clears_labels(self, label_data):
         first = col.add_segment_labels(
-            label_data, segment_labels=self.step_labels1[:1],
+            label_data,
+            segment_labels=self.step_labels1[:1],
         )
         assert 'A' in first['SegmentLabel'].astype(str).tolist()
 
         second = col.add_segment_labels(
-            first, segment_labels=self.step_labels1[1:], reset=True,
+            first,
+            segment_labels=self.step_labels1[1:],
+            reset=True,
         )
         assert 'A' not in second['SegmentLabel'].astype(str).tolist()
 
@@ -389,7 +406,8 @@ class TestAddSegmentLabels:
 
     def test_returns_copy(self, label_data):
         result = col.add_segment_labels(
-            label_data, segment_labels=self.step_labels1,
+            label_data,
+            segment_labels=self.step_labels1,
         )
 
         assert result is not label_data
@@ -402,7 +420,6 @@ class TestAddSegmentLabels:
 
 
 class TestAddState:
-
     def test_missing_amps_column_raises(self, state_data):
         ds = state_data.drop(columns=['Amps'])
         with pytest.raises(ValueError):
@@ -441,7 +458,6 @@ class TestAddState:
 
 
 class TestAddControlMode:
-
     def test_missing_columns_raises(self, control_data):
         ds = control_data.drop(columns=['Amps'])
         with pytest.raises(ValueError):
@@ -495,6 +511,36 @@ class TestAddControlMode:
 
         assert (cp_without['ControlMode'] == 'Unknown').all()
         assert (cp_with['ControlMode'] == 'CP').all()
+
+    def test_rtol_dict_missing_key_raises(self, control_data):
+        ds = control_data.copy()
+        ds['Watts'] = ds['Amps'] * ds['Volts']
+
+        # 'CP' is required since watts_alias is given, but missing from rtol
+        with pytest.raises(KeyError, match='.*Missing keys in rtol.*'):
+            col.add_control_mode(
+                ds,
+                watts_alias='Watts',
+                rtol={'CC': 5e-3, 'CV': 5e-3},
+            )
+
+    def test_rtol_dict_per_mode_tolerance(self, control_data):
+        ds = control_data.copy()
+
+        # loose 'CC' tolerance also matches, so both modes match -> Unknown
+        expected = control_data['Expected'].replace({'CP': 'Unknown'})
+        loose = col.add_control_mode(ds, rtol={'CC': 5e-2, 'CV': 5e-3})
+        assert loose['ControlMode'].astype(str).equals(expected)
+
+        # tight 'CC' tolerance excludes that match, leaving only 'CV'
+        rng = np.random.default_rng(seed=42)
+
+        cc_rows = ds['Expected'] == 'CC'
+        ds.loc[cc_rows, 'Amps'] *= rng.normal(0, 1e-3, sum(cc_rows))
+
+        expected = expected.replace({'CC': 'Unknown'})
+        tight = col.add_control_mode(ds, rtol={'CC': 0.0, 'CV': 5e-3})
+        assert tight['ControlMode'].astype(str).equals(expected)
 
     def test_which_alias(self, control_data):
         ds = control_data.rename(columns={'Step': 'Segment'})

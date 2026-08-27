@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from ampworks import _checks as _chk
+from ampworks._core._dataset import Dataset
 from ampworks._core._std_head import AMPS, VOLTS, WATTS
-
-if TYPE_CHECKING:
-    from ampworks import Dataset
 
 
 def add_power(
@@ -48,7 +44,7 @@ def add_power(
     """
     _chk._check_columns(data, [amps_alias, volts_alias])
 
-    ds = data.copy()
+    ds = Dataset(data)
     ds[col_name] = ds[amps_alias] * ds[volts_alias]
     return ds
 
@@ -97,6 +93,6 @@ def add_c_rate(
     """
     _chk._check_columns(data, [amps_alias])
 
-    ds = data.copy()
+    ds = Dataset(data)
     ds[col_name] = ds[amps_alias] / abs(amps_1c)
     return ds

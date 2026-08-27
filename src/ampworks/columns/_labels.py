@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 from numbers import Integral, Real
-from typing import TYPE_CHECKING, Dict, Sequence
+from typing import Dict, Sequence
 
 import pandas as pd
 
 from ampworks import _checks as _chk
-from ampworks._core._std_head import AMPS, VOLTS, CYCLE, STEP, STATE
+from ampworks._core._dataset import Dataset
 from ampworks.columns._backend import _instance_nums
-
-if TYPE_CHECKING:
-    from ampworks import Dataset
+from ampworks._core._std_head import AMPS, VOLTS, CYCLE, STEP, STATE
 
 
 class StepLabel:
@@ -179,8 +177,6 @@ def add_step_labels(
     >>> ds = add_step_labels(data, step_labels=[step1, step5, step6])
 
     """
-    from ampworks import Dataset
-
     _chk._check_columns(data, [step_alias])
     _chk._check_type('step_labels', step_labels, Sequence)
     _chk._check_inner_type('step_labels', step_labels, StepLabel)
@@ -272,8 +268,6 @@ def add_segment_labels(
     ... )
 
     """
-    from ampworks import Dataset
-
     _chk._check_type('segment_labels', segment_labels, Sequence)
     _chk._check_inner_type('segment_labels', segment_labels, SegmentLabel)
 
@@ -371,8 +365,6 @@ def add_state(
     >>> ds.loc[(ds['Cycle'] == 1) & ds['Step'].isin([5, 7]), 'State'] = 'C'
 
     """
-    from ampworks import Dataset
-
     check_columns = [which, amps_alias] if which is not None else [amps_alias]
 
     _chk._check_columns(data, check_columns)
@@ -495,8 +487,6 @@ def add_control_mode(
     >>> ds = add_control_mode(ds, which='State', watts_alias='Watts')
 
     """
-    from ampworks import Dataset
-
     check_columns = [which, amps_alias, volts_alias]
     mode_map = {amps_alias: 'CC', volts_alias: 'CV'}
 

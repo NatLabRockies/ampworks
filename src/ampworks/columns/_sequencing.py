@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from ampworks import _checks as _chk
-from ampworks._core._std_head import SECONDS, CYCLE, STEP
+from ampworks._core._dataset import Dataset
 from ampworks.columns._backend import _instance_nums
-
-if TYPE_CHECKING:
-    from ampworks import Dataset
+from ampworks._core._std_head import SECONDS, CYCLE, STEP
 
 
 def add_instance_nums(
@@ -90,7 +86,7 @@ def add_instance_nums(
 
     _chk._check_columns(data, check_columns)
 
-    ds = data.copy()
+    ds = Dataset(data)
 
     ds[col_name] = _instance_nums(
         data=ds,
@@ -154,7 +150,7 @@ def add_relative_time(
     """
     _chk._check_columns(data, [which, time_alias])
 
-    ds = data.copy()
+    ds = Dataset(data)
 
     instance_nums = _instance_nums(
         data=ds,

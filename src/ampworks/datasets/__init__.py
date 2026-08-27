@@ -46,6 +46,9 @@ import pathlib
 
 import polars as pl
 
+from ampworks import _checks as _chk
+from ampworks._core._headers import standardize_headers
+
 if TYPE_CHECKING:
     from ampworks import Dataset
 
@@ -101,8 +104,10 @@ def list_datasets(*modules: str) -> list[str]:
 
     missing = set(modules) - set(DATAFOLDERS)
     if missing:
-        raise ValueError(f"Requested module(s) not found, or empty: {missing=}."
-                         f" Available modules are {DATAFOLDERS=}.")
+        raise ValueError(
+            f"Requested module(s) not found, or empty: {missing=}."
+            f" Available modules are {DATAFOLDERS=}."
+        )
 
     names = []
     for m in modules:
@@ -143,10 +148,8 @@ def download_all(
     >>> download_all(format='txt')
 
     """
-    from ampworks._checks import _check_literal
-
     format = format.strip().lower()
-    _check_literal('format', format, {'csv', 'parquet', 'txt'})
+    _chk._check_literal('format', format, {'csv', 'parquet', 'txt'})
 
     path = pathlib.Path(path or '.').joinpath('ampworks_datasets')
     path.mkdir(parents=True, exist_ok=True)
@@ -206,8 +209,6 @@ def load_datasets(*names: str) -> Dataset:
     >>> ici_c, ici_d = load_datasets('ici/ici_charge', 'ici/ici_discharge')
 
     """
-    from ampworks import standardize_headers
-
     available = list_datasets()
 
     if len(names) == 0:

@@ -37,7 +37,6 @@ dependencies = [
     "xlrd",
     "numpy",
     "bokeh",
-    "pandas",
     "polars",
     "plotly",
     "IPython",
@@ -47,6 +46,7 @@ dependencies = [
     "fastexcel",
     "matplotlib",
     "numdifftools",
+    "pandas >= 3.0",
     "scipy >= 1.13",
 ]
 

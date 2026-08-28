@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from numbers import Integral, Real
 from typing import Dict, Sequence
+from numbers import Integral, Real
 
 import pandas as pd
 
@@ -443,7 +443,7 @@ def add_control_mode(
         The column used to define groups where control mode is constant. The
         default is step-based, which assumes each step has a constant mode.
     col_name : str, optional
-        Name of the column to add, by default 'ControlMode'
+        Name of control mode column to add, by default 'ControlMode'
     amps_alias : str, optional
         Name of column containing current in amps; defaults to standard name.
     volts_alias : str, optional

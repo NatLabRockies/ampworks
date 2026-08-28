@@ -32,7 +32,7 @@ def add_instance_nums(
     which : str, optional
         The column used to detect and group instances, step-based by default.
     col_name : str, optional
-        Name of the column to add, by default 'InstanceNum'.
+        Name of instance numbers column to add, by default 'InstanceNum'.
     cycle_alias : str, optional
         Name of the column containing cycle numbers; defaults to standard name.
         Only used if the `cycle_resets` argument is True.
@@ -83,6 +83,9 @@ def add_instance_nums(
 
     """
     check_columns = [which, cycle_alias] if cycle_resets else [which]
+
+    if cycle_resets and (cycle_alias is None):
+        raise ValueError("'cycle_alias' is required when cycle_resets=True.")
 
     _chk._check_columns(data, check_columns)
 

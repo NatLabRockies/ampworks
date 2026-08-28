@@ -72,7 +72,7 @@ def _instance_nums(
 
     """
     first = data[which].iloc[0]
-    changeovers = (data[which] != data[which].shift(fill_value=first))
+    changeovers = data[which] != data[which].shift(fill_value=first)
 
     if cycle_resets and fast:
         warn("Cycle resets are ignored when 'fast=True'.", UserWarning)
@@ -92,7 +92,7 @@ def _instance_nums(
         .groupby(grouping)['_raw']
         .rank(method='dense')
         .astype(int)
-    )
+    )  # fmt: skip
 
     return instance_nums
 
@@ -158,7 +158,7 @@ def _ah_wh(
         cumulative
         .groupby([data[which], instance_nums])
         .transform('first')
-    )
+    )  # fmt: skip
 
     ahwh = cumulative - offsets
 
@@ -209,7 +209,7 @@ def _ah_wh_cumulative(
     _chk._check_literal('method', method, {'integral', 'column'})
 
     # required columns depends on method
-    use_ahwh = (method == 'column')
+    use_ahwh = method == 'column'
     if use_ahwh:
         required = {valueh_alias, state_alias}
     else:
@@ -291,7 +291,7 @@ def _ah_wh_throughput(
     _chk._check_literal('method', method, {'integral', 'column'})
 
     # required columns depends on method
-    use_ahwh = (method == 'column')
+    use_ahwh = method == 'column'
     if use_ahwh:
         required = {valueh_alias}
     else:
@@ -316,7 +316,7 @@ def _ah_wh_throughput(
 
         y = data[valueh_alias]
 
-        was_reset = (y.diff() < 0)
+        was_reset = y.diff() < 0
         value_before_reset = y.shift(1)
         reset_amounts = value_before_reset.where(was_reset, 0.0)
 

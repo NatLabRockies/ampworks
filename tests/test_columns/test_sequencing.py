@@ -5,6 +5,8 @@ import ampworks as amp
 import ampworks.columns as col
 
 
+# fmt: off
+
 @pytest.fixture
 def sequencing_data():
     """
@@ -21,13 +23,22 @@ def sequencing_data():
         'ExpectedStepTime': [0., 1., 0., 1., 0., 1., 2., 3., 0., 1., 0., 1.],
     })
 
+# fmt: on
+
 
 class TestAddInstanceNums:
-
     def test_missing_step_column_raises(self, sequencing_data):
         ds = sequencing_data.drop(columns=['Step'])
         with pytest.raises(ValueError):
             col.add_instance_nums(ds)
+
+    def test_cycle_column_none_raises_with_resets(self, sequencing_data):
+        with pytest.raises(ValueError):
+            col.add_instance_nums(
+                sequencing_data,
+                cycle_alias=None,
+                cycle_resets=True,
+            )
 
     def test_missing_cycle_column_raises_with_resets(self, sequencing_data):
         ds = sequencing_data.drop(columns=['Cycle'])
@@ -65,7 +76,6 @@ class TestAddInstanceNums:
 
 
 class TestAddRelativeTime:
-
     def test_missing_columns_raises(self, sequencing_data):
         ds = sequencing_data.drop(columns=['Seconds'])
         with pytest.raises(ValueError):

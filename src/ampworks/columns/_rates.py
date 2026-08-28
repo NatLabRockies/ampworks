@@ -1,19 +1,16 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from ampworks import _checks as _chk
-
-if TYPE_CHECKING:
-    from ampworks import Dataset
+from ampworks._core._dataset import Dataset
+from ampworks._core._std_head import AMPS, VOLTS, WATTS
 
 
 def add_power(
     data: Dataset,
     *,
-    col_name: str = 'Watts',
-    amps_alias: str = 'Amps',
-    volts_alias: str = 'Volts',
+    col_name: str = WATTS,
+    amps_alias: str = AMPS,
+    volts_alias: str = VOLTS,
 ) -> Dataset:
     """
     Add a power column to a dataset.
@@ -26,11 +23,11 @@ def add_power(
     data : Dataset
         The input dataset.
     col_name : str, optional
-        Name of the column to add, by default 'Watts'.
+        Name of power column to add; defaults to standard name.
     amps_alias : str, optional
-        Name of the column containing current in amps, by default 'Amps'.
+        Name of column containing current in amps; defaults to standard name.
     volts_alias : str, optional
-        Name of the column containing voltage in volts, by default 'Volts'.
+        Name of column containing voltage in volts; defaults to standard name.
 
     Returns
     -------
@@ -47,7 +44,7 @@ def add_power(
     """
     _chk._check_columns(data, [amps_alias, volts_alias])
 
-    ds = data.copy()
+    ds = Dataset(data)
     ds[col_name] = ds[amps_alias] * ds[volts_alias]
     return ds
 
@@ -57,7 +54,7 @@ def add_c_rate(
     *,
     amps_1c: float,
     col_name: str = 'CRate',
-    amps_alias: str = 'Amps',
+    amps_alias: str = AMPS,
 ) -> Dataset:
     """
     Add a C-rate column to a dataset.
@@ -75,7 +72,7 @@ def add_c_rate(
     col_name : str, optional
         Name of the column to add, by default 'CRate'.
     amps_alias : str, optional
-        Name of the column containing current in amps, by default 'Amps'.
+        Name of column containing current in amps; defaults to standard name.
 
     Returns
     -------
@@ -96,6 +93,6 @@ def add_c_rate(
     """
     _chk._check_columns(data, [amps_alias])
 
-    ds = data.copy()
+    ds = Dataset(data)
     ds[col_name] = ds[amps_alias] / abs(amps_1c)
     return ds

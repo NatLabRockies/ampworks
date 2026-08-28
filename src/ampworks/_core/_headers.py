@@ -3,12 +3,12 @@ from __future__ import annotations
 import textwrap
 
 from warnings import warn
-from typing import TYPE_CHECKING, Set, Dict, Sequence, Callable
+from typing import Set, Dict, Sequence, Callable
 
 import pandas as pd
 
-if TYPE_CHECKING:
-    from ampworks import Dataset
+from ampworks import _checks as _chk
+from ampworks._core._dataset import Dataset
 
 AliasSet = Set[str] | Sequence[str]
 AliasMap = Dict[str, float | Callable[[float], float] | None]
@@ -114,8 +114,17 @@ REQUIRED_HEADERS = {'Seconds', 'Amps', 'Volts'}
 class HeaderAliases:
     """Header alias definitions."""
 
-    __slots__ = ('Seconds', 'Amps', 'Volts', 'Cycle', 'Step', 'State', 'Ah',
-                 'Wh', 'DateTime')
+    __slots__ = (
+        'Seconds',
+        'Amps',
+        'Volts',
+        'Cycle',
+        'Step',
+        'State',
+        'Ah',
+        'Wh',
+        'DateTime',
+    )
 
     def __init__(
         self,
@@ -229,8 +238,6 @@ class HeaderAliases:
         ... )
 
         """
-        from ampworks._checks import _check_inner_type, _check_type
-
         params = {
             'Seconds': Seconds,
             'Amps': Amps,
@@ -243,9 +250,9 @@ class HeaderAliases:
             'DateTime': DateTime,
         }
 
-        _check_type('extend_defaults', extend_defaults, (bool, Sequence))
+        _chk._check_type('extend_defaults', extend_defaults, (bool, Sequence))
         if isinstance(extend_defaults, Sequence):
-            _check_inner_type('extend_defaults', extend_defaults, str)
+            _chk._check_inner_type('extend_defaults', extend_defaults, str)
             extend_fields = set(extend_defaults)
         else:
             extend_fields = set(params) if extend_defaults else set()
@@ -343,8 +350,6 @@ def standardize_headers(
         output columns.
 
     """
-    from ampworks import Dataset
-
     if aliases is None:
         aliases = HeaderAliases()
 
@@ -353,7 +358,6 @@ def standardize_headers(
     # Match as-imported headers with standardized headers
     for std_header in aliases.keys():
         for raw_header in data.columns:
-
             # Store column if there is a match, and doesn't already exist
             normalized = _strip_chars(raw_header)
             if normalized not in aliases[std_header]:
@@ -413,7 +417,6 @@ def standardize_headers(
     # Final data typing, unit normalization, and checks for missing headers
     missing = []
     for std_header in aliases.keys():
-
         # Convert types
         if std_header in df.columns:
             if std_header in ['State', 'DateTime']:
@@ -447,12 +450,16 @@ def standardize_headers(
                 df[col_name] = df[col_name].astype(col_type)
 
         if missing_extra:
-            warn(f"'extra_columns' not found: {missing_extra=}. Only found"
-                 f"{set(data.columns)}.")
+            warn(
+                f"'extra_columns' not found: {missing_extra=}. Only found"
+                f"{set(data.columns)}."
+            )
 
         if skipped_extra:
-            warn(f"Skipped some conflicting 'extra_columns': {skipped_extra=}."
-                 f" Existing are {set(df.columns)}.")
+            warn(
+                f"Skipped some conflicting 'extra_columns': {skipped_extra=}."
+                f" Existing are {set(df.columns)}."
+            )
 
     return df
 
@@ -482,21 +489,19 @@ def _format_user_alias(
         The formatted (and optionally extended) alias for `std_header`.
 
     """
-    from ampworks._checks import _check_type, _check_inner_type
-
     defaults = DEFAULT_ALIASES[std_header].copy()
     if alias is None:
         return defaults
 
     # handle AliasSet options
     if std_header in ['Cycle', 'Step', 'State', 'DateTime']:
-        _check_type(f"{std_header}", alias, (Sequence, None))
+        _chk._check_type(f"{std_header}", alias, (Sequence, None))
         if isinstance(alias, str):
             raise TypeError(
                 f"{std_header} alias must be Sequence[str], but got str."
             )
 
-        _check_inner_type(f"{std_header}", alias, str)
+        _chk._check_inner_type(f"{std_header}", alias, str)
         alias = _strip_chars(alias)
 
         formatted = set(alias)
@@ -506,8 +511,8 @@ def _format_user_alias(
         return formatted
 
     # handle AliasMap options
-    _check_type(f"{std_header}", alias, (dict, None))
-    _check_inner_type(f"{std_header}", alias.keys(), str)
+    _chk._check_type(f"{std_header}", alias, (dict, None))
+    _chk._check_inner_type(f"{std_header}", alias.keys(), str)
 
     formatted = {_strip_chars(k): v for k, v in alias.items()}
     for k, v in formatted.items():

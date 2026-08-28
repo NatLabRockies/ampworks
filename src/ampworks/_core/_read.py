@@ -8,9 +8,17 @@ from typing import TYPE_CHECKING, Sequence
 import pandas as pd
 import polars as pl
 
+from ampworks import _checks as _chk
+from ampworks._core._dataset import Dataset
+from ampworks._core._headers import (
+    REQUIRED_HEADERS,
+    HeaderAliases,
+    header_matches,
+    standardize_headers,
+)
+
 if TYPE_CHECKING:
     from os import PathLike
-    from ampworks import Dataset, HeaderAliases
 
 
 def read_csv(
@@ -247,23 +255,19 @@ def read_excel(
         data = amp.read_excel('data.xlsx', sheet_name='all', stack_sheets=True)
 
     """
-    from ampworks import Dataset, HeaderAliases
-    from ampworks._checks import _check_type, _check_inner_type
-    from ampworks._core._headers import (
-        standardize_headers, header_matches, REQUIRED_HEADERS,
-    )
-
     workbook = pd.ExcelFile(filepath)
     all_sheets = workbook.sheet_names
     num_sheets = len(all_sheets)
 
     # warn if 'all' matches a sheet name
     if sheet_name == 'all' and 'all' in all_sheets:
-        warn("sheet_name='all' is interpreted as ALL sheets, but a sheet named"
-             " 'all' exists. To read only that sheet, pass ['all'] explicitly.")
+        warn(
+            "sheet_name='all' is interpreted as ALL sheets, but a sheet named"
+            " 'all' exists. To read only that sheet, pass ['all'] explicitly."
+        )
 
     # Set which sheets to iterate through
-    _check_type('sheet_name', sheet_name, (str, int, Sequence, None))
+    _chk._check_type('sheet_name', sheet_name, (str, int, Sequence, None))
 
     if sheet_name is None or sheet_name == 'all':
         iter_sheets = all_sheets
@@ -273,7 +277,7 @@ def read_excel(
         iter_sheets = list(sheet_name)
 
     # Raise errors if invalid indices/names
-    _check_inner_type('sheet_name', iter_sheets, (str, int))
+    _chk._check_inner_type('sheet_name', iter_sheets, (str, int))
 
     strings = [value for value in iter_sheets if isinstance(value, str)]
     indices = [value for value in iter_sheets if isinstance(value, int)]
@@ -284,14 +288,16 @@ def read_excel(
     if bad_str:
         raise ValueError(f"Invalid worksheet names {bad_str}.")
     if bad_ind:
-        raise ValueError(f"Invalid sheet indices {bad_ind}, must be between 1"
-                         f" and {num_sheets}.")
+        raise ValueError(
+            f"Invalid sheet indices {bad_ind}, must be between 1"
+            f" and {num_sheets}."
+        )
 
     # Set up aliases or use defaults
     if aliases is None:
         aliases = HeaderAliases()
 
-    _check_type('aliases', aliases, HeaderAliases)
+    _chk._check_type('aliases', aliases, HeaderAliases)
 
     # Iterate through select sheets
     failed = []
@@ -320,7 +326,9 @@ def read_excel(
             )
 
             datasets[sheet] = standardize_headers(
-                df.to_pandas(), aliases, extra_columns,
+                df.to_pandas(),
+                aliases,
+                extra_columns,
             )
 
             if sheet_name is None:
@@ -379,16 +387,10 @@ def _read_delimited(
         Standardized battery dataset.
 
     """
-    from ampworks import Dataset, HeaderAliases
-    from ampworks._checks import _check_type
-    from ampworks._core._headers import (
-        standardize_headers, header_matches, REQUIRED_HEADERS,
-    )
-
     if aliases is None:
         aliases = HeaderAliases()
 
-    _check_type('aliases', aliases, HeaderAliases)
+    _chk._check_type('aliases', aliases, HeaderAliases)
 
     options = {
         'ignore_errors': True,
@@ -410,7 +412,9 @@ def _read_delimited(
         df = pl.read_csv(filepath, **options).to_pandas()
         return standardize_headers(df, aliases, extra_columns)
 
-    warn(f"No valid aliases found for {REQUIRED_HEADERS} in {filepath}."
-         " Returning empty dataset.")
+    warn(
+        f"No valid aliases found for {REQUIRED_HEADERS} in {filepath}."
+        " Returning empty dataset."
+    )
 
     return Dataset()

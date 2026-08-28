@@ -9,6 +9,17 @@ import plotly.express as px
 from bokeh.plotting import figure
 from bokeh.models import HoverTool, ColumnDataSource
 
+from ampworks import _checks as _chk
+from ampworks.plotutils._plotly import (
+    _render_plotly,
+    _apply_plotly_style,
+)
+from ampworks.plotutils._bokeh import (
+    BOKEH_CONFIG,
+    _render_bokeh,
+    _apply_bokeh_style,
+)
+
 
 class Dataset(pd.DataFrame):
     """General dataset."""
@@ -82,18 +93,14 @@ class Dataset(pd.DataFrame):
             sample3 = data.downsample(resolution=('Volts', 1e-3))
 
         """
-        from ampworks._checks import (
-            _check_type, _check_only_one, _check_columns,
-        )
-
-        _check_only_one(
+        _chk._check_only_one(
             conditions=[x is not None for x in [n, frac, resolution]],
             message="Specify exactly one of: n, frac, resolution.",
         )
 
-        _check_type('inplace', inplace, bool)
-        _check_type('ignore_index', ignore_index, bool)
-        _check_type('keep_last', keep_last, bool)
+        _chk._check_type('inplace', inplace, bool)
+        _chk._check_type('ignore_index', ignore_index, bool)
+        _chk._check_type('keep_last', keep_last, bool)
 
         result = self.copy()
 
@@ -104,7 +111,7 @@ class Dataset(pd.DataFrame):
 
         # keep a specified number of rows
         if n is not None:
-            _check_type('n', n, int)
+            _chk._check_type('n', n, int)
 
             if n <= 0:
                 raise ValueError("'n' must be a positive integer.")
@@ -114,7 +121,7 @@ class Dataset(pd.DataFrame):
 
         # keep a specified fraction of rows
         elif frac is not None:
-            _check_type('frac', frac, (float, int))
+            _chk._check_type('frac', frac, (float, int))
 
             if not (0 < frac <= 1):
                 raise ValueError("'frac' must be in the range (0, 1].")
@@ -124,16 +131,16 @@ class Dataset(pd.DataFrame):
 
         # keep rows based on a resolution between adjacent values
         elif resolution is not None:
-            _check_type('resolution', resolution, (tuple, list))
+            _chk._check_type('resolution', resolution, (tuple, list))
 
             if len(resolution) != 2:
                 raise ValueError("'resolution' must be length 2.")
 
-            _check_type('resolution[0]', resolution[0], str)
-            _check_type('resolution[1]', resolution[1], (float, int))
+            _chk._check_type('resolution[0]', resolution[0], str)
+            _chk._check_type('resolution[1]', resolution[1], (float, int))
 
             column, atol = resolution
-            _check_columns(result, [column])
+            _chk._check_columns(result, [column])
 
             column_data = result[column].to_numpy()
 
@@ -191,13 +198,11 @@ class Dataset(pd.DataFrame):
             The modified Dataset if 'inplace' is False. Otherwise, None.
 
         """
-        from ampworks._checks import _check_type, _check_columns
-
-        _check_type('column', column, str)
-        _check_type('increasing', increasing, bool)
-        _check_type('strict', strict, bool)
-        _check_type('inplace', inplace, bool)
-        _check_type('ignore_index', ignore_index, bool)
+        _chk._check_type('column', column, str)
+        _chk._check_type('increasing', increasing, bool)
+        _chk._check_type('strict', strict, bool)
+        _chk._check_type('inplace', inplace, bool)
+        _chk._check_type('ignore_index', ignore_index, bool)
 
         result = self.copy()
 
@@ -212,7 +217,7 @@ class Dataset(pd.DataFrame):
         else:
             compare = np.less if strict else np.less_equal
 
-        _check_columns(result, [column])
+        _chk._check_columns(result, [column])
 
         column_data = result[column].to_numpy()
 
@@ -299,10 +304,6 @@ class Dataset(pd.DataFrame):
             data.interactive_plotly('Hours', 'Volts', tips=['Step', 'Amps'])
 
         """
-        from ampworks.plotutils._plotly import (
-            _apply_plotly_style, _render_plotly,
-        )
-
         tips = set(tips).difference(x, y) if tips is not None else set()
         hover = {col: True for col in tips} if tips else {}
 
@@ -385,10 +386,6 @@ class Dataset(pd.DataFrame):
             data.interactive_bokeh('Hours', 'Volts', tips=['Step', 'Amps'])
 
         """
-        from ampworks.plotutils._bokeh import (
-            BOKEH_CONFIG, _apply_bokeh_style, _render_bokeh,
-        )
-
         # Horizontal HTML tooltip to match Plotly's compact single-row layout
         tips = set(tips).difference(x, y) if tips is not None else set()
 
@@ -449,6 +446,7 @@ class Dataset(pd.DataFrame):
 
         """
         import warnings
+
         warnings.warn(
             "interactive_xy_plot() is deprecated and will be removed in a"
             " future release. Use interactive_plotly() or interactive_bokeh().",
@@ -456,7 +454,12 @@ class Dataset(pd.DataFrame):
             stacklevel=2,
         )
         self.interactive_plotly(
-            x=x, y=y, tips=tips, figsize=figsize, kind='both', save=save,
+            x=x,
+            y=y,
+            tips=tips,
+            figsize=figsize,
+            kind='both',
+            save=save,
         )
 
     def zero_below(
@@ -534,10 +537,8 @@ class Dataset(pd.DataFrame):
         sorting by time first, if needed, using `data.sort_values('Seconds')`.
 
         """
-        from ampworks._checks import _check_type, _check_columns
-
-        _check_type('inplace', inplace, bool)
-        _check_columns(self, ['Seconds'])
+        _chk._check_type('inplace', inplace, bool)
+        _chk._check_columns(self, ['Seconds'])
 
         result = self.copy()
         result['Seconds'] -= result['Seconds'].iloc[0]

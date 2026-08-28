@@ -29,10 +29,10 @@ from typing import TYPE_CHECKING
 
 from ._core import (
     Dataset,
+    HeaderAliases,
     read_csv,
     read_excel,
     read_table,
-    HeaderAliases,
     standardize_headers,
 )
 
@@ -40,10 +40,10 @@ __version__ = '0.2.0.dev0'
 
 __all__ = [
     'Dataset',
+    'HeaderAliases',
     'read_csv',
     'read_excel',
     'read_table',
-    'HeaderAliases',
     'standardize_headers',
     'ocv',
     'ici',
@@ -61,7 +61,15 @@ __all__ = [
 
 if TYPE_CHECKING:
     from ampworks import (
-        ocv, ici, gitt, dqdv, hppc, utils, columns, datasets, mathutils,
+        ocv,
+        ici,
+        gitt,
+        dqdv,
+        hppc,
+        utils,
+        columns,
+        datasets,
+        mathutils,
         plotutils,
     )
 
@@ -100,6 +108,7 @@ def __dir__():
 def _in_interactive() -> bool:
     try:
         from IPython import get_ipython
+
         return get_ipython() is not None
     except Exception:
         return False
@@ -108,6 +117,7 @@ def _in_interactive() -> bool:
 def _in_notebook() -> bool:
     try:
         from IPython import get_ipython
+
         shell = get_ipython().__class__.__name__
         return shell in ('ZMQInteractiveShell',)  # Jupyter Notebook or Lab
     except Exception:

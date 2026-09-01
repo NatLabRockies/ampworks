@@ -13,7 +13,7 @@ def test_read_extra_columns(extension):
     filterwarnings('ignore', message='.*No valid aliases.*')
 
     path = pathlib.Path(__file__).parent
-    file = path / 'dummy_data' / ('sample' + extension)
+    file = path / 'data' / 'dummy' / ('sample' + extension)
 
     all_readers = {
         '.csv': amp.read_csv,
@@ -46,7 +46,7 @@ def test_read_custom_aliases(extension):
     filterwarnings('ignore', message='.*No valid aliases.*')
 
     path = pathlib.Path(__file__).parent
-    file = path / 'dummy_data' / ('aliases' + extension)
+    file = path / 'data' / 'dummy' / ('aliases' + extension)
 
     all_readers = {
         '.csv': amp.read_csv,
@@ -81,8 +81,8 @@ def test_read_custom_aliases(extension):
     )
     data2 = reader(file, aliases=aliases2)
 
-    npt.assert_allclose(data2['Seconds'], 0.5*data1['Seconds'])
-    npt.assert_allclose(data2['Amps'], 2.0*data1['Amps'])
+    npt.assert_allclose(data2['Seconds'], 0.5 * data1['Seconds'])
+    npt.assert_allclose(data2['Amps'], 2.0 * data1['Amps'])
 
     # aliases with conversion functions and subset extend_defaults, including
     # spurious 'Volts' which is not in the override aliases anyway...

@@ -240,7 +240,7 @@ def _ah_wh_cumulative(
             )
 
         increments = data[valueh_alias].diff().fillna(0)
-        signs = data[state_alias].map({'C': 1, 'D': -1, 'R': 0})
+        signs = data[state_alias].map({'C': 1, 'D': -1, 'R': 0}).astype(float)
 
         # clip lower bound to 0 since this only occurs when zeroing out the
         # column at new steps, and we don't want to subtract on these resets

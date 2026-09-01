@@ -25,6 +25,7 @@
         "notebook.source.organizeImports": "never",
     },
     "notebook.lineNumbers": "on",
+    "notebook.output.wordWrap": true,
     "notebook.consolidatedRunButton": true,
 
     // 4. Configure Ruff settings for consistency with pyproject.toml settings

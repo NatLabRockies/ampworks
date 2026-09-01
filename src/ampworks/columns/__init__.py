@@ -21,6 +21,12 @@ from ._sequencing import (
     add_instance_nums,
     add_relative_time,
 )
+from ._capacity import (
+    add_capacity,
+    add_cumulative_capacity,
+    add_throughput_capacity,
+    add_equivalent_full_cycles,
+)
 
 __all__ = [
     'StepLabel',
@@ -33,4 +39,8 @@ __all__ = [
     'add_c_rate',
     'add_instance_nums',
     'add_relative_time',
+    'add_capacity',
+    'add_cumulative_capacity',
+    'add_throughput_capacity',
+    'add_equivalent_full_cycles',
 ]

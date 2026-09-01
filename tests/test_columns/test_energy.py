@@ -43,7 +43,9 @@ class TestAddEnergy:
         by_step = col.add_energy(diverging_which_data, which='Step')
         by_state = col.add_energy(diverging_which_data, which='State')
 
-        npt.assert_allclose(by_step['Wh'], diverging_which_data['ExpectedByStep'])
+        npt.assert_allclose(
+            by_step['Wh'], diverging_which_data['ExpectedByStep'],
+        )
         npt.assert_allclose(
             by_state['Wh'], diverging_which_data['ExpectedByState'],
         )

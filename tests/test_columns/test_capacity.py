@@ -48,7 +48,9 @@ class TestAddCapacity:
         by_step = col.add_capacity(diverging_which_data, which='Step')
         by_state = col.add_capacity(diverging_which_data, which='State')
 
-        npt.assert_allclose(by_step['Ah'], diverging_which_data['ExpectedByStep'])
+        npt.assert_allclose(
+            by_step['Ah'], diverging_which_data['ExpectedByStep'],
+        )
         npt.assert_allclose(
             by_state['Ah'], diverging_which_data['ExpectedByState'],
         )

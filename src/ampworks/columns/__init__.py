@@ -27,6 +27,11 @@ from ._capacity import (
     add_throughput_capacity,
     add_equivalent_full_cycles,
 )
+from ._energy import (
+    add_energy,
+    add_cumulative_energy,
+    add_throughput_energy,
+)
 
 __all__ = [
     'StepLabel',
@@ -43,4 +48,7 @@ __all__ = [
     'add_cumulative_capacity',
     'add_throughput_capacity',
     'add_equivalent_full_cycles',
+    'add_energy',
+    'add_cumulative_energy',
+    'add_throughput_energy',
 ]

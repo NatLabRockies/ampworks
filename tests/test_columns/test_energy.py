@@ -6,17 +6,21 @@ import ampworks as amp
 import ampworks.columns as col
 
 
+# fmt: off
+
 @pytest.fixture
 def two_step_data():
     """Two steps, each with its own constant power, uniform 1 s spacing."""
     return amp.Dataset({
         'Step': [1, 1, 1, 2, 2, 2],
         'State': ['C', 'C', 'C', 'D', 'D', 'D'],
-        'Seconds': [0., 1., 2., 3., 4., 5.],
-        'Watts': [1., 1., 1., -2., -2., -2.],
-        'ExpectedWh': np.array([0., 1., 2., 0., 2., 4.]) / 3600.,
-        'ExpectedCumulativeWh': np.array([0., 1., 2., 1.5, -0.5, -2.5]) / 3600.,
-        'ExpectedThroughputWh': np.array([0., 1., 2., 3.5, 5.5, 7.5]) / 3600.,
+        'Seconds': [0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+        'Watts': [1.0, 1.0, 1.0, -2.0, -2.0, -2.0],
+        'ExpectedWh': np.array([0.0, 1.0, 2.0, 0.0, 2.0, 4.0]) / 3600.0,
+        'ExpectedCumulativeWh':
+            np.array([0.0, 1.0, 2.0, 1.5, -0.5, -2.5]) / 3600.0,
+        'ExpectedThroughputWh':
+            np.array([0.0, 1.0, 2.0, 3.5, 5.5, 7.5]) / 3600.0,
     })
 
 
@@ -26,15 +30,16 @@ def diverging_which_data():
     return amp.Dataset({
         'Step': [1, 1, 2, 2],
         'State': ['C', 'C', 'C', 'C'],
-        'Seconds': [0., 1., 2., 3.],
-        'Watts': [1., 1., 1., 1.],
-        'ExpectedByStep': np.array([0., 1., 0., 1.]) / 3600.,
-        'ExpectedByState': np.array([0., 1., 2., 3.]) / 3600.,
+        'Seconds': [0.0, 1.0, 2.0, 3.0],
+        'Watts': [1.0, 1.0, 1.0, 1.0],
+        'ExpectedByStep': np.array([0.0, 1.0, 0.0, 1.0]) / 3600.0,
+        'ExpectedByState': np.array([0.0, 1.0, 2.0, 3.0]) / 3600.0,
     })
+
+# fmt: on
 
 
 class TestAddEnergy:
-
     def test_default_settings(self, two_step_data):
         result = col.add_energy(two_step_data)
         npt.assert_allclose(result['Wh'], two_step_data['ExpectedWh'])
@@ -44,10 +49,12 @@ class TestAddEnergy:
         by_state = col.add_energy(diverging_which_data, which='State')
 
         npt.assert_allclose(
-            by_step['Wh'], diverging_which_data['ExpectedByStep'],
+            by_step['Wh'],
+            diverging_which_data['ExpectedByStep'],
         )
         npt.assert_allclose(
-            by_state['Wh'], diverging_which_data['ExpectedByState'],
+            by_state['Wh'],
+            diverging_which_data['ExpectedByState'],
         )
 
     def test_col_name(self, two_step_data):
@@ -77,11 +84,11 @@ class TestAddEnergy:
 
 
 class TestAddCumulativeEnergy:
-
     def test_integral_method(self, two_step_data):
         result = col.add_cumulative_energy(two_step_data)
         npt.assert_allclose(
-            result['CumulativeWh'], two_step_data['ExpectedCumulativeWh'],
+            result['CumulativeWh'],
+            two_step_data['ExpectedCumulativeWh'],
         )
 
     def test_wh_column_method(self, two_step_data):
@@ -90,7 +97,7 @@ class TestAddCumulativeEnergy:
         # not expected to numerically match the 'integral' method at resets
         with_wh = col.add_energy(two_step_data)
         result = col.add_cumulative_energy(with_wh, method='wh_column')
-        expected = np.array([0., 1., 2., 2., 0., -2.]) / 3600.
+        expected = np.array([0.0, 1.0, 2.0, 2.0, 0.0, -2.0]) / 3600.0
         npt.assert_allclose(result['CumulativeWh'], expected, atol=1e-12)
 
     def test_invalid_method_raises(self, two_step_data):
@@ -109,11 +116,11 @@ class TestAddCumulativeEnergy:
 
 
 class TestAddThroughputEnergy:
-
     def test_integral_method(self, two_step_data):
         result = col.add_throughput_energy(two_step_data)
         npt.assert_allclose(
-            result['ThroughputWh'], two_step_data['ExpectedThroughputWh'],
+            result['ThroughputWh'],
+            two_step_data['ExpectedThroughputWh'],
         )
 
     def test_wh_column_method(self, two_step_data):
@@ -122,7 +129,7 @@ class TestAddThroughputEnergy:
         # not expected to numerically match the 'integral' method at resets
         with_wh = col.add_energy(two_step_data)
         result = col.add_throughput_energy(with_wh, method='wh_column')
-        expected = np.array([0., 1., 2., 2., 4., 6.]) / 3600.
+        expected = np.array([0.0, 1.0, 2.0, 2.0, 4.0, 6.0]) / 3600.0
         npt.assert_allclose(result['ThroughputWh'], expected, atol=1e-12)
 
     def test_invalid_method_raises(self, two_step_data):

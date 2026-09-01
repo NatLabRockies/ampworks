@@ -6,17 +6,21 @@ import ampworks as amp
 import ampworks.columns as col
 
 
+# fmt: off
+
 @pytest.fixture
 def two_step_data():
     """Two steps, each with its own constant current, uniform 1 s spacing."""
     return amp.Dataset({
         'Step': [1, 1, 1, 2, 2, 2],
         'State': ['C', 'C', 'C', 'D', 'D', 'D'],
-        'Seconds': [0., 1., 2., 3., 4., 5.],
-        'Amps': [1., 1., 1., -2., -2., -2.],
-        'ExpectedAh': np.array([0., 1., 2., 0., 2., 4.]) / 3600.,
-        'ExpectedCumulativeAh': np.array([0., 1., 2., 1.5, -0.5, -2.5]) / 3600.,
-        'ExpectedThroughputAh': np.array([0., 1., 2., 3.5, 5.5, 7.5]) / 3600.,
+        'Seconds': [0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
+        'Amps': [1.0, 1.0, 1.0, -2.0, -2.0, -2.0],
+        'ExpectedAh': np.array([0.0, 1.0, 2.0, 0.0, 2.0, 4.0]) / 3600.0,
+        'ExpectedCumulativeAh':
+            np.array([0.0, 1.0, 2.0, 1.5, -0.5, -2.5]) / 3600.0,
+        'ExpectedThroughputAh':
+            np.array([0.0, 1.0, 2.0, 3.5, 5.5, 7.5]) / 3600.0,
     })
 
 
@@ -26,10 +30,10 @@ def diverging_which_data():
     return amp.Dataset({
         'Step': [1, 1, 2, 2],
         'State': ['C', 'C', 'C', 'C'],
-        'Seconds': [0., 1., 2., 3.],
-        'Amps': [1., 1., 1., 1.],
-        'ExpectedByStep': np.array([0., 1., 0., 1.]) / 3600.,
-        'ExpectedByState': np.array([0., 1., 2., 3.]) / 3600.,
+        'Seconds': [0.0, 1.0, 2.0, 3.0],
+        'Amps': [1.0, 1.0, 1.0, 1.0],
+        'ExpectedByStep': np.array([0.0, 1.0, 0.0, 1.0]) / 3600.0,
+        'ExpectedByState': np.array([0.0, 1.0, 2.0, 3.0]) / 3600.0,
     })
 
 
@@ -37,9 +41,10 @@ def diverging_which_data():
 def throughput_data():
     return amp.Dataset({'ThroughputAh': [0.0, 1.0, 2.0, 4.0]})
 
+# fmt: on
+
 
 class TestAddCapacity:
-
     def test_default_settings(self, two_step_data):
         result = col.add_capacity(two_step_data)
         npt.assert_allclose(result['Ah'], two_step_data['ExpectedAh'])
@@ -49,10 +54,12 @@ class TestAddCapacity:
         by_state = col.add_capacity(diverging_which_data, which='State')
 
         npt.assert_allclose(
-            by_step['Ah'], diverging_which_data['ExpectedByStep'],
+            by_step['Ah'],
+            diverging_which_data['ExpectedByStep'],
         )
         npt.assert_allclose(
-            by_state['Ah'], diverging_which_data['ExpectedByState'],
+            by_state['Ah'],
+            diverging_which_data['ExpectedByState'],
         )
 
     def test_col_name(self, two_step_data):
@@ -82,11 +89,11 @@ class TestAddCapacity:
 
 
 class TestAddCumulativeCapacity:
-
     def test_integral_method(self, two_step_data):
         result = col.add_cumulative_capacity(two_step_data)
         npt.assert_allclose(
-            result['CumulativeAh'], two_step_data['ExpectedCumulativeAh'],
+            result['CumulativeAh'],
+            two_step_data['ExpectedCumulativeAh'],
         )
 
     def test_ah_column_method(self, two_step_data):
@@ -95,7 +102,7 @@ class TestAddCumulativeCapacity:
         # not expected to numerically match the 'integral' method at resets
         with_ah = col.add_capacity(two_step_data)
         result = col.add_cumulative_capacity(with_ah, method='ah_column')
-        expected = np.array([0., 1., 2., 2., 0., -2.]) / 3600.
+        expected = np.array([0.0, 1.0, 2.0, 2.0, 0.0, -2.0]) / 3600.0
         npt.assert_allclose(result['CumulativeAh'], expected, atol=1e-12)
 
     def test_invalid_method_raises(self, two_step_data):
@@ -114,11 +121,11 @@ class TestAddCumulativeCapacity:
 
 
 class TestAddThroughputCapacity:
-
     def test_integral_method(self, two_step_data):
         result = col.add_throughput_capacity(two_step_data)
         npt.assert_allclose(
-            result['ThroughputAh'], two_step_data['ExpectedThroughputAh'],
+            result['ThroughputAh'],
+            two_step_data['ExpectedThroughputAh'],
         )
 
     def test_ah_column_method(self, two_step_data):
@@ -127,8 +134,8 @@ class TestAddThroughputCapacity:
         # not expected to numerically match the 'integral' method at resets
         with_ah = col.add_capacity(two_step_data)
         result = col.add_throughput_capacity(with_ah, method='ah_column')
-        expected = np.array([0., 1., 2., 2., 4., 6.]) / 3600.
-        npt.assert_allclose(result['ThroughputAh'], expected)
+        expected = np.array([0.0, 1.0, 2.0, 2.0, 4.0, 6.0]) / 3600.0
+        npt.assert_allclose(result['ThroughputAh'], expected, atol=1e-12)
 
     def test_invalid_method_raises(self, two_step_data):
         with pytest.raises(ValueError):
@@ -146,14 +153,14 @@ class TestAddThroughputCapacity:
 
 
 class TestAddEquivalentFullCycles:
-
     def test_default_settings(self, throughput_data):
         result = col.add_equivalent_full_cycles(throughput_data, nominal_ah=2.0)
         npt.assert_allclose(result['EFC'], [0.0, 0.25, 0.5, 1.0])
 
     def test_negative_nominal_ah_uses_magnitude(self, throughput_data):
         result = col.add_equivalent_full_cycles(
-            throughput_data, nominal_ah=-2.0,
+            throughput_data,
+            nominal_ah=-2.0,
         )
         npt.assert_allclose(result['EFC'], [0.0, 0.25, 0.5, 1.0])
 
@@ -168,7 +175,9 @@ class TestAddEquivalentFullCycles:
 
     def test_col_name(self, throughput_data):
         result = col.add_equivalent_full_cycles(
-            throughput_data, nominal_ah=2.0, col_name='Custom',
+            throughput_data,
+            nominal_ah=2.0,
+            col_name='Custom',
         )
         assert 'Custom' in result.columns
         assert 'EFC' not in result.columns
@@ -176,7 +185,9 @@ class TestAddEquivalentFullCycles:
     def test_throughput_ah_alias(self, throughput_data):
         ds = throughput_data.rename(columns={'ThroughputAh': 'Custom'})
         result = col.add_equivalent_full_cycles(
-            ds, nominal_ah=2.0, throughput_ah_alias='Custom',
+            ds,
+            nominal_ah=2.0,
+            throughput_ah_alias='Custom',
         )
         npt.assert_allclose(result['EFC'], [0.0, 0.25, 0.5, 1.0])
 

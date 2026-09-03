@@ -3,6 +3,7 @@
 ## [Unreleased](https://github.com/NatLabRockies/ampworks)
 
 ### New Features
+- Implement new `columns` functions to add capacity and energy values to a `Dataset` ([#37](https://github.com/NatLabRockies/ampworks/pull/37/commits))
 - Pure a new `_std_head` module within `_core` to optimize use of standard names across package ([#36](https://github.com/NatLabRockies/ampworks/pull/36))
 - Add `_rate` and `_sequencing` submodules to the `columns` for power, C-rate, etc ([#35](https://github.com/NatLabRockies/ampworks/pull/35))
 - Add new `columns` module and move toward new API with `add_*` functions ([#34](https://github.com/NatLabRockies/ampworks/pull/34))

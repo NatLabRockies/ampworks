@@ -303,7 +303,11 @@ def read_excel(
     failed = []
     datasets = {}
     for sheet in iter_sheets:
-        preview = workbook.parse(sheet, header=None, nrows=20, dtype=str)
+        pd_sheet = sheet  # default for polars read_excel
+        if isinstance(sheet, int):
+            pd_sheet = sheet - 1  # convert to zero-based index
+
+        preview = workbook.parse(pd_sheet, header=None, nrows=20, dtype=str)
 
         # Find header row
         header_row = None

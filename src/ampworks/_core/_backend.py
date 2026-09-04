@@ -7,7 +7,7 @@ from typing import Set, Dict, Sequence, Callable
 import pandas as pd
 
 AliasSet = Set[str] | Sequence[str]
-AliasMap = Dict[str, float | Callable[[float], float] | None]
+AliasMap = Dict[str, float | Callable[[pd.Series], pd.Series] | None]
 
 __all__ = [
     'AliasSet',

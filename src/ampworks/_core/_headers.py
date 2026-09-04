@@ -11,7 +11,7 @@ from ampworks import _checks as _chk
 from ampworks._core._dataset import Dataset
 
 AliasSet = Set[str] | Sequence[str]
-AliasMap = Dict[str, float | Callable[[float], float] | None]
+AliasMap = Dict[str, float | Callable[[pd.Series], pd.Series] | None]
 
 
 # construct HEADER_ALIASES dictionary from base names and unit->factor maps
@@ -180,9 +180,10 @@ class HeaderAliases:
 
         An `AliasMap` is just a dictionary where the keys are the alias names
         and values are converters. A converter can be a float if the conversion
-        is just a multiplicative factor, or a callable like `f(float) -> float`
-        if the conversion is more complex. When no conversion is needed, the
-        value can be either `None` or `1.0`.
+        is just a multiplicative factor, or a callable that is compatible with
+        pandas-like `Series` types, like `f(series) -> series`, if the
+        conversion is more complex. When no conversion is needed, the value can
+        be either `None` or `1.0`.
 
         An `AliasSet` is used for a few of the fields which don't require unit
         conversion (e.g., Cycle, Step, and State). For these fields, simply
@@ -210,7 +211,7 @@ class HeaderAliases:
 
         >>> aliases = amp.HeaderAliases(Seconds={'elapsed_min': 60.0})
 
-        Converters can also be arbitrary callables like `f(float) -> float`:
+        Converters can also be arbitrary callables like `f(series) -> series`:
 
         >>> aliases = amp.HeaderAliases(Volts={'v_mv': lambda x: x / 1000})
 
@@ -376,7 +377,7 @@ def standardize_headers(
             if (converter is None) or (converter == 1.0):
                 continue
             elif callable(converter):
-                df[std_header] = df[std_header].apply(converter)
+                df[std_header] = converter(df[std_header])
             else:
                 df[std_header] = df[std_header] * converter
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 from ampworks import _checks as _chk
-from ampworks._core._std_head import SECONDS, AMPS, STATE, AH
+from ampworks._core._std_names import SECONDS, AMPS, STATE, AH
 from ampworks.columns._backend import (
     _ah_wh,
     _ah_wh_cumulative,

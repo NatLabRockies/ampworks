@@ -3,7 +3,7 @@ from __future__ import annotations
 from ampworks import _checks as _chk
 from ampworks._core._dataset import Dataset
 from ampworks.columns._backend import _instance_nums
-from ampworks._core._std_head import SECONDS, CYCLE, STEP
+from ampworks._core._std_names import SECONDS, CYCLE, STEP
 
 
 def add_instance_nums(

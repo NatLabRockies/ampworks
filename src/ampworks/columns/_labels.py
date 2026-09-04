@@ -8,7 +8,7 @@ import pandas as pd
 from ampworks import _checks as _chk
 from ampworks._core._dataset import Dataset
 from ampworks.columns._backend import _instance_nums
-from ampworks._core._std_head import AMPS, VOLTS, CYCLE, STEP, STATE
+from ampworks._core._std_names import AMPS, VOLTS, CYCLE, STEP, STATE
 
 
 class StepLabel:

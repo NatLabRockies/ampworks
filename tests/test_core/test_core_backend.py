@@ -10,7 +10,6 @@ from ampworks._core._backend import (
 
 
 class TestBuildDefaultAlias:
-
     def test_units_none_returns_plain_set(self):
         result = _build_default_alias({'cycle', 'cyc'}, None)
         assert result == {'cycle', 'cyc'}
@@ -31,7 +30,6 @@ class TestBuildDefaultAlias:
 
 
 class TestStripChars:
-
     def test_none_passthrough(self):
         assert _strip_chars(None) is None
 
@@ -56,7 +54,6 @@ class TestStripChars:
 
 
 class TestAstypeFloat:
-
     def test_numeric_series_untouched_values(self):
         series = pd.Series([1, 2, 3])
         result = _astype_float(series)
@@ -76,7 +73,6 @@ class TestAstypeFloat:
 
 
 class TestFindAliasMatch:
-
     def test_exact_dotted_match(self):
         norm_raw = {'testtime.s': 'TestTime_s'}
         result = _find_alias_match(norm_raw, {'testtime.s': 1.0})
@@ -114,6 +110,8 @@ class TestFindAliasMatch:
         assert result == ('current.a', 'Current (A)')
 
     def test_invalid_alias_key_shape_raises(self):
+        # alias keys should at most have one dot, otherwise should raise a
+        # ValueError when trying to split name, units = alias.split('.')
         norm_raw = {'a.b.c': 'A_B_C'}
         with pytest.raises(ValueError):
             _find_alias_match(norm_raw, {'a.b.c': 1.0})

@@ -432,10 +432,19 @@ class TestInteractivePlotly:
         captured = {}
         monkeypatch.setattr(
             'ampworks._core._dataset._render_plotly',
-            lambda fig, figsize, save: captured.update(save=save),
+            lambda fig, figsize, save, show: captured.update(save=save),
         )
         plot_data.interactive_plotly('X', 'Y', save='out.html')
         assert captured['save'] == 'out.html'
+
+    def test_show_forwarded(self, plot_data, monkeypatch):
+        captured = {}
+        monkeypatch.setattr(
+            'ampworks._core._dataset._render_plotly',
+            lambda fig, figsize, save, show: captured.update(show=show),
+        )
+        plot_data.interactive_plotly('X', 'Y', show=False)
+        assert captured['show'] is False
 
 
 # interactive_bokeh method
@@ -466,10 +475,19 @@ class TestInteractiveBokeh:
         captured = {}
         monkeypatch.setattr(
             'ampworks._core._dataset._render_bokeh',
-            lambda fig, figsize, save: captured.update(save=save),
+            lambda fig, figsize, save, show: captured.update(save=save),
         )
         plot_data.interactive_bokeh('X', 'Y', save='out.html')
         assert captured['save'] == 'out.html'
+
+    def test_show_forwarded(self, plot_data, monkeypatch):
+        captured = {}
+        monkeypatch.setattr(
+            'ampworks._core._dataset._render_bokeh',
+            lambda fig, figsize, save, show: captured.update(show=show),
+        )
+        plot_data.interactive_bokeh('X', 'Y', show=False)
+        assert captured['show'] is False
 
 
 # interactive_xy_plot deprecation warning

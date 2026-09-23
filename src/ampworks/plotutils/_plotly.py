@@ -24,16 +24,24 @@ PLOTLY_TEMPLATE = go.layout.Template(
         paper_bgcolor='white',
         font=dict(family='Arial', size=12, color='#212529'),
         xaxis=dict(
-            showline=True, linecolor='#212529', title_standoff=7,
-            mirror='all', ticks='inside', tickcolor='#212529',
+            showline=True,
+            linecolor='#212529',
+            title_standoff=7,
+            mirror='all',
+            ticks='inside',
+            tickcolor='#212529',
             minor=dict(
                 ticklen=2,
                 ticks='inside',
             ),
         ),
         yaxis=dict(
-            showline=True, linecolor='#212529', title_standoff=7,
-            mirror='all', ticks='inside', tickcolor='#212529',
+            showline=True,
+            linecolor='#212529',
+            title_standoff=7,
+            mirror='all',
+            ticks='inside',
+            tickcolor='#212529',
             minor=dict(
                 ticklen=2,
                 ticks='inside',
@@ -43,8 +51,12 @@ PLOTLY_TEMPLATE = go.layout.Template(
             orientation='h',
             bgcolor='rgba(0,0,0,0)',
             bordercolor='rgba(0,0,0,0)',
-            entrywidth=0.125, entrywidthmode='fraction',
-            xanchor='center', x=0.5, yanchor='top', y=1.15,
+            entrywidth=0.125,
+            entrywidthmode='fraction',
+            xanchor='center',
+            x=0.5,
+            yanchor='top',
+            y=1.15,
         ),
         margin=dict(l=80, r=80, t=60, b=80),
     )
@@ -75,6 +87,7 @@ def _render_plotly(
     fig: PlotlyFigure,
     figsize: tuple[int, int] | None = None,
     save: str | None = None,
+    show: bool = True,
 ) -> None:
     """
     Render a plotly figure.
@@ -91,6 +104,9 @@ def _render_plotly(
         both dimensions to None to allow them to stretch.
     save : str | None, optional
         The file path to save the figure, by default None.
+    show : bool, optional
+        Whether to display the figure immediately, by default True. Useful in
+        cases where you only want to save and not display the plot.
 
     """
     from ampworks import _in_notebook
@@ -114,12 +130,12 @@ def _render_plotly(
         path = Path(tmp.name)
         tmp.close()
 
-    # Optionally write to file, then display
+    # Optionally write to file, then optionally display (in browser or notebook)
     in_nb = _in_notebook()
+    auto_open = not in_nb and show
 
-    if (not in_nb) or (save is not None):
-        auto_open = True if not in_nb else False
+    if (save is not None) or auto_open:
         fig.write_html(path, auto_open=auto_open, config=config)
 
-    if in_nb:
+    if in_nb and show:
         fig.show(config=config)

@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 
 def extract_impedance(
     data: Dataset,
-    tmin: float = 0.,
-    tmax: float = 20.,
+    tmin: float = 0.0,
+    tmax: float = 20.0,
     sample_times: list[float] | None = None,
     steps: list[int] | None = None,
     area: float | None = None,
@@ -103,6 +103,9 @@ def extract_impedance(
     save : str or None, optional
         Path to save the plot as HTML. If not in a Jupyter notebook and save is
         None, a temporary file is still created and is opened in the browser.
+    show : bool, optional
+        Whether to display the plot immediately, by default True. Useful in
+        cases where you only want to save and not display the plot.
 
     Returns
     -------
@@ -155,7 +158,6 @@ def extract_impedance(
         raise ValueError("'data' requires 'Step' column to use 'steps' input.")
 
     elif steps is not None:
-
         missing = set(steps) - set(data['Step'].unique())
         if missing:
             raise ValueError(f"'steps' has values not in 'data': {missing=}.")
@@ -167,7 +169,12 @@ def extract_impedance(
 
     # Detect pulses using 'steps' or state transitions
     df = _detect_pulses(
-        data, tmin=tmin, tmax=tmax, steps=steps, plot=plot, **fig_kw,
+        data,
+        tmin=tmin,
+        tmax=tmax,
+        steps=steps,
+        plot=plot,
+        **fig_kw,
     )
 
     # Calculate and store impedance for detected pulses at 'sample_times'
@@ -180,9 +187,7 @@ def extract_impedance(
     dis_groups = df.groupby('DisPulse', dropna=True)
     chg_groups = df.groupby('ChgPulse', dropna=True)
     for state, groups in zip(['D', 'C'], [dis_groups, chg_groups]):
-
-        for (idx, g) in groups:
-
+        for idx, g in groups:
             soc0 = g['SOC'].iloc[0]
             seconds0 = g['Seconds'].iloc[0]
             amps_avg = g.loc[g['Amps'] != 0, 'Amps'].mean()
@@ -214,7 +219,7 @@ def extract_impedance(
             row = {
                 'PulseNum': [idx],
                 'State': [state],
-                'Hours_0': [seconds0 / 3600.],
+                'Hours_0': [seconds0 / 3600.0],
                 'SOC_0': [soc0],
                 'AmpsAvg': [amps_avg],
             }
@@ -225,7 +230,8 @@ def extract_impedance(
             row.update(asi_dict)
 
             impedance = pd.concat(
-                [impedance, pd.DataFrame(row)], ignore_index=True,
+                [impedance, pd.DataFrame(row)],
+                ignore_index=True,
             )
 
     rename = {}
@@ -257,17 +263,24 @@ def _plot_pulses(data: Dataset, **fig_kw) -> None:
     save : str or None, optional
         Path to save the plot as HTML. If not in a Jupyter notebook and save is
         None, a temporary file is still created and is opened in the browser.
+    show : bool, optional
+        Whether to display the plot immediately, by default True. Useful in
+        cases where you only want to save and not display the plot.
 
     """
     from ampworks.plotutils._plotly import PLOTLY_TEMPLATE, _render_plotly
 
     save = fig_kw.get('save', None)
+    show = fig_kw.get('show', True)
     figsize = fig_kw.get('figsize', (800, 500))
 
     # Two-row subplot with shared x-axis
     fig = make_subplots(
-        rows=2, cols=1, shared_xaxes=True,
-        row_heights=[0.3, 0.7], vertical_spacing=0.05,
+        rows=2,
+        cols=1,
+        shared_xaxes=True,
+        row_heights=[0.3, 0.7],
+        vertical_spacing=0.05,
     )
 
     # Detect appropriate units for current
@@ -297,7 +310,6 @@ def _plot_pulses(data: Dataset, **fig_kw) -> None:
 
     # Add shaded pulses and markers
     for pulse, color in zip(['DisPulse', 'ChgPulse'], ['red', 'blue']):
-
         for idx, g in data.groupby(pulse, dropna=True):
             t0, t1 = g['Hours'].iloc[0], g['Hours'].iloc[-1]
             i0, i1 = g[ycol].iloc[0], g[ycol].iloc[-1]
@@ -309,41 +321,64 @@ def _plot_pulses(data: Dataset, **fig_kw) -> None:
                 f"StepTime: %{{customdata:.3f}} s<br>"
                 f"Current: %{{y:.3f}} {yunits}"
             )
-            hover_volts = (
-                "StepTime: %{customdata:.3f} s<br>"
-                "Voltage: %{y:.3f} V"
-            )
+            hover_volts = "StepTime: %{customdata:.3f} s<br>Voltage: %{y:.3f} V"
             customdata = [trel0, trel1]
 
             fig.add_vrect(
-                x0=t0, x1=t1,  row=1, col=1,
-                fillcolor=color, opacity=0.3, line_width=0,
+                x0=t0,
+                x1=t1,
+                row=1,
+                col=1,
+                fillcolor=color,
+                opacity=0.3,
+                line_width=0,
             )
-            fig.add_trace(go.Scatter(
-                x=[t0, t1], y=[i0, i1], name=pulse + f"{idx}",
-                mode='markers', marker=dict(color=color, size=8),
-                hovertemplate=hover_amps, customdata=customdata,
-            ), row=1, col=1)
+            fig.add_trace(
+                go.Scatter(
+                    x=[t0, t1],
+                    y=[i0, i1],
+                    name=pulse + f"{idx}",
+                    mode='markers',
+                    marker=dict(color=color, size=8),
+                    hovertemplate=hover_amps,
+                    customdata=customdata,
+                ),
+                row=1,
+                col=1,
+            )
 
             fig.add_vrect(
-                x0=t0, x1=t1, row=2, col=1,
-                fillcolor=color, opacity=0.3, line_width=0,
+                x0=t0,
+                x1=t1,
+                row=2,
+                col=1,
+                fillcolor=color,
+                opacity=0.3,
+                line_width=0,
             )
-            fig.add_trace(go.Scatter(
-                x=[t0, t1], y=[v0, v1], name=pulse + f"{idx}",
-                mode='markers', marker=dict(color=color, size=8),
-                hovertemplate=hover_volts, customdata=customdata,
-            ), row=2, col=1)
+            fig.add_trace(
+                go.Scatter(
+                    x=[t0, t1],
+                    y=[v0, v1],
+                    name=pulse + f"{idx}",
+                    mode='markers',
+                    marker=dict(color=color, size=8),
+                    hovertemplate=hover_volts,
+                    customdata=customdata,
+                ),
+                row=2,
+                col=1,
+            )
 
     # Adjust layout and styling; then save and display
     fig.update_layout(template=PLOTLY_TEMPLATE, showlegend=False)
-    _render_plotly(fig=fig, figsize=figsize, save=save)
+    _render_plotly(fig=fig, figsize=figsize, save=save, show=show)
 
 
 def _detect_pulses(
     data: Dataset,
-    tmin: float = 0.,
-    tmax: float = 20.,
+    tmin: float = 0.0,
+    tmax: float = 20.0,
     steps: list[int] | None = None,
     plot: bool = False,
     **fig_kw,
@@ -379,6 +414,9 @@ def _detect_pulses(
     save : str or None, optional
         Path to save the plot as HTML. If not in a Jupyter notebook and save is
         None, a temporary file is still created and is opened in the browser.
+    show : bool, optional
+        Whether to display the plot immediately, by default True. Useful in
+        cases where you only want to save and not display the plot.
 
     Returns
     -------
@@ -393,7 +431,7 @@ def _detect_pulses(
     df = df.reset_index(drop=True)
 
     df['Seconds'] -= df['Seconds'].min()
-    df['Hours'] = df['Seconds'] / 3600.
+    df['Hours'] = df['Seconds'] / 3600.0
 
     # Create State column
     _infer_state(df)
@@ -402,12 +440,12 @@ def _detect_pulses(
     is_net_charge = df['Volts'].iloc[0] < df['Volts'].iloc[-1]
     sign = +1 if is_net_charge else -1
 
-    df['Ah'] = cumulative_trapezoid(sign*df['Amps'], df['Hours'], initial=0.)
+    df['Ah'] = cumulative_trapezoid(sign * df['Amps'], df['Hours'], initial=0.0)
 
     if is_net_charge:
         df['SOC'] = df['Ah'] / df['Ah'].max()
     else:
-        df['SOC'] = 1. - df['Ah'] / df['Ah'].max()
+        df['SOC'] = 1.0 - df['Ah'] / df['Ah'].max()
 
     # Create 'Step' column to group by State and Step
     shifted_state = df['State'].shift(fill_value=df['State'].iloc[0])
@@ -424,7 +462,6 @@ def _detect_pulses(
     chg_count = 1
 
     for (state, _), g in groups:
-
         idx = g.index
         if idx[0] != df.index[0]:
             idx = np.hstack([idx[0] - 1, idx], dtype=int)

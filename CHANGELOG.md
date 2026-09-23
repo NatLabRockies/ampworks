@@ -3,6 +3,7 @@
 ## [Unreleased](https://github.com/NatLabRockies/ampworks)
 
 ### New Features
+- Add `show` to `_render_plotly` and `_render_bokeh` to toggle off in save-only cases ([#39](https://github.com/NatLabRockies/ampworks/pull/39))
 - Implement new `columns` functions to add capacity and energy values to a `Dataset` ([#37](https://github.com/NatLabRockies/ampworks/pull/37/commits))
 - Pure a new `_std_head` module within `_core` to optimize use of standard names across package ([#36](https://github.com/NatLabRockies/ampworks/pull/36))
 - Add `_rate` and `_sequencing` submodules to the `columns` for power, C-rate, etc ([#35](https://github.com/NatLabRockies/ampworks/pull/35))

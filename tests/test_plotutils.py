@@ -209,6 +209,24 @@ class TestRenderPlotly:
         assert opened[0].endswith('.html')
         assert opened[0].startswith('file://')
 
+    def test_show_false_skips_display(self, monkeypatch):
+        opened = []
+        monkeypatch.setattr(
+            'webbrowser.open', lambda url, **kw: opened.append(url),
+        )
+
+        _render_plotly(go.Figure(), show=False)
+
+        assert len(opened) == 0
+
+    def test_show_false_still_saves(self, tmp_path, monkeypatch):
+        monkeypatch.setattr('webbrowser.open', lambda *a, **kw: None)
+
+        save_path = tmp_path / 'chart.html'
+        _render_plotly(go.Figure(), save=str(save_path), show=False)
+
+        assert save_path.exists()
+
 
 # tests for plotutils._bokeh._render_bokeh
 class TestRenderBokeh:
@@ -261,3 +279,21 @@ class TestRenderBokeh:
 
         assert len(out) == 1
         assert out[0].endswith('.html')
+
+    def test_show_false_skips_display(self, monkeypatch):
+        shown = []
+        monkeypatch.setattr(
+            'bokeh.io.show', lambda *a, **kw: shown.append(True),
+        )
+
+        _render_bokeh(figure(), show=False)
+
+        assert len(shown) == 0
+
+    def test_show_false_still_saves(self, tmp_path, monkeypatch):
+        monkeypatch.setattr('bokeh.io.show', lambda *a, **kw: None)
+
+        save_path = tmp_path / 'chart.html'
+        _render_bokeh(figure(), save=str(save_path), show=False)
+
+        assert save_path.exists()

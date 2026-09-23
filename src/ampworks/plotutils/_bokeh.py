@@ -104,6 +104,7 @@ def _render_bokeh(
     fig: BokehFigure,
     figsize: tuple[int, int] | None = None,
     save: str | None = None,
+    show: bool = True,
 ) -> None:
     """
     Render a Bokeh figure.
@@ -120,6 +121,9 @@ def _render_bokeh(
         both dimensions to None to allow them to stretch.
     save : str | None, optional
         The file path to save the figure, by default None.
+    show : bool, optional
+        Whether to display the figure immediately, by default True. Useful in
+        cases where you only want to save and not display the plot.
 
     """
     from ampworks import _in_notebook
@@ -155,11 +159,15 @@ def _render_bokeh(
 
     str_path = str(path)
 
-    # Optionally write to file, then display
-    in_nb = _in_notebook()
-
+    # Optionally write to file
     if save is not None:
         bk_io.save(fig, filename=str_path, resources='cdn', title=path.name)
+
+    # Exit early if show is False, otherwise display the figure
+    if not show:
+        return
+
+    in_nb = _in_notebook()
 
     if not in_nb:
         bk_io.output_file(filename=str_path, mode='cdn', title=path.name)

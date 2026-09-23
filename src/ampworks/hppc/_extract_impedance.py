@@ -105,7 +105,7 @@ def extract_impedance(
         None, a temporary file is still created and is opened in the browser.
     show : bool, optional
         Whether to display the plot immediately, by default True. Useful in
-        cases where you only want to share and not display the plot.
+        cases where you only want to save and not display the plot.
 
     Returns
     -------
@@ -265,7 +265,7 @@ def _plot_pulses(data: Dataset, **fig_kw) -> None:
         None, a temporary file is still created and is opened in the browser.
     show : bool, optional
         Whether to display the plot immediately, by default True. Useful in
-        cases where you only want to share and not display the plot.
+        cases where you only want to save and not display the plot.
 
     """
     from ampworks.plotutils._plotly import PLOTLY_TEMPLATE, _render_plotly
@@ -416,7 +416,7 @@ def _detect_pulses(
         None, a temporary file is still created and is opened in the browser.
     show : bool, optional
         Whether to display the plot immediately, by default True. Useful in
-        cases where you only want to share and not display the plot.
+        cases where you only want to save and not display the plot.
 
     Returns
     -------

@@ -274,7 +274,7 @@ class Dataset(pd.DataFrame):
             File path to save the plot as an HTML file, by default None.
         show : bool, optional
             Whether to display the plot immediately, by default True. Useful in
-            cases where you only want to share and not display the plot.
+            cases where you only want to save and not display the plot.
 
         See Also
         --------
@@ -360,7 +360,7 @@ class Dataset(pd.DataFrame):
             File path to save the plot as an HTML file, by default None.
         show : bool, optional
             Whether to display the plot immediately, by default True. Useful in
-            cases where you only want to share and not display the plot.
+            cases where you only want to save and not display the plot.
 
         See Also
         --------

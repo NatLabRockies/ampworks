@@ -106,7 +106,7 @@ def _render_plotly(
         The file path to save the figure, by default None.
     show : bool, optional
         Whether to display the figure immediately, by default True. Useful in
-        cases where you only want to share and not display the plot.
+        cases where you only want to save and not display the plot.
 
     """
     from ampworks import _in_notebook

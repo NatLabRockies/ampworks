@@ -250,6 +250,7 @@ class Dataset(pd.DataFrame):
         figsize: tuple[int | None, int | None] = (800, 450),
         kind: Literal['line', 'scatter', 'both'] = 'line',
         save: str = None,
+        show: bool = True,
     ) -> None:
         """
         Create an interactive plotly figure with hover tips. Optionally save as
@@ -271,6 +272,9 @@ class Dataset(pd.DataFrame):
             for a scatter plot, or 'both' to show both a line and markers.
         save : str, optional
             File path to save the plot as an HTML file, by default None.
+        show : bool, optional
+            Whether to display the plot immediately, by default True. Useful in
+            cases where you only want to share and not display the plot.
 
         See Also
         --------
@@ -321,7 +325,7 @@ class Dataset(pd.DataFrame):
             )
 
         _apply_plotly_style(fig)
-        _render_plotly(fig=fig, figsize=figsize, save=save)
+        _render_plotly(fig=fig, figsize=figsize, save=save, show=show)
 
     def interactive_bokeh(
         self,
@@ -332,6 +336,7 @@ class Dataset(pd.DataFrame):
         figsize: tuple[int | None, int | None] = (800, 450),
         kind: Literal['line', 'scatter', 'both'] = 'line',
         save: str = None,
+        show: bool = True,
     ) -> None:
         """
         Create an interactive bokeh figure with hover tips. Optionally save as
@@ -353,6 +358,9 @@ class Dataset(pd.DataFrame):
             for a scatter plot, or 'both' to show both a line and markers.
         save : str, optional
             File path to save the plot as an HTML file, by default None.
+        show : bool, optional
+            Whether to display the plot immediately, by default True. Useful in
+            cases where you only want to share and not display the plot.
 
         See Also
         --------
@@ -429,7 +437,7 @@ class Dataset(pd.DataFrame):
         fig.add_tools(hover)
 
         _apply_bokeh_style(fig)
-        _render_bokeh(fig=fig, figsize=figsize, save=save)
+        _render_bokeh(fig=fig, figsize=figsize, save=save, show=show)
 
     def interactive_xy_plot(
         self,
@@ -439,6 +447,7 @@ class Dataset(pd.DataFrame):
         tips: list[str] | None = None,
         figsize: tuple[int | None, int | None] = (800, 450),
         save: str = None,
+        show: bool = True,
     ) -> None:
         """
         Deprecated. This method will be removed in a future release. Use either
@@ -460,6 +469,7 @@ class Dataset(pd.DataFrame):
             figsize=figsize,
             kind='both',
             save=save,
+            show=show,
         )
 
     def zero_below(

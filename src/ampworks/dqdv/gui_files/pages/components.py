@@ -6,8 +6,9 @@ from dash import dcc, html
 
 
 # Sliders
+# Keys must be built-in types; orjson can't serialize numpy floats as keys
 marks = {0: '0.0', 1: '1.0'}
-marks.update({i: f"{i:.1f}" for i in np.linspace(0.1, 0.9, 9)})
+marks.update({float(i): f"{i:.1f}" for i in np.linspace(0.1, 0.9, 9)})
 
 for k, v in marks.copy().items():
     marks[k] = {'label': v, 'style': {'fontSize': '1em'}}

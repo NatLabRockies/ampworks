@@ -22,6 +22,7 @@
 - Move backend datasets for examples and tests to `.parquet` formats ([#34](https://github.com/NatLabRockies/ampworks/pull/34))
 
 ### Bug Fixes
+- Fix broken `dqdv` GUI by ensuring numpy floats are serializable ([#40](https://github.com/NatLabRockies/ampworks/pull/40))
 - Extra tabs in some `.txt` files were creating read errors, now ignore ragged columns ([#31](https://github.com/NatLabRockies/ampworks/pull/31))
 
 ### Chores

@@ -15,18 +15,33 @@ for k, v in marks.copy().items():
 
 sliders = dbc.Stack(
     [
-        dbc.Label('Negative Electrode: [0.00, 1.00]',
-                  id='neg-slider-label', class_name='bold-label mt-3'),
-        dcc.RangeSlider(
-            id='neg-slider', updatemode='drag',
-            min=0.0, max=1.0, step=0.01, value=[0., 1.], marks=marks,
+        dbc.Label(
+            'Negative Electrode: [0.00, 1.00]',
+            id='neg-slider-label',
+            class_name='bold-label mt-3',
         ),
-
-        dbc.Label('Positive Electrode: [0.00, 1.00]',
-                  id='pos-slider-label', class_name='bold-label mt-3'),
         dcc.RangeSlider(
-            id='pos-slider', updatemode='drag',
-            min=0.0, max=1.0, step=0.01, value=[0., 1.], marks=marks,
+            id='neg-slider',
+            updatemode='drag',
+            min=0.0,
+            max=1.0,
+            step=0.01,
+            value=[0.0, 1.0],
+            marks=marks,
+        ),
+        dbc.Label(
+            'Positive Electrode: [0.00, 1.00]',
+            id='pos-slider-label',
+            class_name='bold-label mt-3',
+        ),
+        dcc.RangeSlider(
+            id='pos-slider',
+            updatemode='drag',
+            min=0.0,
+            max=1.0,
+            step=0.01,
+            value=[0.0, 1.0],
+            marks=marks,
         ),
     ],
     class_name='mx-auto',
@@ -81,12 +96,21 @@ terminal = dbc.Row(
 download = dcc.Download(id="download-csv")
 logging_btns = dbc.Stack(
     [
-        dbc.Button('Log Output', id='add-row-btn',
-                   class_name='log-btn success'),
-        dbc.Button('Delete Selected', id='delete-btn',
-                   class_name='log-btn danger'),
-        dbc.Button('Export Data', id='export-btn',
-                   class_name='log-btn secondary'),
+        dbc.Button(
+            'Log Output',
+            id='add-row-btn',
+            class_name='log-btn success',
+        ),
+        dbc.Button(
+            'Delete Selected',
+            id='delete-btn',
+            class_name='log-btn danger',
+        ),
+        dbc.Button(
+            'Export Data',
+            id='export-btn',
+            class_name='log-btn secondary',
+        ),
     ],
     gap=3,
     direction='horizontal',
@@ -106,8 +130,20 @@ column_defs = [
     *[
         {'headerName': f"{c}", 'field': f"{c}", 'minWidth': 100}
         for c in [
-            'Ah', 'xn0', 'xn0_std', 'xn1', 'xn1_std', 'xp0', 'xp0_std', 'xp1',
-            'xp1_std', 'iR', 'iR_std', 'fun', 'success', 'message',
+            'Ah',
+            'xn0',
+            'xn0_std',
+            'xn1',
+            'xn1_std',
+            'xp0',
+            'xp0_std',
+            'xp1',
+            'xp1_std',
+            'iR',
+            'iR_std',
+            'fun',
+            'success',
+            'message',
         ]
     ],
 ]

@@ -26,6 +26,7 @@
 - Extra tabs in some `.txt` files were creating read errors, now ignore ragged columns ([#31](https://github.com/NatLabRockies/ampworks/pull/31))
 
 ### Chores
+- Update workflows to use Python 3.15 as upper bound; test with `[gui]` on codecov ([#41](https://github.com/NatLabRockies/ampworks/pull/41))
 - Prepare for re-write of `_core` by adding `_core/_backend` submodule, with tests ([#38](https://github.com/NatLabRockies/ampworks/pull/38))
 - Move all hidden methods and functions to end of classes and files for consistency ([#33](https://github.com/NatLabRockies/ampworks/pull/33))
 - Add `tool.coverage` to `pyproject.toml` for excluding common statements ([#33](https://github.com/NatLabRockies/ampworks/pull/33))

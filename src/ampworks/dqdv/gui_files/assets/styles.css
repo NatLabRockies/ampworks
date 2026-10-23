@@ -244,39 +244,54 @@
     border: 1px solid var(--hr-color);
 }
 
-/* Range sliders */
-.rc-slider-track {
+/* Range sliders (dash>=4 class names) */
+.dash-slider-track {
     height: 8px;
+    background-color: var(--bs-secondary-bg);
+}
+
+.dash-slider-mark {
+    color: var(--bs-body-color);
+}
+
+.dash-slider-mark-outside-selection {
+    color: var(--bs-secondary-color);
+}
+
+.dash-slider-root:not([data-included='false']) .dash-slider-range {
     background-color: var(--amp-primary);
 }
 
-.rc-slider-rail {
-    height: 8px;
-}
-
-.rc-slider-handle {
+.dash-slider-thumb {
     width: 15px;
     height: 15px;
-    margin-top: -4px;
+    box-shadow: none;
+    background-color: var(--bs-body-bg);
     border: 2px solid var(--amp-primary);
 }
 
-.rc-slider-handle:hover,
-.rc-slider-handle:active {
+.dash-slider-thumb:hover,
+.dash-slider-thumb:active {
+    transform: none;
     border: 2px solid var(--amp-primary) !important;
     box-shadow: 0 0 3px 3px var(--amp-primary) !important;
 }
 
-.rc-slider-handle:focus {
+.dash-slider-thumb:focus {
+    outline: none;
+    transform: none;
     border: 2px solid var(--amp-primary) !important;
     box-shadow: 0 0 3px 3px var(--amp-secondary) !important;
 }
 
-.rc-slider-dot {
+/* Mark ticks restyled as dots; margin centers them on the track */
+.dash-slider-mark:before {
     width: 10px;
     height: 10px;
-    bottom: -5px;
-    margin-left: -5px;
+    margin-bottom: 11px;
+    border-radius: 50%;
+    box-sizing: border-box;
+    background-color: var(--bs-body-bg);
     border: 2px solid var(--amp-primary);
 }
 

@@ -28,6 +28,7 @@ sliders = dbc.Stack(
             step=0.01,
             value=[0.0, 1.0],
             marks=marks,
+            allow_direct_input=False,
         ),
         dbc.Label(
             'Positive Electrode: [0.00, 1.00]',
@@ -42,6 +43,7 @@ sliders = dbc.Stack(
             step=0.01,
             value=[0.0, 1.0],
             marks=marks,
+            allow_direct_input=False,
         ),
     ],
     class_name='mx-auto',

@@ -101,7 +101,7 @@ exclude_also = [
 
 [project.optional-dependencies]
 gui = [
-    "dash",
+    "dash>=4.1",
     "dash-ag-grid",
     "dash-extensions",
     "dash-breakpoints",

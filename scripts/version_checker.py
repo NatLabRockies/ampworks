@@ -1,5 +1,6 @@
-import requests
 import argparse
+
+import requests
 
 from packaging.version import Version
 
@@ -30,7 +31,7 @@ def get_latest_version(package: str, prefix: str = None) -> str:
     """
     url = f"https://pypi.org/pypi/{package}/json"
 
-    response = requests.get(url)
+    response = requests.get(url, timeout=30)
     if response.status_code != 200:
         raise ValueError(f"Failed to fetch PyPI data for '{package}'.")
 
@@ -42,7 +43,8 @@ def get_latest_version(package: str, prefix: str = None) -> str:
 
     if prefix:
         versions = [v for v in versions if v.startswith(prefix)]
-        assert len(versions) != 0, f"{prefix=} has no existing matches."
+        if not versions:
+            raise ValueError(f"{prefix=} has no existing matches.")
 
     sorted_versions = sorted(versions, key=Version, reverse=True)
     latest_version = sorted_versions[0]

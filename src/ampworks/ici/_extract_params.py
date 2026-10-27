@@ -196,7 +196,7 @@ def extract_params(data: Dataset, radius: float, tmin: float = 1,
         'Eeq': stats['Eeq'],
     })
 
-    params.sort_values(by='SOC', inplace=True, ignore_index=True)
+    params = params.sort_values(by='SOC', ignore_index=True)
 
     if return_stats:
         return params, amp.Dataset(stats)

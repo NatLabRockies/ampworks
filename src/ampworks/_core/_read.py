@@ -255,7 +255,7 @@ def read_excel(
         data = amp.read_excel('data.xlsx', sheet_name='all', stack_sheets=True)
 
     """
-    workbook = pd.ExcelFile(filepath)
+    workbook = pd.ExcelFile(filepath, engine='calamine')
     all_sheets = workbook.sheet_names
     num_sheets = len(all_sheets)
 
@@ -307,7 +307,14 @@ def read_excel(
         if isinstance(sheet, int):
             pd_sheet = sheet - 1  # convert to zero-based index
 
-        preview = workbook.parse(pd_sheet, header=None, nrows=20, dtype=str)
+        preview = pd.read_excel(
+            filepath,
+            sheet_name=pd_sheet,
+            nrows=20,
+            dtype=str,
+            header=None,
+            engine='calamine',
+        )
 
         # Find header row
         header_row = None

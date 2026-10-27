@@ -34,10 +34,9 @@ class Dataset(pd.DataFrame):
         n: int = None,
         frac: float = None,
         resolution: tuple[str, float] = None,
-        inplace: bool = False,
         ignore_index: bool = False,
         keep_last: bool = False,
-    ) -> Dataset | None:
+    ) -> Dataset:
         """
         Downsample the dataset by eliminating rows given:
 
@@ -54,8 +53,6 @@ class Dataset(pd.DataFrame):
         resolution : tuple[str, float], optional
             Column (str) and resolution (float) to use for downsampling based on
             the absolute difference between adjacent values. By default None.
-        inplace : bool, optional
-            Modify in place if True. If False (default), return a new Dataset.
         ignore_index : bool, optional
             If True, reset the indices. Default is False.
         keep_last : bool, optional
@@ -63,8 +60,8 @@ class Dataset(pd.DataFrame):
 
         Returns
         -------
-        data : Dataset or None
-            The downsampled Dataset if 'inplace' is False. Otherwise, None.
+        data : Dataset
+            The downsampled Dataset.
 
         Raises
         ------
@@ -98,7 +95,6 @@ class Dataset(pd.DataFrame):
             message="Specify exactly one of: n, frac, resolution.",
         )
 
-        _chk._check_type('inplace', inplace, bool)
         _chk._check_type('ignore_index', ignore_index, bool)
         _chk._check_type('keep_last', keep_last, bool)
 
@@ -161,19 +157,15 @@ class Dataset(pd.DataFrame):
         if ignore_index:
             result = result.reset_index(drop=True)
 
-        if inplace:
-            self._update_inplace(result)
-        else:
-            return result
+        return result
 
     def enforce_monotonic(
         self,
         column: str,
         increasing: bool = True,
         strict: bool = False,
-        inplace: bool = False,
         ignore_index: bool = False,
-    ) -> Dataset | None:
+    ) -> Dataset:
         """
         Enforce monotonicity in a column by dropping rows that break the trend.
 
@@ -187,21 +179,18 @@ class Dataset(pd.DataFrame):
         strict : bool, optional
             If True, enforce strict monotonicity (no equal adjacent values). The
             default is False, which allows equal adjacent values.
-        inplace : bool, optional
-            Modify in place if True. If False (default), return a new Dataset.
         ignore_index : bool, optional
             If True, reset the indices. Default is False.
 
         Returns
         -------
-        data : Dataset or None
-            The modified Dataset if 'inplace' is False. Otherwise, None.
+        data : Dataset
+            The modified Dataset.
 
         """
         _chk._check_type('column', column, str)
         _chk._check_type('increasing', increasing, bool)
         _chk._check_type('strict', strict, bool)
-        _chk._check_type('inplace', inplace, bool)
         _chk._check_type('ignore_index', ignore_index, bool)
 
         result = self.copy()
@@ -236,10 +225,7 @@ class Dataset(pd.DataFrame):
         if ignore_index:
             result = result.reset_index(drop=True)
 
-        if inplace:
-            self._update_inplace(result)
-        else:
-            return result
+        return result
 
     def interactive_plotly(
         self,
@@ -476,8 +462,7 @@ class Dataset(pd.DataFrame):
         self,
         column: str,
         threshold: float,
-        inplace: bool = False,
-    ) -> Dataset | None:
+    ) -> Dataset:
         """
         Set values in 'column' below 'threshold' to zero.
 
@@ -488,13 +473,11 @@ class Dataset(pd.DataFrame):
         threshold : float
             Values whose absolute value is below this threshold are set to zero.
             Note that values equal to the threshold are not zeroed.
-        inplace : bool, optional
-            Modify in place if True. If False (default), return a new Dataset.
 
         Returns
         -------
-        data : Dataset or None
-            The modified Dataset if 'inplace' is False. Otherwise, None.
+        data : Dataset
+            The modified Dataset.
 
         Examples
         --------
@@ -519,25 +502,17 @@ class Dataset(pd.DataFrame):
         mask = result[column].abs() < abs(threshold)
         result.loc[mask, column] = 0.0
 
-        if inplace:
-            self._update_inplace(result)
-        else:
-            return result
+        return result
 
-    def zero_time(self, inplace: bool = False) -> Dataset | None:
+    def zero_time(self) -> Dataset:
         """
         Shifts the `Seconds` column by subtracting the first row's value to set
         a new zero reference.
 
-        Parameters
-        ----------
-        inplace : bool, optional
-            Modify in place if True. If False (default), return a new Dataset.
-
         Returns
         -------
-        data : Dataset | None
-            The modified Dataset if 'inplace' is False. Otherwise, None.
+        data : Dataset
+            The modified Dataset.
 
         Notes
         -----
@@ -547,13 +522,9 @@ class Dataset(pd.DataFrame):
         sorting by time first, if needed, using `data.sort_values('Seconds')`.
 
         """
-        _chk._check_type('inplace', inplace, bool)
         _chk._check_columns(self, ['Seconds'])
 
         result = self.copy()
         result['Seconds'] -= result['Seconds'].iloc[0]
 
-        if inplace:
-            self._update_inplace(result)
-        else:
-            return result
+        return result

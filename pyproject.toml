@@ -34,7 +34,6 @@ classifiers = [
 ]
 dependencies = [
     "tqdm",
-    "xlrd",
     "numpy",
     "bokeh",
     "polars",
@@ -42,12 +41,12 @@ dependencies = [
     "IPython",
     "pyarrow",
     "seaborn",
-    "openpyxl",
     "fastexcel",
     "matplotlib",
     "numdifftools",
     "pandas >= 3.0",
     "scipy >= 1.13",
+    "python-calamine",
 ]
 
 [project.scripts]

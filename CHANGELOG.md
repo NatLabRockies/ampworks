@@ -13,6 +13,7 @@
 - New hidden `auxiliary` module for repeated logic across package (only for devs, for now) ([#30](https://github.com/NatLabRockies/ampworks/pull/30))
 
 ### Deprecations
+- All uses of the `inplace` argument are removed due to upcoming pandas deprecation ([#42](https://github.com/NatLabRockies/ampworks/pull/42))
 - The `labels` module is fully removed, with functionality moved to `columns` ([#34](https://github.com/NatLabRockies/ampworks/pull/34))
 - `interactive_xy_plot` deprecated in favor of `interactive_plotly` ([#31](https://github.com/NatLabRockies/ampworks/pull/31))
 

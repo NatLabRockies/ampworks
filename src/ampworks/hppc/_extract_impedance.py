@@ -239,7 +239,7 @@ def extract_impedance(
     for name in ['StepTime', 'Volts', 'Ohms', 'ASI']:
         rename[f"{name}_{N}"] = f"{name}_N"
 
-    impedance.rename(columns=rename, inplace=True)
+    impedance = impedance.rename(columns=rename)
 
     return impedance
 

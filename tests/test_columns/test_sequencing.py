@@ -36,7 +36,7 @@ class TestAddInstanceNums:
         with pytest.raises(ValueError):
             col.add_instance_nums(
                 sequencing_data,
-                cycle_alias=None,
+                cycle_col=None,
                 cycle_resets=True,
             )
 
@@ -64,8 +64,8 @@ class TestAddInstanceNums:
         expected = [1, 1, 2, 2, 3, 3, 3, 3, 4, 4, 5, 5]
         npt.assert_array_equal(result['InstanceNum'], expected)
 
-    def test_col_name(self, sequencing_data):
-        result = col.add_instance_nums(sequencing_data, col_name='Custom')
+    def test_output_col(self, sequencing_data):
+        result = col.add_instance_nums(sequencing_data, output_col='Custom')
         assert 'Custom' in result.columns
         assert 'InstanceNum' not in result.columns
 
@@ -88,24 +88,24 @@ class TestAddRelativeTime:
             sequencing_data['ExpectedStepTime'],
         )
 
-    def test_which_alias(self, sequencing_data):
+    def test_by_col(self, sequencing_data):
         ds = sequencing_data.rename(columns={'Step': 'Segment'})
-        result = col.add_relative_time(ds, which='Segment')
+        result = col.add_relative_time(ds, by='Segment')
         npt.assert_allclose(
             result['StepTime'],
             sequencing_data['ExpectedStepTime'],
         )
 
-    def test_time_alias(self, sequencing_data):
+    def test_time_col(self, sequencing_data):
         ds = sequencing_data.rename(columns={'Seconds': 'Elapsed'})
-        result = col.add_relative_time(ds, time_alias='Elapsed')
+        result = col.add_relative_time(ds, time_col='Elapsed')
         npt.assert_allclose(
             result['StepTime'],
             sequencing_data['ExpectedStepTime'],
         )
 
-    def test_col_name(self, sequencing_data):
-        result = col.add_relative_time(sequencing_data, col_name='Custom')
+    def test_output_col(self, sequencing_data):
+        result = col.add_relative_time(sequencing_data, output_col='Custom')
         assert 'Custom' in result.columns
         assert 'StepTime' not in result.columns
 

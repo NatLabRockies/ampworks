@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Sequence
 
 import numpy as np
 import pandas as pd
@@ -504,10 +504,22 @@ class Dataset(pd.DataFrame):
 
         return result
 
-    def zero_time(self) -> Dataset:
+    def zero_reference(
+        self,
+        columns: str | Sequence[str],
+        *,
+        method: Literal['first', 'min'] = 'first',
+    ) -> Dataset:
         """
-        Shifts the `Seconds` column by subtracting the first row's value to set
-        a new zero reference.
+        Shift columns so their reference value becomes zero.
+
+        Parameters
+        ----------
+        columns : str or Sequence[str]
+            Name(s) of the column(s) to shift.
+        method : {'first', 'min'}, optional
+            Reference value to subtract from given column(s). 'first' (default)
+            uses the value in the first row, and 'min' uses the column minimum.
 
         Returns
         -------
@@ -516,15 +528,40 @@ class Dataset(pd.DataFrame):
 
         Notes
         -----
-        This method does not sort by time, nor does it use the minimum time when
-        subtracting. It simply shifts the time values so that the first row has
-        a time of zero, regardless of the actual order of time values. Consider
-        sorting by time first, if needed, using `data.sort_values('Seconds')`.
+        This method does not include any sorting of the data. The references are
+        simply taken from the current order of the data.
+
+        Examples
+        --------
+        Re-zero time at the start of a sliced segment, or re-zero several
+        columns at once:
+
+        .. code-block:: python
+
+            import ampworks as amp
+
+            data = amp.datasets.load_datasets('hppc/hppc_discharge')
+            segment = data[data['Step'] == 5]
+
+            segment = segment.zero_reference('Seconds')
+            segment = segment.zero_reference(['Seconds', 'Ah'], method='min')
 
         """
-        _chk._check_columns(self, ['Seconds'])
+        if isinstance(columns, str):
+            columns = [columns]
+
+        _chk._check_type('columns', columns, Sequence)
+        _chk._check_inner_type('columns', columns, str)
+        _chk._check_literal('method', method.lower(), {'first', 'min'})
+        _chk._check_columns(self, columns)
 
         result = self.copy()
-        result['Seconds'] -= result['Seconds'].iloc[0]
+        for column in columns:
+            if method.lower() == 'first':
+                ref = result[column].iloc[0]
+            else:  # method == 'min'
+                ref = result[column].min()
+
+            result[column] = result[column] - ref
 
         return result

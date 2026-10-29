@@ -33,14 +33,14 @@ def state_data():
              1.,  0.5, 0.,  # tapers to zero, stays >= 0 -> charge
             -1.,  0.,  1.,  # truly mixed sign -> unknown
         ],
-        'ExpectedStep': [   # which='Step' (single state across each step)
+        'ExpectedStep': [   # by='Step' (single state across each step)
             'C', 'C', 'C',
             'D', 'D', 'D',
             'R', 'R', 'R',
             'C', 'C', 'C',
             'Unknown', 'Unknown', 'Unknown',
         ],
-        'ExpectedNone': [    # which=None (row-by-row state)
+        'ExpectedNone': [    # by=None (row-by-row state)
             'C', 'C', 'C',
             'D', 'D', 'D',
             'R', 'R', 'R',
@@ -176,20 +176,20 @@ class TestAddStepLabels:
         expected = label_data['ExpectedStep']
         assert result['StepLabel'].astype(str).equals(expected)
 
-    def test_col_name(self, label_data):
+    def test_output_col(self, label_data):
         result = col.add_step_labels(
             label_data,
             step_labels=self.step_labels,
-            col_name='Custom',
+            output_col='Custom',
         )
         assert 'Custom' in result.columns
         assert 'StepLabel' not in result.columns
 
-    def test_step_alias(self, label_data):
+    def test_step_col(self, label_data):
         result = col.add_step_labels(
             label_data.rename(columns={'Step': 'StepAlias'}),
             step_labels=self.step_labels,
-            step_alias='StepAlias',
+            step_col='StepAlias',
         )
 
         expected = label_data['ExpectedStep']
@@ -332,30 +332,30 @@ class TestAddSegmentLabels:
         expected = label_data['ExpectedSeg3']
         assert result['SegmentLabel'].astype(str).equals(expected)
 
-    def test_col_name(self, label_data):
+    def test_output_col(self, label_data):
         result = col.add_segment_labels(
             label_data,
             segment_labels=self.step_labels1,
-            col_name='Custom',
+            output_col='Custom',
         )
         assert 'Custom' in result.columns
         assert 'SegmentLabel' not in result.columns
 
-    def test_step_alias(self, label_data):
+    def test_step_col(self, label_data):
         result = col.add_segment_labels(
             label_data.rename(columns={'Step': 'StepAlias'}),
             segment_labels=self.step_labels1,
-            step_alias='StepAlias',
+            step_col='StepAlias',
         )
 
         expected = label_data['ExpectedSeg1']
         assert result['SegmentLabel'].astype(str).equals(expected)
 
-    def test_cycle_alias(self, label_data):
+    def test_cycle_col(self, label_data):
         result = col.add_segment_labels(
             label_data.rename(columns={'Cycle': 'CycleAlias'}),
             segment_labels=self.cycle_labels2,
-            cycle_alias='CycleAlias',
+            cycle_col='CycleAlias',
         )
 
         expected = label_data['ExpectedSeg2']
@@ -426,25 +426,25 @@ class TestAddState:
             col.add_state(ds)
 
     def test_grouped_charge_discharge_rest(self, state_data):
-        result = col.add_state(state_data, which='Step')
+        result = col.add_state(state_data, by='Step')
 
         expected = state_data['ExpectedStep']
         assert result['State'].astype(str).equals(expected)
 
-    def test_which_none_is_row_by_row(self, state_data):
-        result = col.add_state(state_data, which=None)
+    def test_by_none_is_row_by_row(self, state_data):
+        result = col.add_state(state_data, by=None)
 
         expected = state_data['ExpectedNone']
         assert result['State'].astype(str).equals(expected)
 
-    def test_col_name(self, state_data):
-        result = col.add_state(state_data, col_name='Custom')
+    def test_output_col(self, state_data):
+        result = col.add_state(state_data, output_col='Custom')
         assert 'Custom' in result.columns
         assert 'State' not in result.columns
 
-    def test_amps_alias(self, state_data):
+    def test_amps_col(self, state_data):
         ds = state_data.rename(columns={'Amps': 'Current'})
-        result = col.add_state(ds, amps_alias='Current')
+        result = col.add_state(ds, amps_col='Current')
         assert 'State' in result.columns
 
     def test_returns_copy(self, state_data):
@@ -503,8 +503,8 @@ class TestAddControlMode:
         ds = control_data.copy()
         ds['Watts'] = ds['Amps'] * ds['Volts']
 
-        without_watts = col.add_control_mode(ds, watts_alias=None)
-        with_watts = col.add_control_mode(ds, watts_alias='Watts')
+        without_watts = col.add_control_mode(ds, watts_col=None)
+        with_watts = col.add_control_mode(ds, watts_col='Watts')
 
         cp_without = without_watts[control_data['Expected'] == 'CP']
         cp_with = with_watts[control_data['Expected'] == 'CP']
@@ -516,11 +516,11 @@ class TestAddControlMode:
         ds = control_data.copy()
         ds['Watts'] = ds['Amps'] * ds['Volts']
 
-        # 'CP' is required since watts_alias is given, but missing from rtol
+        # 'CP' is required since watts_col is given, but missing from rtol
         with pytest.raises(KeyError, match='.*Missing keys in rtol.*'):
             col.add_control_mode(
                 ds,
-                watts_alias='Watts',
+                watts_col='Watts',
                 rtol={'CC': 5e-3, 'CV': 5e-3},
             )
 
@@ -542,9 +542,9 @@ class TestAddControlMode:
         tight = col.add_control_mode(ds, rtol={'CC': 0.0, 'CV': 5e-3})
         assert tight['ControlMode'].astype(str).equals(expected)
 
-    def test_which_alias(self, control_data):
+    def test_by_col(self, control_data):
         ds = control_data.rename(columns={'Step': 'Segment'})
-        result = col.add_control_mode(ds, which='Segment')
+        result = col.add_control_mode(ds, by='Segment')
 
         expected = control_data['Expected'].replace({'CP': 'Unknown'})
         assert result['ControlMode'].astype(str).equals(expected)

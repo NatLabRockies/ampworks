@@ -25,8 +25,8 @@ def two_step_data():
 
 
 @pytest.fixture
-def diverging_which_data():
-    """Step changes mid-state, so `which='Step'`/`'State'` results differ."""
+def diverging_by_data():
+    """Step changes mid-state, so `by='Step'`/`'State'` results differ."""
     return amp.Dataset({
         'Step': [1, 1, 2, 2],
         'State': ['C', 'C', 'C', 'C'],
@@ -49,32 +49,32 @@ class TestAddCapacity:
         result = col.add_capacity(two_step_data)
         npt.assert_allclose(result['Ah'], two_step_data['ExpectedAh'])
 
-    def test_which_alias_changes_reset_points(self, diverging_which_data):
-        by_step = col.add_capacity(diverging_which_data, which='Step')
-        by_state = col.add_capacity(diverging_which_data, which='State')
+    def test_by_changes_reset_points(self, diverging_by_data):
+        by_step = col.add_capacity(diverging_by_data, by='Step')
+        by_state = col.add_capacity(diverging_by_data, by='State')
 
         npt.assert_allclose(
             by_step['Ah'],
-            diverging_which_data['ExpectedByStep'],
+            diverging_by_data['ExpectedByStep'],
         )
         npt.assert_allclose(
             by_state['Ah'],
-            diverging_which_data['ExpectedByState'],
+            diverging_by_data['ExpectedByState'],
         )
 
-    def test_col_name(self, two_step_data):
-        result = col.add_capacity(two_step_data, col_name='Custom')
+    def test_output_col(self, two_step_data):
+        result = col.add_capacity(two_step_data, output_col='Custom')
         assert 'Custom' in result.columns
         assert 'Ah' not in result.columns
 
-    def test_seconds_alias(self, two_step_data):
+    def test_seconds_col(self, two_step_data):
         ds = two_step_data.rename(columns={'Seconds': 'Time'})
-        result = col.add_capacity(ds, seconds_alias='Time')
+        result = col.add_capacity(ds, seconds_col='Time')
         npt.assert_allclose(result['Ah'], two_step_data['ExpectedAh'])
 
-    def test_amps_alias(self, two_step_data):
+    def test_amps_col(self, two_step_data):
         ds = two_step_data.rename(columns={'Amps': 'Current'})
-        result = col.add_capacity(ds, amps_alias='Current')
+        result = col.add_capacity(ds, amps_col='Current')
         npt.assert_allclose(result['Ah'], two_step_data['ExpectedAh'])
 
     def test_missing_columns_raises(self, two_step_data):
@@ -96,12 +96,12 @@ class TestAddCumulativeCapacity:
             two_step_data['ExpectedCumulativeAh'],
         )
 
-    def test_ah_column_method(self, two_step_data):
-        # 'ah_column' reconstructs cumulative Ah from discrete increments in an
+    def test_column_method(self, two_step_data):
+        # 'column' reconstructs cumulative Ah from discrete increments in an
         # existing Ah column (which already resets to zero each step), so it is
         # not expected to numerically match the 'integral' method at resets
         with_ah = col.add_capacity(two_step_data)
-        result = col.add_cumulative_capacity(with_ah, method='ah_column')
+        result = col.add_cumulative_capacity(with_ah, method='column')
         expected = np.array([0.0, 1.0, 2.0, 2.0, 0.0, -2.0]) / 3600.0
         npt.assert_allclose(result['CumulativeAh'], expected, atol=1e-12)
 
@@ -109,8 +109,8 @@ class TestAddCumulativeCapacity:
         with pytest.raises(ValueError):
             col.add_cumulative_capacity(two_step_data, method='bogus')
 
-    def test_col_name(self, two_step_data):
-        result = col.add_cumulative_capacity(two_step_data, col_name='Custom')
+    def test_output_col(self, two_step_data):
+        result = col.add_cumulative_capacity(two_step_data, output_col='Custom')
         assert 'Custom' in result.columns
         assert 'CumulativeAh' not in result.columns
 
@@ -128,12 +128,12 @@ class TestAddThroughputCapacity:
             two_step_data['ExpectedThroughputAh'],
         )
 
-    def test_ah_column_method(self, two_step_data):
-        # 'ah_column' reconstructs throughput Ah from discrete increments in an
+    def test_column_method(self, two_step_data):
+        # 'column' reconstructs throughput Ah from discrete increments in an
         # existing Ah column (which already resets to zero each step), so it is
         # not expected to numerically match the 'integral' method at resets
         with_ah = col.add_capacity(two_step_data)
-        result = col.add_throughput_capacity(with_ah, method='ah_column')
+        result = col.add_throughput_capacity(with_ah, method='column')
         expected = np.array([0.0, 1.0, 2.0, 2.0, 4.0, 6.0]) / 3600.0
         npt.assert_allclose(result['ThroughputAh'], expected, atol=1e-12)
 
@@ -141,8 +141,8 @@ class TestAddThroughputCapacity:
         with pytest.raises(ValueError):
             col.add_throughput_capacity(two_step_data, method='bogus')
 
-    def test_col_name(self, two_step_data):
-        result = col.add_throughput_capacity(two_step_data, col_name='Custom')
+    def test_output_col(self, two_step_data):
+        result = col.add_throughput_capacity(two_step_data, output_col='Custom')
         assert 'Custom' in result.columns
         assert 'ThroughputAh' not in result.columns
 
@@ -173,21 +173,21 @@ class TestAddEquivalentFullCycles:
         with pytest.raises(ValueError):
             col.add_equivalent_full_cycles(ds, nominal_ah=2.0)
 
-    def test_col_name(self, throughput_data):
+    def test_output_col(self, throughput_data):
         result = col.add_equivalent_full_cycles(
             throughput_data,
             nominal_ah=2.0,
-            col_name='Custom',
+            output_col='Custom',
         )
         assert 'Custom' in result.columns
         assert 'EFC' not in result.columns
 
-    def test_throughput_ah_alias(self, throughput_data):
+    def test_throughput_ah_col(self, throughput_data):
         ds = throughput_data.rename(columns={'ThroughputAh': 'Custom'})
         result = col.add_equivalent_full_cycles(
             ds,
             nominal_ah=2.0,
-            throughput_ah_alias='Custom',
+            throughput_ah_col='Custom',
         )
         npt.assert_allclose(result['EFC'], [0.0, 0.25, 0.5, 1.0])
 

@@ -25,8 +25,8 @@ __all__ = [
 def _instance_nums(
     data: Dataset,
     *,
-    which: str,
-    cycle_alias: str | None,
+    by: str,
+    cycle_col: str | None,
     cycle_resets: bool,
     fast: bool,
 ) -> Series:
@@ -39,9 +39,9 @@ def _instance_nums(
     ----------
     data : Dataset
         The input dataset.
-    which : str
+    by : str
         The column used to detect and group instances.
-    cycle_alias : str | None
+    cycle_col : str | None
         The column containing cycle numbers. Only used if `cycle_resets=True`.
     cycle_resets : bool
         Whether the instance numbers reset at the start of each cycle. If True,
@@ -57,7 +57,7 @@ def _instance_nums(
     Raises
     ------
     ValueError
-        If `cycle_resets` is True and `cycle_alias` is None.
+        If `cycle_resets` is True and `cycle_col` is None.
 
     Warnings
     --------
@@ -71,8 +71,8 @@ def _instance_nums(
     count.
 
     """
-    first = data[which].iloc[0]
-    changeovers = data[which] != data[which].shift(fill_value=first)
+    first = data[by].iloc[0]
+    changeovers = data[by] != data[by].shift(fill_value=first)
 
     if cycle_resets and fast:
         warn("Cycle resets are ignored when 'fast=True'.", UserWarning)
@@ -81,10 +81,10 @@ def _instance_nums(
     if fast:
         return raw
 
-    if cycle_resets and (cycle_alias is None):
-        raise ValueError("'cycle_alias' is required when cycle_resets=True.")
+    if cycle_resets and (cycle_col is None):
+        raise ValueError("'cycle_col' is required when cycle_resets=True.")
 
-    grouping = [which, cycle_alias] if cycle_resets else [which]
+    grouping = [by, cycle_col] if cycle_resets else [by]
 
     instance_nums = (
         data
@@ -100,9 +100,9 @@ def _instance_nums(
 def _ah_wh(
     data: Dataset,
     *,
-    which: str,
-    seconds_alias: str,
-    value_alias: str,
+    by: str,
+    seconds_col: str,
+    value_col: str,
 ) -> Series:
     """
     Helper function for `add_capacity` and `add_energy`.
@@ -111,11 +111,11 @@ def _ah_wh(
     ----------
     data : Dataset
         The input dataset.
-    which : str
+    by : str
         The column used to define groups where Ah or Wh resets to zero.
-    seconds_alias : str
+    seconds_col : str
         Name of the column containing time in seconds.
-    value_alias : str
+    value_col : str
         Name of the column containing current in amps or power in watts.
 
     Returns
@@ -136,19 +136,19 @@ def _ah_wh(
     requires a non-negative Ah/Wh column that only decreases at resets.
 
     """
-    _chk._check_columns(data, [which, seconds_alias, value_alias])
+    _chk._check_columns(data, [by, seconds_col, value_col])
 
     instance_nums = _instance_nums(
         data=data,
-        which=which,
-        cycle_alias=None,
+        by=by,
+        cycle_col=None,
         cycle_resets=False,
         fast=True,
     )
 
     # integrate once over full series, then re-reference groups to their starts
-    x = data[seconds_alias] / 3600  # seconds to hours
-    y = data[value_alias].abs()
+    x = data[seconds_col] / 3600  # seconds to hours
+    y = data[value_col].abs()
 
     cumulative = pd.Series(
         cumulative_trapezoid(y=y, x=x, initial=0),
@@ -156,7 +156,7 @@ def _ah_wh(
     )
     offsets = (
         cumulative
-        .groupby([data[which], instance_nums])
+        .groupby([data[by], instance_nums])
         .transform('first')
     )  # fmt: skip
 
@@ -169,10 +169,10 @@ def _ah_wh_cumulative(
     data: Dataset,
     *,
     method: Literal['integral', 'column'],
-    seconds_alias: str,
-    value_alias: str,
-    state_alias: str,
-    valueh_alias: str,
+    seconds_col: str,
+    value_col: str,
+    state_col: str,
+    valueh_col: str,
 ) -> Series:
     """
     Helper function for `add_cumulative_capacity` and `add_cumulative_energy`.
@@ -183,13 +183,13 @@ def _ah_wh_cumulative(
         The input dataset.
     method : Literal['integral', 'column']
         The method to use for calculating the cumulative quantity.
-    seconds_alias : str
+    seconds_col : str
         Name of the column containing time in seconds.
-    value_alias : str
+    value_col : str
         Name of the column containing current in amps or power in watts.
-    state_alias : str
+    state_col : str
         Name of the column containing the state, with values of {'C', 'D', 'R'}.
-    valueh_alias : str
+    valueh_col : str
         Name of the column containing ampere-hour or watt-hour values. Only
         used for `method='column'`, which requires non-negative values that
         only decrease at resets (e.g., as produced by `_ah_wh`).
@@ -211,36 +211,36 @@ def _ah_wh_cumulative(
     # required columns depends on method
     use_ahwh = method == 'column'
     if use_ahwh:
-        required = {valueh_alias, state_alias}
+        required = {valueh_col, state_col}
     else:
-        required = {seconds_alias, value_alias}
+        required = {seconds_col, value_col}
 
     _chk._check_columns(data, required)
 
     if method == 'integral':
-        x = data[seconds_alias] / 3600  # seconds to hours
-        y = data[value_alias]
+        x = data[seconds_col] / 3600  # seconds to hours
+        y = data[value_col]
 
         ahwh = cumulative_trapezoid(y=y, x=x, initial=0)
 
     else:
-        # ah/wh_column methods assume all >= 0 values for capacity/energy, that
+        # 'column' methods assume all >= 0 values for capacity/energy, that
         # non-monotonic behavior is only due to resets, and that state column
         # is present with 'C' for charge, 'D' for discharge, and 'R' for rest
 
-        if not (data[valueh_alias] >= 0).all():
+        if not (data[valueh_col] >= 0).all():
             raise ValueError(
-                f"All values in column '{valueh_alias}' must be non-negative."
+                f"All values in column '{valueh_col}' must be non-negative."
             )
 
         valid = {'C', 'D', 'R'}
-        if not data[state_alias].isin(valid).all():
+        if not data[state_col].isin(valid).all():
             raise ValueError(
-                f"All values in column '{state_alias}' must be one of {valid}."
+                f"All values in column '{state_col}' must be one of {valid}."
             )
 
-        increments = data[valueh_alias].diff().fillna(0)
-        signs = data[state_alias].map({'C': 1, 'D': -1, 'R': 0}).astype(float)
+        increments = data[valueh_col].diff().fillna(0)
+        signs = data[state_col].map({'C': 1, 'D': -1, 'R': 0}).astype(float)
 
         # clip lower bound to 0 since this only occurs when zeroing out the
         # column at new steps, and we don't want to subtract on these resets
@@ -254,9 +254,9 @@ def _ah_wh_throughput(
     data: Dataset,
     *,
     method: Literal['integral', 'column'],
-    seconds_alias: str,
-    value_alias: str,
-    valueh_alias: str,
+    seconds_col: str,
+    value_col: str,
+    valueh_col: str,
 ) -> Series:
     """
     Helper function for `add_throughput_capacity` and `add_throughput_energy`.
@@ -267,11 +267,11 @@ def _ah_wh_throughput(
         The input dataset.
     method : Literal['integral', 'column']
         The method to use for calculating the throughput quantity.
-    seconds_alias : str
+    seconds_col : str
         Name of the column containing time in seconds.
-    value_alias : str
+    value_col : str
         Name of the column containing current in amps or power in watts.
-    valueh_alias : str
+    valueh_col : str
         Name of the column containing ampere-hour or watt-hour values. Only
         used for `method='column'`, which requires non-negative values that
         only decrease at resets (e.g., as produced by `_ah_wh`).
@@ -293,28 +293,28 @@ def _ah_wh_throughput(
     # required columns depends on method
     use_ahwh = method == 'column'
     if use_ahwh:
-        required = {valueh_alias}
+        required = {valueh_col}
     else:
-        required = {seconds_alias, value_alias}
+        required = {seconds_col, value_col}
 
     _chk._check_columns(data, required)
 
     if method == 'integral':
-        x = data[seconds_alias] / 3600  # seconds to hours
-        y = data[value_alias]
+        x = data[seconds_col] / 3600  # seconds to hours
+        y = data[value_col]
 
         ahwh = cumulative_trapezoid(y=y.abs(), x=x, initial=0)  # use abs()
 
     else:
-        # ah/wh_column methods assume all >= 0 values for capacity/energy, and
+        # 'column' methods assume all >= 0 values for capacity/energy, and
         # that non-monotonic behavior is only due to resets
 
-        if not (data[valueh_alias] >= 0).all():
+        if not (data[valueh_col] >= 0).all():
             raise ValueError(
-                f"All values in column '{valueh_alias}' must be non-negative."
+                f"All values in column '{valueh_col}' must be non-negative."
             )
 
-        y = data[valueh_alias]
+        y = data[valueh_col]
 
         was_reset = y.diff() < 0
         value_before_reset = y.shift(1)

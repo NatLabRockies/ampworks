@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from ._tables import DegModeTable, DqdvFitTable
 
 
-def calc_lam_lli(fit_table: DqdvFitTable) -> pd.DataFrame:
+def calc_lam_lli(fit_table: DqdvFitTable) -> DegModeTable:
     r"""
     Calculate degradation modes.
 

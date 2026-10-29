@@ -36,6 +36,8 @@ jobs:
         uses: astral-sh/setup-uv@v10.3.3
 
       - name: Install ampworks
+        env:
+          UV_COMPILE_BYTECODE: 1
         run: uv pip install --system nox .[gui,tests]
 
       - name: Collect coverage

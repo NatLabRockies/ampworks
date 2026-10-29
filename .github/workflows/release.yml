@@ -41,6 +41,8 @@ jobs:
 
       - name: Extract local package version
         id: local
+        env:
+          UV_COMPILE_BYTECODE: 1
         run: |
           uv pip install --system .
 

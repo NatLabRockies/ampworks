@@ -76,6 +76,8 @@ jobs:
           enable-cache: ${{ github.event_name != 'schedule' }}
 
       - name: Install ampworks
+        env:
+          UV_COMPILE_BYTECODE: 1
         run: uv pip install --system nox .[gui,tests]
                 
       - name: Pytest

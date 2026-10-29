@@ -25,8 +25,8 @@ def two_step_data():
 
 
 @pytest.fixture
-def diverging_which_data():
-    """Step changes mid-state, so `which='Step'`/`'State'` results differ."""
+def diverging_by_data():
+    """Step changes mid-state, so `by='Step'`/`'State'` results differ."""
     return amp.Dataset({
         'Step': [1, 1, 2, 2],
         'State': ['C', 'C', 'C', 'C'],
@@ -44,32 +44,32 @@ class TestAddEnergy:
         result = col.add_energy(two_step_data)
         npt.assert_allclose(result['Wh'], two_step_data['ExpectedWh'])
 
-    def test_which_alias_changes_reset_points(self, diverging_which_data):
-        by_step = col.add_energy(diverging_which_data, which='Step')
-        by_state = col.add_energy(diverging_which_data, which='State')
+    def test_by_changes_reset_points(self, diverging_by_data):
+        by_step = col.add_energy(diverging_by_data, by='Step')
+        by_state = col.add_energy(diverging_by_data, by='State')
 
         npt.assert_allclose(
             by_step['Wh'],
-            diverging_which_data['ExpectedByStep'],
+            diverging_by_data['ExpectedByStep'],
         )
         npt.assert_allclose(
             by_state['Wh'],
-            diverging_which_data['ExpectedByState'],
+            diverging_by_data['ExpectedByState'],
         )
 
-    def test_col_name(self, two_step_data):
-        result = col.add_energy(two_step_data, col_name='Custom')
+    def test_output_col(self, two_step_data):
+        result = col.add_energy(two_step_data, output_col='Custom')
         assert 'Custom' in result.columns
         assert 'Wh' not in result.columns
 
-    def test_seconds_alias(self, two_step_data):
+    def test_seconds_col(self, two_step_data):
         ds = two_step_data.rename(columns={'Seconds': 'Time'})
-        result = col.add_energy(ds, seconds_alias='Time')
+        result = col.add_energy(ds, seconds_col='Time')
         npt.assert_allclose(result['Wh'], two_step_data['ExpectedWh'])
 
-    def test_watts_alias(self, two_step_data):
+    def test_watts_col(self, two_step_data):
         ds = two_step_data.rename(columns={'Watts': 'Power'})
-        result = col.add_energy(ds, watts_alias='Power')
+        result = col.add_energy(ds, watts_col='Power')
         npt.assert_allclose(result['Wh'], two_step_data['ExpectedWh'])
 
     def test_missing_columns_raises(self, two_step_data):
@@ -91,12 +91,12 @@ class TestAddCumulativeEnergy:
             two_step_data['ExpectedCumulativeWh'],
         )
 
-    def test_wh_column_method(self, two_step_data):
-        # 'wh_column' reconstructs cumulative Wh from discrete increments in an
+    def test_column_method(self, two_step_data):
+        # 'column' reconstructs cumulative Wh from discrete increments in an
         # existing Wh column (which already resets to zero each step), so it is
         # not expected to numerically match the 'integral' method at resets
         with_wh = col.add_energy(two_step_data)
-        result = col.add_cumulative_energy(with_wh, method='wh_column')
+        result = col.add_cumulative_energy(with_wh, method='column')
         expected = np.array([0.0, 1.0, 2.0, 2.0, 0.0, -2.0]) / 3600.0
         npt.assert_allclose(result['CumulativeWh'], expected, atol=1e-12)
 
@@ -104,8 +104,8 @@ class TestAddCumulativeEnergy:
         with pytest.raises(ValueError):
             col.add_cumulative_energy(two_step_data, method='bogus')
 
-    def test_col_name(self, two_step_data):
-        result = col.add_cumulative_energy(two_step_data, col_name='Custom')
+    def test_output_col(self, two_step_data):
+        result = col.add_cumulative_energy(two_step_data, output_col='Custom')
         assert 'Custom' in result.columns
         assert 'CumulativeWh' not in result.columns
 
@@ -123,12 +123,12 @@ class TestAddThroughputEnergy:
             two_step_data['ExpectedThroughputWh'],
         )
 
-    def test_wh_column_method(self, two_step_data):
-        # 'wh_column' reconstructs throughput Wh from discrete increments in an
+    def test_column_method(self, two_step_data):
+        # 'column' reconstructs throughput Wh from discrete increments in an
         # existing Wh column (which already resets to zero each step), so it is
         # not expected to numerically match the 'integral' method at resets
         with_wh = col.add_energy(two_step_data)
-        result = col.add_throughput_energy(with_wh, method='wh_column')
+        result = col.add_throughput_energy(with_wh, method='column')
         expected = np.array([0.0, 1.0, 2.0, 2.0, 4.0, 6.0]) / 3600.0
         npt.assert_allclose(result['ThroughputWh'], expected, atol=1e-12)
 
@@ -136,8 +136,8 @@ class TestAddThroughputEnergy:
         with pytest.raises(ValueError):
             col.add_throughput_energy(two_step_data, method='bogus')
 
-    def test_col_name(self, two_step_data):
-        result = col.add_throughput_energy(two_step_data, col_name='Custom')
+    def test_output_col(self, two_step_data):
+        result = col.add_throughput_energy(two_step_data, output_col='Custom')
         assert 'Custom' in result.columns
         assert 'ThroughputWh' not in result.columns
 

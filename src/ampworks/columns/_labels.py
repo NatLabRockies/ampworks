@@ -126,8 +126,8 @@ def add_step_labels(
     data: Dataset,
     *,
     step_labels: Sequence[StepLabel],
-    col_name: str = 'StepLabel',
-    step_alias: str = STEP,
+    output_col: str = 'StepLabel',
+    step_col: str = STEP,
     reset: bool = False,
     default: str = 'Unlabeled',
 ) -> Dataset:
@@ -143,9 +143,9 @@ def add_step_labels(
         The input dataset.
     step_labels : Sequence[StepLabel]
         A sequence of `StepLabel` defining the map of labels to step numbers.
-    col_name : str, optional
+    output_col : str, optional
         Name of the column to add, by default 'StepLabel'.
-    step_alias : str, optional
+    step_col : str, optional
         Name of column containing step numbers; defaults to standard name.
     reset : bool, optional
         Whether to reset the column before adding labels, by default False.
@@ -177,23 +177,23 @@ def add_step_labels(
     >>> ds = add_step_labels(data, step_labels=[step1, step5, step6])
 
     """
-    _chk._check_columns(data, [step_alias])
+    _chk._check_columns(data, [step_col])
     _chk._check_type('step_labels', step_labels, Sequence)
     _chk._check_inner_type('step_labels', step_labels, StepLabel)
 
     ds = Dataset(data)
-    ds[step_alias] = ds[step_alias].astype(int)
+    ds[step_col] = ds[step_col].astype(int)
 
-    if reset or (col_name not in ds.columns):
-        ds[col_name] = default
+    if reset or (output_col not in ds.columns):
+        ds[output_col] = default
     else:
         # avoid restrictive existing categories from a prior call
-        ds[col_name] = ds[col_name].astype(object)
+        ds[output_col] = ds[output_col].astype(object)
 
     for s in step_labels:
-        ds.loc[ds[step_alias] == s.step_num, col_name] = s.label
+        ds.loc[ds[step_col] == s.step_num, output_col] = s.label
 
-    ds[col_name] = ds[col_name].astype('category')
+    ds[output_col] = ds[output_col].astype('category')
     return ds
 
 
@@ -201,9 +201,9 @@ def add_segment_labels(
     data: Dataset,
     *,
     segment_labels: Sequence[SegmentLabel],
-    col_name: str = 'SegmentLabel',
-    step_alias: str = STEP,
-    cycle_alias: str = CYCLE,
+    output_col: str = 'SegmentLabel',
+    step_col: str = STEP,
+    cycle_col: str = CYCLE,
     reset: bool = False,
     default: str = 'Unlabeled',
 ) -> Dataset:
@@ -219,12 +219,12 @@ def add_segment_labels(
         The input dataset.
     segment_labels : Sequence[SegmentLabel]
         A sequence of `SegmentLabel` defining the map of labels to segments.
-    col_name : str, optional
+    output_col : str, optional
         Name of the column to add, by default 'SegmentLabel'.
-    step_alias : str, optional
+    step_col : str, optional
         Name of column containing step numbers; defaults to standard name. Only
         used if some segment labels are defined by step numbers.
-    cycle_alias : str, optional
+    cycle_col : str, optional
         Name of column containing cycle numbers; defaults to standard name. Only
         used if some segment labels are defined by cycle numbers.
     reset : bool, optional
@@ -258,13 +258,20 @@ def add_segment_labels(
     >>> cap_checks = SegmentLabel('Capacity Check', step_nums=[1, 2])
     >>> rpts = SegmentLabel('RPT', cycle_nums=[1, 2, 52, 53, 103, 104])
     >>> ds = add_segment_labels(
-    ...    data, segment_labels=[hppcs], col_name='CycleLabel',
+    ...    data,
+    ...    segment_labels=[hppcs],
+    ...    output_col='CycleLabel',
     ... )
     >>> ds = add_segment_labels(
-    ...    ds, segment_labels=[cap_checks], col_name='CycleLabel', reset=False,
+    ...    ds,
+    ...    segment_labels=[cap_checks],
+    ...    output_col='CycleLabel',
+    ...    reset=False,
     ... )
     >>> ds = add_segment_labels(
-    ...    ds, segment_labels=[rpts], col_name='SegmentLabel',
+    ...    ds,
+    ...    segment_labels=[rpts],
+    ...    output_col='SegmentLabel',
     ... )
 
     """
@@ -273,38 +280,38 @@ def add_segment_labels(
 
     ds = Dataset(data)
 
-    needs_step_alias = any(s.step_nums is not None for s in segment_labels)
-    needs_cycle_alias = any(s.cycle_nums is not None for s in segment_labels)
+    needs_step_col = any(s.step_nums is not None for s in segment_labels)
+    needs_cycle_col = any(s.cycle_nums is not None for s in segment_labels)
 
-    if needs_step_alias:
-        _chk._check_columns(data, [step_alias])
-        ds[step_alias] = ds[step_alias].astype(int)
-    if needs_cycle_alias:
-        _chk._check_columns(data, [cycle_alias])
-        ds[cycle_alias] = ds[cycle_alias].astype(int)
+    if needs_step_col:
+        _chk._check_columns(data, [step_col])
+        ds[step_col] = ds[step_col].astype(int)
+    if needs_cycle_col:
+        _chk._check_columns(data, [cycle_col])
+        ds[cycle_col] = ds[cycle_col].astype(int)
 
-    if reset or (col_name not in ds.columns):
-        ds[col_name] = default
+    if reset or (output_col not in ds.columns):
+        ds[output_col] = default
     else:
         # avoid restrictive existing categories from a prior call
-        ds[col_name] = ds[col_name].astype(object)
+        ds[output_col] = ds[output_col].astype(object)
 
     for s in segment_labels:
-        which_alias = step_alias if s.step_nums is not None else cycle_alias
-        which_nums = s.step_nums if s.step_nums is not None else s.cycle_nums
+        match_col = step_col if s.step_nums is not None else cycle_col
+        match_nums = s.step_nums if s.step_nums is not None else s.cycle_nums
 
-        ds.loc[ds[which_alias].isin(which_nums), col_name] = s.label
+        ds.loc[ds[match_col].isin(match_nums), output_col] = s.label
 
-    ds[col_name] = ds[col_name].astype('category')
+    ds[output_col] = ds[output_col].astype('category')
     return ds
 
 
 def add_state(
     data: Dataset,
     *,
-    which: str | None = STEP,
-    col_name: str = STATE,
-    amps_alias: str = AMPS,
+    by: str | None = STEP,
+    output_col: str = STATE,
+    amps_col: str = AMPS,
     default: str = 'Unknown',
 ) -> Dataset:
     """
@@ -318,13 +325,13 @@ def add_state(
     ----------
     data : Dataset
         The input dataset.
-    which : str or None, optional
+    by : str or None, optional
         The column used to define groups where the state is constant. Defaults
         to step-based, which assumes each step has a constant state. If None,
         rows are treated individually, without groups. See notes for more info.
-    col_name : str, optional
+    output_col : str, optional
         Name of state column to add; defaults to standard name.
-    amps_alias : str, optional
+    amps_col : str, optional
         Name of column containing current in amps; defaults to standard name.
     default : str, optional
         Default state for rows that do not match any conditions, by default
@@ -341,9 +348,9 @@ def add_state(
 
     Notes
     -----
-    With `which=None`, state is set per row, which can split a single step
-    across multiple states if current changes sign mid-step. Grouping by
-    `which` avoids that, but assigns `default` to any groups whose current
+    With `by=None`, state is set per row, which can split a single step
+    across multiple states if current changes sign mid-step. Grouping with
+    `by` avoids that, but assigns `default` to any groups whose current
     changes signs. Relabel these manually if needed (see Examples). Be aware
     that detection of state within groups allows for tapering current to zero,
     so constant-voltage steps that have a constant charge or discharge state,
@@ -365,27 +372,27 @@ def add_state(
     >>> ds.loc[(ds['Cycle'] == 1) & ds['Step'].isin([5, 7]), 'State'] = 'C'
 
     """
-    check_columns = [which, amps_alias] if which is not None else [amps_alias]
+    check_columns = [by, amps_col] if by is not None else [amps_col]
 
     _chk._check_columns(data, check_columns)
 
     ds = Dataset(data)
 
-    if which is None:
-        ds[col_name] = 'R'
-        ds.loc[ds[amps_alias] > 0, col_name] = 'C'
-        ds.loc[ds[amps_alias] < 0, col_name] = 'D'
+    if by is None:
+        ds[output_col] = 'R'
+        ds.loc[ds[amps_col] > 0, output_col] = 'C'
+        ds.loc[ds[amps_col] < 0, output_col] = 'D'
 
     else:
         instance_nums = _instance_nums(
             data=ds,
-            which=which,
-            cycle_alias=None,
+            by=by,
+            cycle_col=None,
             cycle_resets=False,
             fast=True,
         )
 
-        groups = ds.groupby([which, instance_nums])[amps_alias]
+        groups = ds.groupby([by, instance_nums])[amps_col]
 
         # a group is 'C'/'D' when its min/max never cross zero; both bounds
         # sitting exactly at zero implies every value in the group is zero
@@ -396,32 +403,32 @@ def add_state(
         all_discharge = group_max <= 0
         all_zero = all_charge & all_discharge
 
-        ds[col_name] = default  # default first, then overwrite with matches
+        ds[output_col] = default  # default first, then overwrite with matches
 
         # assign rests last b/c all_charge, all_discharge also true for rests
-        ds.loc[all_discharge, col_name] = 'D'
-        ds.loc[all_charge, col_name] = 'C'
-        ds.loc[all_zero, col_name] = 'R'
+        ds.loc[all_discharge, output_col] = 'D'
+        ds.loc[all_charge, output_col] = 'C'
+        ds.loc[all_zero, output_col] = 'R'
 
-    ds[col_name] = ds[col_name].astype('category')
+    ds[output_col] = ds[output_col].astype('category')
     return ds
 
 
 def add_control_mode(
     data: Dataset,
     *,
-    which: str = STEP,
-    col_name: str = 'ControlMode',
-    amps_alias: str = AMPS,
-    volts_alias: str = VOLTS,
-    watts_alias: str | None = None,
+    by: str = STEP,
+    output_col: str = 'ControlMode',
+    amps_col: str = AMPS,
+    volts_col: str = VOLTS,
+    watts_col: str | None = None,
     rtol: float | Dict[str, float] = 5e-3,
     default: str = 'Unknown',
 ) -> Dataset:
     r"""
     Add a control mode column to a dataset.
 
-    Control modes are 'CC', 'CV', 'CP' (only checked if `watts_alias` is given),
+    Control modes are 'CC', 'CV', 'CP' (only checked if `watts_col` is given),
     or 'Rest' (current exactly zero). A mode is assigned when its signal is
     constant within `rtol` over a group. If there are no matches or multiple
     matches, the `default` is used instead.
@@ -439,16 +446,16 @@ def add_control_mode(
     ----------
     data : Dataset
         The input dataset.
-    which : str, optional
+    by : str, optional
         The column used to define groups where control mode is constant. The
         default is step-based, which assumes each step has a constant mode.
-    col_name : str, optional
+    output_col : str, optional
         Name of control mode column to add, by default 'ControlMode'
-    amps_alias : str, optional
+    amps_col : str, optional
         Name of column containing current in amps; defaults to standard name.
-    volts_alias : str, optional
+    volts_col : str, optional
         Name of column containing voltage in volts; defaults to standard name.
-    watts_alias : str | None, optional
+    watts_col : str | None, optional
         Name of column containing power in watts; None (default) disables CP
         mode detection.
     rtol : float or Dict[str, float], optional
@@ -477,25 +484,25 @@ def add_control_mode(
     >>> data = amp.Dataset(...)
     >>> ds = add_control_mode(data)
 
-    For 'CP' detection, add a `Watts` column and pass it as `watts_alias`. If
+    For 'CP' detection, add a `Watts` column and pass it as `watts_col`. If
     steps are unavailable, group by another constant-per-segment column instead,
     such as state:
 
     >>> data = amp.Dataset(...)
     >>> ds = add_state(data)
     >>> ds = add_power(ds)
-    >>> ds = add_control_mode(ds, which='State', watts_alias='Watts')
+    >>> ds = add_control_mode(ds, by='State', watts_col='Watts')
 
     """
-    check_columns = [which, amps_alias, volts_alias]
-    mode_map = {amps_alias: 'CC', volts_alias: 'CV'}
+    check_columns = [by, amps_col, volts_col]
+    mode_map = {amps_col: 'CC', volts_col: 'CV'}
 
     if isinstance(rtol, Real):
         rtol = {'CC': rtol, 'CV': rtol, 'CP': rtol}
 
-    if watts_alias is not None:
-        check_columns.append(watts_alias)
-        mode_map[watts_alias] = 'CP'
+    if watts_col is not None:
+        check_columns.append(watts_col)
+        mode_map[watts_col] = 'CP'
 
     _chk._check_columns(data, check_columns)
 
@@ -503,13 +510,13 @@ def add_control_mode(
 
     instance_nums = _instance_nums(
         data=ds,
-        which=which,
-        cycle_alias=None,
+        by=by,
+        cycle_col=None,
         cycle_resets=False,
         fast=True,
     )
 
-    groups = ds.groupby([which, instance_nums])[list(mode_map.keys())]
+    groups = ds.groupby([by, instance_nums])[list(mode_map.keys())]
 
     minimum = groups.transform('min')
     maximum = groups.transform('max')
@@ -526,17 +533,17 @@ def add_control_mode(
 
     # take column name of match, ignoring rows with multiple matches
     count = matches.sum(axis=1)  # number of matches per row
-    ds[col_name] = matches.idxmax(axis=1).where(count == 1, other=default)
+    ds[output_col] = matches.idxmax(axis=1).where(count == 1, other=default)
 
     # override rests - where multiple conditions exist, but have meaning
     rests = (
-        ds[amps_alias]
+        ds[amps_col]
         .eq(0.0)
-        .groupby([ds[which], instance_nums])
+        .groupby([ds[by], instance_nums])
         .transform('all')
-    )
+    )  # fmt: skip
 
-    ds.loc[rests, col_name] = 'Rest'
+    ds.loc[rests, output_col] = 'Rest'
 
-    ds[col_name] = ds[col_name].astype('category')
+    ds[output_col] = ds[output_col].astype('category')
     return ds

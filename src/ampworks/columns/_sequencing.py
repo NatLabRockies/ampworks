@@ -9,9 +9,9 @@ from ampworks._core._std_names import SECONDS, CYCLE, STEP
 def add_instance_nums(
     data: Dataset,
     *,
-    which: str = STEP,
-    col_name: str = 'InstanceNum',
-    cycle_alias: str = CYCLE,
+    by: str = STEP,
+    output_col: str = 'InstanceNum',
+    cycle_col: str = CYCLE,
     cycle_resets: bool = True,
     fast: bool = False,
 ) -> Dataset:
@@ -29,11 +29,11 @@ def add_instance_nums(
     ----------
     data : Dataset
         The input dataset.
-    which : str, optional
+    by : str, optional
         The column used to detect and group instances, step-based by default.
-    col_name : str, optional
+    output_col : str, optional
         Name of instance numbers column to add, by default 'InstanceNum'.
-    cycle_alias : str, optional
+    cycle_col : str, optional
         Name of the column containing cycle numbers; defaults to standard name.
         Only used if the `cycle_resets` argument is True.
     cycle_resets : bool, optional
@@ -51,7 +51,7 @@ def add_instance_nums(
     Raises
     ------
     ValueError
-        If `cycle_resets` is True and `cycle_alias` is None.
+        If `cycle_resets` is True and `cycle_col` is None.
 
     Warnings
     --------
@@ -82,19 +82,19 @@ def add_instance_nums(
     >>> first_means = step5[step5['InstanceNum'] == 1].groupby('Cycle').mean()
 
     """
-    check_columns = [which, cycle_alias] if cycle_resets else [which]
+    check_columns = [by, cycle_col] if cycle_resets else [by]
 
-    if cycle_resets and (cycle_alias is None):
-        raise ValueError("'cycle_alias' is required when cycle_resets=True.")
+    if cycle_resets and (cycle_col is None):
+        raise ValueError("'cycle_col' is required when cycle_resets=True.")
 
     _chk._check_columns(data, check_columns)
 
     ds = Dataset(data)
 
-    ds[col_name] = _instance_nums(
+    ds[output_col] = _instance_nums(
         data=ds,
-        which=which,
-        cycle_alias=cycle_alias,
+        by=by,
+        cycle_col=cycle_col,
         cycle_resets=cycle_resets,
         fast=fast,
     )
@@ -105,9 +105,9 @@ def add_instance_nums(
 def add_relative_time(
     data: Dataset,
     *,
-    which: str = STEP,
-    col_name: str = 'StepTime',
-    time_alias: str = SECONDS,
+    by: str = STEP,
+    output_col: str = 'StepTime',
+    time_col: str = SECONDS,
 ) -> Dataset:
     """
     Add a relative time column to a dataset.
@@ -116,12 +116,12 @@ def add_relative_time(
     ----------
     data : Dataset
         The input dataset.
-    which : str, optional
+    by : str, optional
         The column used to define groups where relative time resets to zero.
         Defaults to step-based, resetting at the start of each step.
-    col_name : str, optional
+    output_col : str, optional
         Name of the relative time column to add, by default 'StepTime'.
-    time_alias : str, optional
+    time_col : str, optional
         Name of column containing global time values; defaults to the standard
         name for time in seconds.
 
@@ -139,31 +139,31 @@ def add_relative_time(
 
     You may want relative time to reset on changes in State instead of Step,
     e.g., to get relative times for charge/discharge/rest segments that span
-    multiple steps (e.g., a CCCV charge). Use a different `which` column to
+    multiple steps (e.g., a CCCV charge). Use a different `by` column to
     control this:
 
-    >>> ds = add_relative_time(data, which='State')
+    >>> ds = add_relative_time(data, by='State')
 
     The time column also doesn't need to be in seconds. If you have another time
-    column, use it via `time_alias`:
+    column, use it via `time_col`:
 
     >>> data['Hours'] = data['Seconds'] / 3600.0
-    >>> ds = add_relative_time(data, col_name='StepTimeHr', time_alias='Hours')
+    >>> ds = add_relative_time(data, output_col='StepTimeHr', time_col='Hours')
 
     """
-    _chk._check_columns(data, [which, time_alias])
+    _chk._check_columns(data, [by, time_col])
 
     ds = Dataset(data)
 
     instance_nums = _instance_nums(
         data=ds,
-        which=which,
-        cycle_alias=None,
+        by=by,
+        cycle_col=None,
         cycle_resets=False,
         fast=True,
     )
 
-    groups = ds.groupby([which, instance_nums])[time_alias]
-    ds[col_name] = ds[time_alias] - groups.transform('first')
+    groups = ds.groupby([by, instance_nums])[time_col]
+    ds[output_col] = ds[time_col] - groups.transform('first')
 
     return ds

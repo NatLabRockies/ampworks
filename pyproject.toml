@@ -41,6 +41,7 @@ dependencies = [
     "IPython",
     "pyarrow",
     "seaborn",
+    "openpyxl",
     "fastexcel",
     "matplotlib",
     "numdifftools",

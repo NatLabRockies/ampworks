@@ -83,7 +83,10 @@ def read_csv(
         data = amp.read_csv('data.csv')
 
         # specify custom aliases for a couple column headers
-        aliases = amp.HeaderAliases(Seconds='Time_s', Amps='Current_A')
+        aliases = amp.HeaderAliases(
+            seconds={'Time_s': None},
+            amps={'Current_A': None},
+        )
         data = amp.read_csv('data.csv', aliases=aliases)
 
         # include extra columns for temperature and notes
@@ -154,7 +157,10 @@ def read_table(
         data = amp.read_table('data.txt')
 
         # specify custom aliases for a couple column headers
-        aliases = amp.HeaderAliases(Seconds='Time_s', Amps='Current_A')
+        aliases = amp.HeaderAliases(
+            seconds={'Time_s': None},
+            amps={'Current_A': None},
+        )
         data = amp.read_table('data.txt', aliases=aliases)
 
         # include extra columns for temperature and notes
@@ -241,7 +247,10 @@ def read_excel(
         data = amp.read_excel('data.xls')
 
         # specify custom aliases for a couple column headers
-        aliases = amp.HeaderAliases(Seconds='Time_s', Amps='Current_A')
+        aliases = amp.HeaderAliases(
+            seconds={'Time_s': None},
+            amps={'Current_A': None},
+        )
         data = amp.read_excel('data.xls', aliases=aliases)
 
         # include extra columns for temperature and notes
@@ -407,6 +416,8 @@ def _read_delimited(
         'ignore_errors': True,
         'separator': delimiter,
         'truncate_ragged_lines': True,
+        'infer_schema_length': 10000,
+        'encoding': 'utf8-lossy',
     }
 
     skip_rows = None

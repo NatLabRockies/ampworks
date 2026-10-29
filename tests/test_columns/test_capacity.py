@@ -182,12 +182,12 @@ class TestAddEquivalentFullCycles:
         assert 'Custom' in result.columns
         assert 'EFC' not in result.columns
 
-    def test_throughput_col(self, throughput_data):
+    def test_throughput_ah_col(self, throughput_data):
         ds = throughput_data.rename(columns={'ThroughputAh': 'Custom'})
         result = col.add_equivalent_full_cycles(
             ds,
             nominal_ah=2.0,
-            throughput_col='Custom',
+            throughput_ah_col='Custom',
         )
         npt.assert_allclose(result['EFC'], [0.0, 0.25, 0.5, 1.0])
 

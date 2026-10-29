@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 from ampworks import _checks as _chk
-from ampworks._core._std_names import SECONDS, STATE, WH, WATTS
 from ampworks.columns._backend import (
     _ah_wh,
     _ah_wh_cumulative,
@@ -17,10 +16,10 @@ if TYPE_CHECKING:
 def add_energy(
     data: Dataset,
     *,
-    by: str = STATE,
-    output_col: str = WH,
-    seconds_col: str = SECONDS,
-    watts_col: str = WATTS,
+    by: str = 'State',
+    output_col: str = 'Wh',
+    seconds_col: str = 'Seconds',
+    watts_col: str = 'Watts',
 ) -> Dataset:
     """
     Add an energy column to a dataset.
@@ -36,13 +35,13 @@ def add_energy(
         The input dataset.
     by : str, optional
         The column used to define groups where energy resets to zero. Defaults
-        to state-based, which resets to zero on state changes.
+        to 'State', which resets to zero on state changes.
     output_col : str, optional
-        Name of the new energy column to add; defaults to standard name.
+        Name of the new energy column to add, by default 'Wh'.
     seconds_col : str, optional
-        Name of column containing time in seconds; defaults to standard name.
+        Name of column containing time in seconds, by default 'Seconds'.
     watts_col : str, optional
-        Name of column containing power in watts; defaults to standard name.
+        Name of column containing power in watts, by default 'Watts'.
 
     Returns
     -------
@@ -97,10 +96,10 @@ def add_cumulative_energy(
     *,
     method: Literal['integral', 'column'] = 'integral',
     output_col: str = 'CumulativeWh',
-    seconds_col: str = SECONDS,
-    watts_col: str = WATTS,
-    state_col: str = STATE,
-    wh_col: str = WH,
+    seconds_col: str = 'Seconds',
+    watts_col: str = 'Watts',
+    state_col: str = 'State',
+    wh_col: str = 'Wh',
 ) -> Dataset:
     """
     Add a cumulative energy column to a dataset.
@@ -128,17 +127,17 @@ def add_cumulative_energy(
     output_col : str, optional
         Name of cumulative energy column to add; defaults to 'CumulativeWh'.
     seconds_col : str, optional
-        Name of column containing time in seconds; defaults to standard name.
+        Name of column containing time in seconds, by default 'Seconds'.
         Only used when `method='integral'`.
     watts_col : str, optional
-        Name of column containing power in watts; defaults to standard name.
+        Name of column containing power in watts, by default 'Watts'.
         Only used when `method='integral'`.
     state_col : str, optional
-        Name of column containing the state; defaults to standard name. Only
+        Name of column containing the state, by default 'State'. Only
         used when `method='column'`.
     wh_col : str, optional
-        Name of column containing energy in watt-hours; defaults to standard
-        name. Only used when `method='column'`.
+        Name of column containing energy in watt-hours, by default 'Wh'.
+        Only used when `method='column'`.
 
     Returns
     -------
@@ -217,9 +216,9 @@ def add_throughput_energy(
     *,
     method: Literal['integral', 'column'] = 'integral',
     output_col: str = 'ThroughputWh',
-    seconds_col: str = SECONDS,
-    watts_col: str = WATTS,
-    wh_col: str = WH,
+    seconds_col: str = 'Seconds',
+    watts_col: str = 'Watts',
+    wh_col: str = 'Wh',
 ) -> Dataset:
     """
     Add a throughput energy column to a dataset.
@@ -239,14 +238,14 @@ def add_throughput_energy(
     output_col : str, optional
         Name of throughput energy column to add; defaults to 'ThroughputWh'.
     seconds_col : str, optional
-        Name of column containing time in seconds; defaults to standard name.
+        Name of column containing time in seconds, by default 'Seconds'.
         Only used when `method='integral'`.
     watts_col : str, optional
-        Name of column containing power in watts; defaults to standard name.
+        Name of column containing power in watts, by default 'Watts'.
         Only used when `method='integral'`.
     wh_col : str, optional
-        Name of column containing energy in watt-hours; defaults to standard
-        name. Only used when `method='column'`.
+        Name of column containing energy in watt-hours, by default 'Wh'.
+        Only used when `method='column'`.
 
     Returns
     -------

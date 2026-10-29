@@ -8,7 +8,6 @@ import pandas as pd
 from ampworks import _checks as _chk
 from ampworks._core._dataset import Dataset
 from ampworks.columns._backend import _instance_nums
-from ampworks._core._std_names import AMPS, VOLTS, CYCLE, STEP, STATE
 
 
 class StepLabel:
@@ -127,7 +126,7 @@ def add_step_labels(
     *,
     step_labels: Sequence[StepLabel],
     output_col: str = 'StepLabel',
-    step_col: str = STEP,
+    step_col: str = 'Step',
     reset: bool = False,
     default: str = 'Unlabeled',
 ) -> Dataset:
@@ -146,7 +145,7 @@ def add_step_labels(
     output_col : str, optional
         Name of the column to add, by default 'StepLabel'.
     step_col : str, optional
-        Name of column containing step numbers; defaults to standard name.
+        Name of column containing step numbers, by default 'Step'.
     reset : bool, optional
         Whether to reset the column before adding labels, by default False.
     default : str, optional
@@ -202,8 +201,8 @@ def add_segment_labels(
     *,
     segment_labels: Sequence[SegmentLabel],
     output_col: str = 'SegmentLabel',
-    step_col: str = STEP,
-    cycle_col: str = CYCLE,
+    step_col: str = 'Step',
+    cycle_col: str = 'Cycle',
     reset: bool = False,
     default: str = 'Unlabeled',
 ) -> Dataset:
@@ -222,10 +221,10 @@ def add_segment_labels(
     output_col : str, optional
         Name of the column to add, by default 'SegmentLabel'.
     step_col : str, optional
-        Name of column containing step numbers; defaults to standard name. Only
+        Name of column containing step numbers, by default 'Step'. Only
         used if some segment labels are defined by step numbers.
     cycle_col : str, optional
-        Name of column containing cycle numbers; defaults to standard name. Only
+        Name of column containing cycle numbers, by default 'Cycle'. Only
         used if some segment labels are defined by cycle numbers.
     reset : bool, optional
         Whether to reset the column before adding labels, by default False.
@@ -309,9 +308,9 @@ def add_segment_labels(
 def add_state(
     data: Dataset,
     *,
-    by: str | None = STEP,
-    output_col: str = STATE,
-    amps_col: str = AMPS,
+    by: str | None = 'Step',
+    output_col: str = 'State',
+    amps_col: str = 'Amps',
     default: str = 'Unknown',
 ) -> Dataset:
     """
@@ -327,12 +326,12 @@ def add_state(
         The input dataset.
     by : str or None, optional
         The column used to define groups where the state is constant. Defaults
-        to step-based, which assumes each step has a constant state. If None,
-        rows are treated individually, without groups. See notes for more info.
+        to 'Step', which assumes each step has a constant state. If None, rows
+        are treated individually, without groups. See notes for more info.
     output_col : str, optional
-        Name of state column to add; defaults to standard name.
+        Name of state column to add, by default 'State'.
     amps_col : str, optional
-        Name of column containing current in amps; defaults to standard name.
+        Name of column containing current in amps, by default 'Amps'.
     default : str, optional
         Default state for rows that do not match any conditions, by default
         'Unknown'.
@@ -417,10 +416,10 @@ def add_state(
 def add_control_mode(
     data: Dataset,
     *,
-    by: str = STEP,
+    by: str = 'Step',
     output_col: str = 'ControlMode',
-    amps_col: str = AMPS,
-    volts_col: str = VOLTS,
+    amps_col: str = 'Amps',
+    volts_col: str = 'Volts',
     watts_col: str | None = None,
     rtol: float | Dict[str, float] = 5e-3,
     default: str = 'Unknown',
@@ -448,13 +447,13 @@ def add_control_mode(
         The input dataset.
     by : str, optional
         The column used to define groups where control mode is constant. The
-        default is step-based, which assumes each step has a constant mode.
+        default is 'Step', which assumes each step has a constant mode.
     output_col : str, optional
         Name of control mode column to add, by default 'ControlMode'
     amps_col : str, optional
-        Name of column containing current in amps; defaults to standard name.
+        Name of column containing current in amps, by default 'Amps'.
     volts_col : str, optional
-        Name of column containing voltage in volts; defaults to standard name.
+        Name of column containing voltage in volts, by default 'Volts'.
     watts_col : str | None, optional
         Name of column containing power in watts; None (default) disables CP
         mode detection.

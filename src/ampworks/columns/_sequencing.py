@@ -3,15 +3,14 @@ from __future__ import annotations
 from ampworks import _checks as _chk
 from ampworks._core._dataset import Dataset
 from ampworks.columns._backend import _instance_nums
-from ampworks._core._std_names import SECONDS, CYCLE, STEP
 
 
 def add_instance_nums(
     data: Dataset,
     *,
-    by: str = STEP,
+    by: str = 'Step',
     output_col: str = 'InstanceNum',
-    cycle_col: str = CYCLE,
+    cycle_col: str = 'Cycle',
     cycle_resets: bool = True,
     fast: bool = False,
 ) -> Dataset:
@@ -30,11 +29,11 @@ def add_instance_nums(
     data : Dataset
         The input dataset.
     by : str, optional
-        The column used to detect and group instances, step-based by default.
+        The column used to detect and group instances, 'Step' by default.
     output_col : str, optional
         Name of instance numbers column to add, by default 'InstanceNum'.
     cycle_col : str, optional
-        Name of the column containing cycle numbers; defaults to standard name.
+        Name of the column containing cycle numbers, by default 'Cycle'.
         Only used if the `cycle_resets` argument is True.
     cycle_resets : bool, optional
         Whether the instance numbers reset at the start of each cycle. If True
@@ -105,9 +104,9 @@ def add_instance_nums(
 def add_relative_time(
     data: Dataset,
     *,
-    by: str = STEP,
+    by: str = 'Step',
     output_col: str = 'StepTime',
-    time_col: str = SECONDS,
+    time_col: str = 'Seconds',
 ) -> Dataset:
     """
     Add a relative time column to a dataset.
@@ -118,12 +117,11 @@ def add_relative_time(
         The input dataset.
     by : str, optional
         The column used to define groups where relative time resets to zero.
-        Defaults to step-based, resetting at the start of each step.
+        Defaults to 'Step', resetting at the start of each step.
     output_col : str, optional
         Name of the relative time column to add, by default 'StepTime'.
     time_col : str, optional
-        Name of column containing global time values; defaults to the standard
-        name for time in seconds.
+        Name of column containing global time values, by default 'Seconds'.
 
     Returns
     -------

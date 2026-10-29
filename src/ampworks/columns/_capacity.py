@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 from ampworks import _checks as _chk
-from ampworks._core._std_names import SECONDS, AMPS, STATE, AH
 from ampworks.columns._backend import (
     _ah_wh,
     _ah_wh_cumulative,
@@ -17,10 +16,10 @@ if TYPE_CHECKING:
 def add_capacity(
     data: Dataset,
     *,
-    by: str = STATE,
-    output_col: str = AH,
-    seconds_col: str = SECONDS,
-    amps_col: str = AMPS,
+    by: str = 'State',
+    output_col: str = 'Ah',
+    seconds_col: str = 'Seconds',
+    amps_col: str = 'Amps',
 ) -> Dataset:
     """
     Add a capacity column to a dataset.
@@ -36,13 +35,13 @@ def add_capacity(
         The input dataset.
     by : str, optional
         The column used to define groups where capacity resets to zero. Defaults
-        to state-based, which resets zero on state changes.
+        to 'State', which resets zero on state changes.
     output_col : str, optional
-        Name of the new capacity column to add; defaults to standard name.
+        Name of the new capacity column to add, by default 'Ah'.
     seconds_col : str, optional
-        Name of column containing time in seconds; defaults to standard name.
+        Name of column containing time in seconds, by default 'Seconds'.
     amps_col : str, optional
-        Name of column containing current in amps; defaults to standard name.
+        Name of column containing current in amps, by default 'Amps'.
 
     Returns
     -------
@@ -92,10 +91,10 @@ def add_cumulative_capacity(
     *,
     method: Literal['integral', 'column'] = 'integral',
     output_col: str = 'CumulativeAh',
-    seconds_col: str = SECONDS,
-    amps_col: str = AMPS,
-    state_col: str = STATE,
-    ah_col: str = AH,
+    seconds_col: str = 'Seconds',
+    amps_col: str = 'Amps',
+    state_col: str = 'State',
+    ah_col: str = 'Ah',
 ) -> Dataset:
     """
     Add a cumulative capacity column to a dataset.
@@ -123,17 +122,17 @@ def add_cumulative_capacity(
     output_col : str, optional
         Name of cumulative capacity column to add; defaults to 'CumulativeAh'.
     seconds_col : str, optional
-        Name of column containing time in seconds; defaults to standard name.
+        Name of column containing time in seconds, by default 'Seconds'.
         Only used when `method='integral'`.
     amps_col : str, optional
-        Name of column containing current in amps; defaults to standard name.
+        Name of column containing current in amps, by default 'Amps'.
         Only used when `method='integral'`.
     state_col : str, optional
-        Name of column containing the state; defaults to standard name. Only
+        Name of column containing the state, by default 'State'. Only
         used when `method='column'`.
     ah_col : str, optional
-        Name of column containing capacity in ampere-hours; defaults to standard
-        name. Only used when `method='column'`.
+        Name of column containing capacity in ampere-hours, by default 'Ah'.
+        Only used when `method='column'`.
 
     Returns
     -------
@@ -210,9 +209,9 @@ def add_throughput_capacity(
     *,
     method: Literal['integral', 'column'] = 'integral',
     output_col: str = 'ThroughputAh',
-    seconds_col: str = SECONDS,
-    amps_col: str = AMPS,
-    ah_col: str = AH,
+    seconds_col: str = 'Seconds',
+    amps_col: str = 'Amps',
+    ah_col: str = 'Ah',
 ) -> Dataset:
     """
     Add a throughput capacity column to a dataset.
@@ -233,14 +232,14 @@ def add_throughput_capacity(
     output_col : str, optional
         Name of throughput capacity column to add; defaults to 'ThroughputAh'.
     seconds_col : str, optional
-        Name of column containing time in seconds; defaults to standard name.
+        Name of column containing time in seconds, by default 'Seconds'.
         Only used when `method='integral'`.
     amps_col : str, optional
-        Name of column containing current in amps; defaults to standard name.
+        Name of column containing current in amps, by default 'Amps'.
         Only used when `method='integral'`.
     ah_col : str, optional
-        Name of column containing capacity in ampere-hours; defaults to standard
-        name. Only used when `method='column'`.
+        Name of column containing capacity in ampere-hours, by default 'Ah'.
+        Only used when `method='column'`.
 
     Returns
     -------
@@ -306,7 +305,7 @@ def add_equivalent_full_cycles(
     *,
     nominal_ah: float,
     output_col: str = 'EFC',
-    throughput_col: str = 'ThroughputAh',
+    throughput_ah_col: str = 'ThroughputAh',
 ) -> Dataset:
     """
     Add an equivalent full cycles column to a dataset.
@@ -326,7 +325,7 @@ def add_equivalent_full_cycles(
         The nominal capacity of the battery in ampere-hours.
     output_col : str, optional
         Name of the column to add, by default 'EFC'.
-    throughput_col : str, optional
+    throughput_ah_col : str, optional
         Name of the column containing throughput capacity in ampere-hours, by
         default 'ThroughputAh'.
 
@@ -364,11 +363,11 @@ def add_equivalent_full_cycles(
     >>> ds = add_equivalent_full_cycles(ds, nominal_ah=2.0)
 
     """
-    _chk._check_columns(data, [throughput_col])
+    _chk._check_columns(data, [throughput_ah_col])
 
     if nominal_ah == 0:
         raise ValueError("'nominal_ah' must be nonzero.")
 
     ds = data.copy()
-    ds[output_col] = ds[throughput_col] / (2.0 * abs(nominal_ah))
+    ds[output_col] = ds[throughput_ah_col] / (2.0 * abs(nominal_ah))
     return ds

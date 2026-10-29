@@ -2,15 +2,14 @@ from __future__ import annotations
 
 from ampworks import _checks as _chk
 from ampworks._core._dataset import Dataset
-from ampworks._core._std_names import AMPS, VOLTS, WATTS
 
 
 def add_power(
     data: Dataset,
     *,
-    output_col: str = WATTS,
-    amps_col: str = AMPS,
-    volts_col: str = VOLTS,
+    output_col: str = 'Watts',
+    amps_col: str = 'Amps',
+    volts_col: str = 'Volts',
 ) -> Dataset:
     """
     Add a power column to a dataset.
@@ -23,11 +22,11 @@ def add_power(
     data : Dataset
         The input dataset.
     output_col : str, optional
-        Name of power column to add; defaults to standard name.
+        Name of power column to add, by default 'Watts'.
     amps_col : str, optional
-        Name of column containing current in amps; defaults to standard name.
+        Name of column containing current in amps, by default 'Amps'.
     volts_col : str, optional
-        Name of column containing voltage in volts; defaults to standard name.
+        Name of column containing voltage in volts, by default 'Volts'.
 
     Returns
     -------
@@ -54,7 +53,7 @@ def add_c_rate(
     *,
     nominal_ah: float,
     output_col: str = 'CRate',
-    amps_col: str = AMPS,
+    amps_col: str = 'Amps',
 ) -> Dataset:
     """
     Add a C-rate column to a dataset.
@@ -74,7 +73,7 @@ def add_c_rate(
     output_col : str, optional
         Name of the column to add, by default 'CRate'.
     amps_col : str, optional
-        Name of column containing current in amps; defaults to standard name.
+        Name of column containing current in amps, by default 'Amps'.
 
     Returns
     -------

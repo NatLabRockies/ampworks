@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Literal, Sequence
+from warnings import catch_warnings, filterwarnings
 
 import numpy as np
 import pandas as pd
@@ -391,7 +392,9 @@ class Dataset(pd.DataFrame):
         color = '#636EFA'  # adopt color from plotly's default
 
         cols = [x, y] + list(tips)
-        source = ColumnDataSource(data=self[cols])
+        with catch_warnings():
+            filterwarnings('ignore', message=r".*inplace keyword.*deprecated")
+            source = ColumnDataSource(data=self[cols])
 
         fig = figure(
             x_axis_label=x,
@@ -556,12 +559,12 @@ class Dataset(pd.DataFrame):
         _chk._check_columns(self, columns)
 
         result = self.copy()
-        for column in columns:
-            if method.lower() == 'first':
-                ref = result[column].iloc[0]
-            else:  # method == 'min'
-                ref = result[column].min()
 
-            result[column] = result[column] - ref
+        if method.lower() == 'first':
+            ref = result[columns].iloc[0]
+        else:  # method == 'min'
+            ref = result[columns].min()
+
+        result[columns] = result[columns] - ref
 
         return result

@@ -283,49 +283,68 @@ class TestEnforceMonotonicFunctional:
         assert isinstance(result, amp.Dataset)
 
 
-# zero_time method validation and functionality
-class TestZeroTimeValidation:
+# zero_reference method validation and functionality
+class TestZeroReferenceValidation:
 
-    def test_missing_seconds_column(self):
+    def test_missing_column(self):
         data = amp.Dataset({'A': [1.0, 2.0, 3.0]})
         with pytest.raises(ValueError):
-            data.zero_time()
+            data.zero_reference('Seconds')
+
+    def test_invalid_method(self, sample_data):
+        with pytest.raises(ValueError):
+            sample_data.zero_reference('Seconds', method='last')
+
+    def test_invalid_columns_type(self, sample_data):
+        with pytest.raises(TypeError):
+            sample_data.zero_reference(['Seconds', 1])
 
 
-class TestZeroTimeFunctional:
+class TestZeroReferenceFunctional:
 
     def test_first_row_zero(self, sample_data):
         assert sample_data['Seconds'].iloc[0] != 0.0  # sanity check
-        result = sample_data.zero_time()
+        result = sample_data.zero_reference('Seconds')
         assert result['Seconds'].iloc[0] == 0.0
 
     def test_remaining_rows_shifts(self, sample_data):
         seconds = sample_data['Seconds'].to_numpy()
         assert seconds[0] != 0.0  # sanity check
 
-        result = sample_data.zero_time()
+        result = sample_data.zero_reference('Seconds')
         expected = seconds - seconds[0]
 
         npt.assert_almost_equal(result['Seconds'].to_numpy(), expected)
 
     def test_negative_start_time_handled(self):
         data = amp.Dataset({'Seconds': [-50., -30., -10., 10.]})
-        result = data.zero_time()
+        result = data.zero_reference('Seconds')
         npt.assert_allclose(result['Seconds'].to_numpy(), [0., 20., 40., 60.])
 
+    def test_min_method(self, sample_data):
+        result = sample_data.zero_reference('A', method='min')
+        expected = sample_data['A'].to_numpy() - sample_data['A'].min()
+        npt.assert_allclose(result['A'].to_numpy(), expected)
+        assert result['A'].iloc[0] != 0.0  # first row is not the minimum
+
+    def test_multiple_columns(self, sample_data):
+        result = sample_data.zero_reference(['A', 'Seconds'])
+        assert result['A'].iloc[0] == 0.0
+        assert result['Seconds'].iloc[0] == 0.0
+
     def test_other_columns_unchanged(self, sample_data):
-        result = sample_data.zero_time()
+        result = sample_data.zero_reference('Seconds')
         npt.assert_allclose(result['A'].to_numpy(), sample_data['A'].to_numpy())
 
     def test_does_not_modify_self(self, sample_data):
         original_first = sample_data['Seconds'].iloc[0]
         assert sample_data['Seconds'].iloc[0] != 0.0  # sanity check
-        result = sample_data.zero_time()
+        result = sample_data.zero_reference('Seconds')
         assert result['Seconds'].iloc[0] == 0.0
         assert sample_data['Seconds'].iloc[0] == original_first
 
     def test_return_type_is_dataset(self, sample_data):
-        result = sample_data.zero_time()
+        result = sample_data.zero_reference('Seconds')
         assert isinstance(result, amp.Dataset)
 
 

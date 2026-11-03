@@ -3,50 +3,18 @@ from __future__ import annotations
 import textwrap
 
 from warnings import warn
-from typing import Set, Dict, Sequence, Callable
+from typing import Dict, Sequence
 
 import pandas as pd
 
 from ampworks import _checks as _chk
 from ampworks._core._dataset import Dataset
-
-AliasSet = Set[str] | Sequence[str]
-AliasMap = Dict[str, float | Callable[[pd.Series], pd.Series] | None]
-
-
-# construct HEADER_ALIASES dictionary from base names and unit->factor maps
-def _build_default_alias(
-    names: Set[str],
-    units: Dict[str, float] | None,
-) -> AliasSet | AliasMap:
-    """
-    Build a default alias set or map from names and units.
-
-    Parameters
-    ----------
-    names : Set[str]
-        Base alias names.
-    units : Dict[str, float] or None
-        Mapping of unit label (key) and conversion factor (value) to the base
-        unit (i.e., after standardization). If None, only build AliasSet.
-
-    Returns
-    -------
-    aliases : AliasSet or AliasMap
-        Alias set or map for given names and units. If units is not None, the
-        map keys include name only, unit only, and name.unit variants.
-
-    """
-    if units is None:
-        return set(names)
-
-    aliases = dict(units)
-    for name in names:
-        aliases[name] = 1.0
-        for unit, factor in units.items():
-            aliases[f"{name}.{unit}"] = factor
-
-    return aliases
+from ampworks._core._backend import (
+    AliasSet,
+    AliasMap,
+    _astype_float,
+    _build_default_alias,
+)
 
 
 TIME_NAMES = {'t', 'time', 'test', 'testtime', 'totaltime'}
@@ -110,6 +78,19 @@ DEFAULT_ALIASES: Dict[str, AliasSet | AliasMap] = {
 
 REQUIRED_HEADERS = {'Seconds', 'Amps', 'Volts'}
 
+# HeaderAliases keyword names mapped to their standard header names
+_KWARG_TO_STD = {
+    'seconds': 'Seconds',
+    'amps': 'Amps',
+    'volts': 'Volts',
+    'cycle': 'Cycle',
+    'step': 'Step',
+    'state': 'State',
+    'ah': 'Ah',
+    'wh': 'Wh',
+    'datetime': 'DateTime',
+}
+
 
 class HeaderAliases:
     """Header alias definitions."""
@@ -129,15 +110,15 @@ class HeaderAliases:
     def __init__(
         self,
         *,
-        Seconds: AliasMap | None = None,
-        Amps: AliasMap | None = None,
-        Volts: AliasMap | None = None,
-        Cycle: AliasSet = None,
-        Step: AliasSet = None,
-        State: AliasSet = None,
-        Ah: AliasMap | None = None,
-        Wh: AliasMap | None = None,
-        DateTime: AliasSet | None = None,
+        seconds: AliasMap | None = None,
+        amps: AliasMap | None = None,
+        volts: AliasMap | None = None,
+        cycle: AliasSet = None,
+        step: AliasSet = None,
+        state: AliasSet = None,
+        ah: AliasMap | None = None,
+        wh: AliasMap | None = None,
+        datetime: AliasSet | None = None,
         extend_defaults: bool | Sequence[str] = False,
     ) -> None:
         """
@@ -146,30 +127,29 @@ class HeaderAliases:
 
         Parameters
         ----------
-        Seconds : AliasMap or None, optional
+        seconds : AliasMap or None, optional
             Time column aliases and converters. None uses internal defaults.
-        Amps : AliasMap or None, optional
+        amps : AliasMap or None, optional
             Current column aliases and converters. None uses internal defaults.
-        Volts : AliasMap or None, optional
+        volts : AliasMap or None, optional
             Voltage column aliases and converters. None uses internal defaults.
-        Cycle : AliasSet or None, optional
+        cycle : AliasSet or None, optional
             Cycle column aliases. None uses internal defaults.
-        Step : AliasSet or None, optional
+        step : AliasSet or None, optional
             Step column aliases. None uses internal defaults.
-        State : AliasSet or None, optional
+        state : AliasSet or None, optional
             State column aliases. None uses internal defaults.
-        Ah : AliasMap or None, optional
+        ah : AliasMap or None, optional
             Capacity column aliases and converters. None uses internal defaults.
-        Wh : AliasMap or None, optional
+        wh : AliasMap or None, optional
             Energy column aliases and converters. None uses internal defaults.
-        DateTime : AliasSet or None, optional
+        datetime : AliasSet or None, optional
             DateTime column aliases. None uses internal defaults.
         extend_defaults : bool or Sequence[str], optional
             How to augment or override default aliases. True extends defaults.
             False (default) replaces defaults with provided values. To extend
-            some while replacing others, supply a list of which field names to
-            extend, others will be replaced, where the field names are the
-            attribute names of the class (e.g., 'Seconds', 'Amps', etc.).
+            some while replacing others, supply a list of the keyword names to
+            extend (e.g., `['seconds', 'amps']`); all others are replaced.
 
         Notes
         -----
@@ -186,9 +166,9 @@ class HeaderAliases:
         be either `None` or `1.0`.
 
         An `AliasSet` is used for a few of the fields which don't require unit
-        conversion (e.g., Cycle, Step, and State). For these fields, simply
-        provide a list of the alias names. Even if you want to enforce only one
-        alias, it must still be provided as a list of one item.
+        conversion (e.g., `cycle`, `step`, and `state`). For these fields,
+        simply provide a list of the alias names. Even if you want to enforce
+        only one alias, it must still be provided as a list of one item.
 
         Examples
         --------
@@ -201,31 +181,31 @@ class HeaderAliases:
 
         >>> import ampworks as amp
         >>> aliases = amp.HeaderAliases(
-        ...     Seconds={'elapsed_s': None},
-        ...     Amps={'current_amps': None, 'current_a': None},
+        ...     seconds={'elapsed_s': None},
+        ...     amps={'current_amps': None, 'current_a': None},
         ... )
 
         If a column's units don't match the standardized unit, use the value to
         specify the conversion factor or function. Factors (float) multiply the
         source value to convert to the standard unit. For example, `s = 60*min`:
 
-        >>> aliases = amp.HeaderAliases(Seconds={'elapsed_min': 60.0})
+        >>> aliases = amp.HeaderAliases(seconds={'elapsed_min': 60.0})
 
         Converters can also be arbitrary callables like `f(series) -> series`:
 
-        >>> aliases = amp.HeaderAliases(Volts={'v_mv': lambda x: x / 1000})
+        >>> aliases = amp.HeaderAliases(volts={'v_mv': lambda x: x / 1000})
 
         Use `extend_defaults` to add to the built-in defaults instead of fully
         replacing them, either for all provided fields or for select fields:
 
         >>> aliases = amp.HeaderAliases(
-        ...     Seconds={'elapsed_s': None},
+        ...     seconds={'elapsed_s': None},
         ...     extend_defaults=True,
         ... )
         >>> aliases = amp.HeaderAliases(
-        ...     Seconds={'elapsed_s': None},
-        ...     Amps={'current_a': None},
-        ...     extend_defaults=['Seconds'],
+        ...     seconds={'elapsed_s': None},
+        ...     amps={'current_a': None},
+        ...     extend_defaults=['seconds'],
         ... )
 
         All of the above examples focus on values that may or may not need to be
@@ -233,22 +213,22 @@ class HeaderAliases:
         conversion, which are given as a list of strings instead of by a map:
 
         >>> aliases = amp.HeaderAliases(
-        ...     Cycle=['CycleNumber'],
-        ...     Step=['StepIndex', 'StepNumber'],
+        ...     cycle=['CycleNumber'],
+        ...     step=['StepIndex', 'StepNumber'],
         ...     extend_defaults=True,
         ... )
 
         """
         params = {
-            'Seconds': Seconds,
-            'Amps': Amps,
-            'Volts': Volts,
-            'Cycle': Cycle,
-            'Step': Step,
-            'State': State,
-            'Ah': Ah,
-            'Wh': Wh,
-            'DateTime': DateTime,
+            'seconds': seconds,
+            'amps': amps,
+            'volts': volts,
+            'cycle': cycle,
+            'step': step,
+            'state': state,
+            'ah': ah,
+            'wh': wh,
+            'datetime': datetime,
         }
 
         _chk._check_type('extend_defaults', extend_defaults, (bool, Sequence))
@@ -265,10 +245,12 @@ class HeaderAliases:
                 f" subset of {list(params.keys())}.",
             )
 
-        # loop over fields and add to class instance
+        # loop over fields and store under the standard header names
         for name, value in params.items():
+            std_header = _KWARG_TO_STD[name]
             extend = name in extend_fields
-            setattr(self, name, _format_user_alias(name, value, extend))
+            formatted = _format_user_alias(std_header, value, extend, name)
+            setattr(self, std_header, formatted)
 
     def __getitem__(self, key: str) -> AliasMap | AliasSet:  # noqa: E501
         """Return the alias map or set for a standardized header name."""
@@ -469,6 +451,7 @@ def _format_user_alias(
     std_header: str,
     alias: AliasSet | AliasMap | None,
     extend_defaults: bool,
+    name: str,
 ):
     """
     Format user-provided aliases (AliasMap or AliasSet types) to be used in the
@@ -483,6 +466,8 @@ def _format_user_alias(
     extend_defaults : bool
         Whether or not to extend the current alias's defaults. If not extended,
         the user-provided values replace the internal defaults.
+    name : str
+        The `HeaderAliases` keyword name for `std_header`, used in errors.
 
     Returns
     -------
@@ -496,13 +481,11 @@ def _format_user_alias(
 
     # handle AliasSet options
     if std_header in ['Cycle', 'Step', 'State', 'DateTime']:
-        _chk._check_type(f"{std_header}", alias, (Sequence, None))
+        _chk._check_type(name, alias, (Sequence, None))
         if isinstance(alias, str):
-            raise TypeError(
-                f"{std_header} alias must be Sequence[str], but got str."
-            )
+            raise TypeError(f"'{name}' must be Sequence[str], but got str.")
 
-        _chk._check_inner_type(f"{std_header}", alias, str)
+        _chk._check_inner_type(name, alias, str)
         alias = _strip_chars(alias)
 
         formatted = set(alias)
@@ -512,8 +495,8 @@ def _format_user_alias(
         return formatted
 
     # handle AliasMap options
-    _chk._check_type(f"{std_header}", alias, (dict, None))
-    _chk._check_inner_type(f"{std_header}", alias.keys(), str)
+    _chk._check_type(name, alias, (dict, None))
+    _chk._check_inner_type(name, alias.keys(), str)
 
     formatted = {_strip_chars(k): v for k, v in alias.items()}
     for k, v in formatted.items():
@@ -550,28 +533,3 @@ def _strip_chars(string: str | list[str] | None) -> str | list[str] | None:
 
     transmap = str.maketrans('[(/,', '....', ' _-#<>)]')
     return string.lower().translate(transmap).replace('..', '.').strip('.')
-
-
-def _astype_float(series: pd.Series) -> pd.Series:
-    """
-    Convert a pandas Series to float, coercing errors.
-
-    If numeric, ensures a float. Else, convert to a string, strip commas and
-    hash symbols, then coerce to numeric. Non-convertible values become NaN.
-
-    Parameters
-    ----------
-    series : pd.Series
-        Input Series to convert.
-
-    Returns
-    -------
-    series : pd.Series
-        Converted Series with float dtype.
-
-    """
-    if pd.api.types.is_numeric_dtype(series):
-        return series.astype(float)
-
-    series = series.astype(str).replace('[,#]', '', regex=True)
-    return pd.to_numeric(series, errors='coerce').astype(float)

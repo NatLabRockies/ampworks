@@ -58,12 +58,12 @@ def test_read_custom_aliases(extension):
     reader = all_readers[extension]
 
     # aliases without conversion or None (use defaults)
-    # extend_defaults=False, so Seconds and Amps override defaults
+    # extend_defaults=False, so seconds and amps override defaults
     aliases1 = amp.HeaderAliases(
-        Seconds={'elapsed_s': None},
-        Amps={'amps_raw': None},
-        Volts=None,
-        Cycle=['CycleNumber', 'CycleNum'],
+        seconds={'elapsed_s': None},
+        amps={'amps_raw': None},
+        volts=None,
+        cycle=['CycleNumber', 'CycleNum'],
         extend_defaults=False,
     )
     data1 = reader(file, aliases=aliases1, extra_columns={'Meta': 'string'})
@@ -74,9 +74,9 @@ def test_read_custom_aliases(extension):
 
     # aliases with conversion functions and extend_defaults
     aliases2 = amp.HeaderAliases(
-        Seconds={'elapsed_s': 0.5},
-        Amps={'amps_raw': lambda x: 2.0 * x},
-        Cycle=['CycleNumber', 'CycleNum'],
+        seconds={'elapsed_s': 0.5},
+        amps={'amps_raw': lambda x: 2.0 * x},
+        cycle=['CycleNumber', 'CycleNum'],
         extend_defaults=True,
     )
     data2 = reader(file, aliases=aliases2)
@@ -85,14 +85,38 @@ def test_read_custom_aliases(extension):
     npt.assert_allclose(data2['Amps'], 2.0 * data1['Amps'])
 
     # aliases with conversion functions and subset extend_defaults, including
-    # spurious 'Volts' which is not in the override aliases anyway...
+    # spurious 'volts' which is not in the override aliases anyway...
     aliases3 = amp.HeaderAliases(
-        Seconds={'elapsed_s': 0.5},
-        Amps={'amps_raw': lambda x: 2.0 * x},
-        extend_defaults=['Seconds', 'Amps', 'Volts'],
+        seconds={'elapsed_s': 0.5},
+        amps={'amps_raw': lambda x: 2.0 * x},
+        extend_defaults=['seconds', 'amps', 'volts'],
     )
     data3 = reader(file, aliases=aliases3)
 
     # data2 and data3 must match because extend_defaults doesn't matter here
     # since the test files use the aliased headers instead of defaults
     assert data2.equals(data3)
+
+
+@pytest.mark.parametrize('reader, sep', [
+    (amp.read_csv, ','),
+    (amp.read_table, '\t'),
+])
+def test_read_non_utf8_and_late_dtype_change(tmp_path, reader, sep):
+    # latin-1 bytes (degree sign) in a kept column, and a current column that
+    # is integer-like past polars' default 100-row schema inference window
+    header = sep.join(['Time (s)', 'Current (A)', 'Voltage (V)', 'Notes'])
+    deg_c = '25\xb0C'
+    late = [sep.join([str(i), '1.5', '3.6', deg_c]) for i in range(150, 155)]
+    rows = [sep.join([str(i), '0', '3.5', 'rest']) for i in range(150)] + late
+
+    file = tmp_path / ('latin1' + ('.csv' if sep == ',' else '.txt'))
+    file.write_bytes('\n'.join([header, *rows, '']).encode('latin1'))
+
+    filterwarnings('ignore', message='.*No valid aliases.*')
+    data = reader(file, extra_columns={'Notes': None})
+
+    assert len(data) == 155
+    assert not data['Amps'].isna().any()
+    npt.assert_allclose(data['Amps'].iloc[-5:], 1.5)
+    assert data['Notes'].iloc[-1].startswith('25')

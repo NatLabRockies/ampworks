@@ -5,7 +5,7 @@
 ### New Features
 - Add `show` to `_render_plotly` and `_render_bokeh` to toggle off in save-only cases ([#39](https://github.com/NatLabRockies/ampworks/pull/39))
 - Implement new `columns` functions to add capacity and energy values to a `Dataset` ([#37](https://github.com/NatLabRockies/ampworks/pull/37/commits))
-- Pure a new `_std_head` module within `_core` to optimize use of standard names across package ([#36](https://github.com/NatLabRockies/ampworks/pull/36))
+- Put a new `_std_head` module within `_core` to optimize use of standard names across package ([#36](https://github.com/NatLabRockies/ampworks/pull/36))
 - Add `_rate` and `_sequencing` submodules to the `columns` for power, C-rate, etc ([#35](https://github.com/NatLabRockies/ampworks/pull/35))
 - Add new `columns` module and move toward new API with `add_*` functions ([#34](https://github.com/NatLabRockies/ampworks/pull/34))
 - Allow unit overrides to `HeaderAliases` to help ensure self-consistent standardizations ([#32](https://github.com/NatLabRockies/ampworks/pull/32))
@@ -23,10 +23,18 @@
 - Move backend datasets for examples and tests to `.parquet` formats ([#34](https://github.com/NatLabRockies/ampworks/pull/34))
 
 ### Bug Fixes
+- Read non-UTF-8 delimited files and scan more rows when inferring column dtypes ([#43](https://github.com/NatLabRockies/ampworks/pull/43))
 - Fix broken `dqdv` GUI by ensuring numpy floats are serializable ([#40](https://github.com/NatLabRockies/ampworks/pull/40))
 - Extra tabs in some `.txt` files were creating read errors, now ignore ragged columns ([#31](https://github.com/NatLabRockies/ampworks/pull/31))
 
+### Breaking Changes
+- `HeaderAliases` keywords are now snake_case (e.g., `seconds=`, `amps=`) ([#43](https://github.com/NatLabRockies/ampworks/pull/43))
+- Replace `Dataset.zero_time()` with `zero_reference(columns, method=...)` to re-zero any columns ([#43](https://github.com/NatLabRockies/ampworks/pull/43))
+- Modify keyword arguments in `columns` module for consistency, don't use `alias` ([#43](https://github.com/NatLabRockies/ampworks/pull/43))
+- `HeaderAliases` requires conversion info for quantities that have units, given as `AliasMap` ([#32](https://github.com/NatLabRockies/ampworks/pull/32))
+
 ### Chores
+- Use literal standard names (e.g., `'Seconds'`) as `columns` defaults ([#43](https://github.com/NatLabRockies/ampworks/pull/43))
 - Update workflows to use Python 3.15 as upper bound; test with `[gui]` on codecov ([#41](https://github.com/NatLabRockies/ampworks/pull/41))
 - Prepare for re-write of `_core` by adding `_core/_backend` submodule, with tests ([#38](https://github.com/NatLabRockies/ampworks/pull/38))
 - Move all hidden methods and functions to end of classes and files for consistency ([#33](https://github.com/NatLabRockies/ampworks/pull/33))

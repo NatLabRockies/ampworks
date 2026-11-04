@@ -28,6 +28,7 @@
 - Extra tabs in some `.txt` files were creating read errors, now ignore ragged columns ([#31](https://github.com/NatLabRockies/ampworks/pull/31))
 
 ### Breaking Changes
+- Make all optional args keyword only, except first in cases of all kwarg signatures ([#44](https://github.com/NatLabRockies/ampworks/pull/44))
 - `HeaderAliases` keywords are now snake_case (e.g., `seconds=`, `amps=`) ([#43](https://github.com/NatLabRockies/ampworks/pull/43))
 - Replace `Dataset.zero_time()` with `zero_reference(columns, method=...)` to re-zero any columns ([#43](https://github.com/NatLabRockies/ampworks/pull/43))
 - Modify keyword arguments in `columns` module for consistency, don't use `alias` ([#43](https://github.com/NatLabRockies/ampworks/pull/43))

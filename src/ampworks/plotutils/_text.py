@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
 
 
-def add_text(ax: Axes, xloc: float, yloc: float, text: str,
+def add_text(ax: Axes, xloc: float, yloc: float, text: str, *,
              ha: str = 'left', va: str = 'center') -> None:
     """
     Add text to ax at a given location.

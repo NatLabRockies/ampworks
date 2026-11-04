@@ -120,7 +120,7 @@ def test_combinations():
     values = [np.array([0., 1.]), np.array([3., 4.])]
 
     combinations_nonames = amp.mathutils.combinations(values)
-    combinations_names = amp.mathutils.combinations(values, names)
+    combinations_names = amp.mathutils.combinations(values, names=names)
 
     no_names = []
     with_names = []

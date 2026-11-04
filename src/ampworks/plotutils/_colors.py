@@ -11,7 +11,12 @@ if TYPE_CHECKING:
 
 class ColorMap:
 
-    def __init__(self, cmap: str = 'jet', norm: tuple[float] = (0, 1)) -> None:
+    def __init__(
+        self,
+        cmap: str = 'jet',
+        *,
+        norm: tuple[float] = (0, 1),
+    ) -> None:
         """
         Map values to RGBA colors.
 
@@ -71,7 +76,7 @@ class ColorMap:
             raise ValueError("'scalar' is not in bounds set by 'norm'.")
 
 
-def colors_from_size(size: int, cmap: str = 'jet') -> list:
+def colors_from_size(size: int, *, cmap: str = 'jet') -> list:
     """
     Generate a list of evenly spaced colors from a colormap.
 
@@ -94,7 +99,7 @@ def colors_from_size(size: int, cmap: str = 'jet') -> list:
     return [colormap.get_color(i) for i in data]
 
 
-def colors_from_data(data: ndarray, cmap: str = 'jet') -> ndarray:
+def colors_from_data(data: ndarray, *, cmap: str = 'jet') -> ndarray:
     """
     Map an array of values to colors using a normalized colormap.
 

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 def focused_limits(
-    y: ArrayLike, factor: float = 2.5, margin: float = 0.05,
+    y: ArrayLike, *, factor: float = 2.5, margin: float = 0.05,
 ) -> tuple[float, float]:
     """
     Compute limits by ignoring outliers.

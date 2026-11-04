@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 
-def alphanum_sort(unsorted: list[str], reverse: bool = False) -> list[str]:
+def alphanum_sort(unsorted: list[str], *, reverse: bool = False) -> list[str]:
     """
     Sort a list alphanumerically.
 

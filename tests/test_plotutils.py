@@ -16,20 +16,20 @@ from ampworks.plotutils._plotly import _render_plotly
 class TestColorMap:
 
     def test_init(self):
-        cm = aplt.ColorMap('viridis', (0, 1))
+        cm = aplt.ColorMap('viridis', norm=(0, 1))
 
         assert cm._vmin == 0
         assert cm._vmax == 1
         assert hasattr(cm, '_sm')
 
         with pytest.raises(ValueError):
-            aplt.ColorMap('viridis', (0,))  # norm must be length 2
+            aplt.ColorMap('viridis', norm=(0,))  # norm must be length 2
 
         with pytest.raises(ValueError):
-            aplt.ColorMap('viridis', (1, 0))  # vmin must be < vmax
+            aplt.ColorMap('viridis', norm=(1, 0))  # vmin must be < vmax
 
     def test_get_color(self):
-        cm = aplt.ColorMap('viridis', (0, 1))
+        cm = aplt.ColorMap('viridis', norm=(0, 1))
         color = cm.get_color(0.5)
 
         assert isinstance(color, tuple)
@@ -40,7 +40,7 @@ class TestColorMap:
 
     def test_colors_from_size(self):
         size = 5
-        colors = aplt.colors_from_size(size, 'viridis')
+        colors = aplt.colors_from_size(size, cmap='viridis')
 
         assert isinstance(colors, list)
         assert len(colors) == size
@@ -48,7 +48,7 @@ class TestColorMap:
 
     def test_colors_from_data(self):
         data = np.array([[0, 0.5], [0.8, 1]])
-        colors = aplt.colors_from_data(data, 'viridis')
+        colors = aplt.colors_from_data(data, cmap='viridis')
 
         assert isinstance(colors, np.ndarray)
         assert colors.shape == data.shape

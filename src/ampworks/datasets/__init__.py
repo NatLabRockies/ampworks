@@ -119,6 +119,7 @@ def list_datasets(*modules: str) -> list[str]:
 
 def download_all(
     path: str | os.PathLike | None = None,
+    *,
     format: Literal['csv', 'parquet', 'txt'] = 'parquet',
 ) -> None:
     """

@@ -14,6 +14,7 @@ class Timer:
     def __init__(
         self,
         name: str = 'Elapsed time',
+        *,
         units: Literal['s', 'min', 'h'] = 's',
         display: bool = True,
     ) -> None:

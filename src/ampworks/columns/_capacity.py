@@ -302,8 +302,8 @@ def add_throughput_capacity(
 
 def add_equivalent_full_cycles(
     data: Dataset,
-    *,
     nominal_ah: float,
+    *,
     output_col: str = 'EFC',
     throughput_ah_col: str = 'ThroughputAh',
 ) -> Dataset:

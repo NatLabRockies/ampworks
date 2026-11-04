@@ -123,8 +123,8 @@ class SegmentLabel:
 
 def add_step_labels(
     data: Dataset,
-    *,
     step_labels: Sequence[StepLabel],
+    *,
     output_col: str = 'StepLabel',
     step_col: str = 'Step',
     reset: bool = False,
@@ -198,8 +198,8 @@ def add_step_labels(
 
 def add_segment_labels(
     data: Dataset,
-    *,
     segment_labels: Sequence[SegmentLabel],
+    *,
     output_col: str = 'SegmentLabel',
     step_col: str = 'Step',
     cycle_col: str = 'Cycle',

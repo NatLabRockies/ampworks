@@ -11,6 +11,7 @@ class ProgressBar(tqdm):
     def __init__(
         self,
         iterable: Iterable | None = None,
+        *,
         manual: bool = False,
         desc: str | None = None,
         ncols: int = 80,

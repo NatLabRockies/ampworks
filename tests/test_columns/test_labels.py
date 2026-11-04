@@ -157,9 +157,10 @@ class TestAddStepLabels:
         col.StepLabel('B', 2),
     ]
 
-    def test_keyword_only(self, label_data):
-        with pytest.raises(TypeError, match='positional'):
-            col.add_step_labels(label_data, self.step_labels)
+    def test_positional_labels(self, label_data):
+        positional = col.add_step_labels(label_data, self.step_labels)
+        keyword = col.add_step_labels(label_data, step_labels=self.step_labels)
+        pd.testing.assert_frame_equal(positional, keyword)
 
     def test_missing_step_column_raises(self, label_data):
         ds = label_data.rename(columns={'Step': 'StepAlias'})
@@ -267,9 +268,12 @@ class TestAddSegmentLabels:
         col.SegmentLabel('B', cycle_nums=[2]),
     ]
 
-    def test_keyword_only(self, label_data):
-        with pytest.raises(TypeError, match='positional'):
-            col.add_segment_labels(label_data, self.step_labels1)
+    def test_positional_labels(self, label_data):
+        positional = col.add_segment_labels(label_data, self.step_labels1)
+        keyword = col.add_segment_labels(
+            label_data, segment_labels=self.step_labels1,
+        )
+        pd.testing.assert_frame_equal(positional, keyword)
 
     def test_missing_step_column_raises(self, label_data):
         ds = label_data.drop(columns=['Step'])

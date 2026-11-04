@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from matplotlib.axes import Axes
 
 
-def minor_ticks(ax: Axes, xdiv: int = None, ydiv: int = None) -> None:
+def minor_ticks(ax: Axes, *, xdiv: int = None, ydiv: int = None) -> None:
     """
     Adds minor ticks.
 
@@ -37,7 +37,7 @@ def minor_ticks(ax: Axes, xdiv: int = None, ydiv: int = None) -> None:
             ax.yaxis.set_minor_locator(AutoMinorLocator(ydiv))
 
 
-def tick_direction(ax: Axes, xdir: str = 'in', ydir: str = 'in',
+def tick_direction(ax: Axes, *, xdir: str = 'in', ydir: str = 'in',
                    top: bool = True, right: bool = True) -> None:
     """
     Controls tick directions.
@@ -64,7 +64,7 @@ def tick_direction(ax: Axes, xdir: str = 'in', ydir: str = 'in',
 
 
 def format_ticks(
-    ax: Axes, xdiv: int = None, ydiv: int = None, xdir: str = 'in',
+    ax: Axes, *, xdiv: int = None, ydiv: int = None, xdir: str = 'in',
     ydir: str = 'in', top: bool = True, right: bool = True,
 ) -> None:
     """

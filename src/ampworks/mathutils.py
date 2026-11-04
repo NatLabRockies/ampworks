@@ -3,26 +3,28 @@ General-purpose mathematical utilities for array and numerical computations.
 Provides reusable functions to simplify common tasks in data analysis and math.
 
 """
+
 from __future__ import annotations
 
-from typing import Sequence, TYPE_CHECKING
+from typing import Sequence
 
 import numpy as np
 import pandas as pd
+
+from ampworks import _checks as _chk
+from ampworks._core._dataset import Dataset
 
 __all__ = [
     'combinations',
     'aggregate_over_x',
 ]
 
-if TYPE_CHECKING:
-    from ampworks import Dataset
-
 
 def aggregate_over_x(
     datasets: Sequence[Dataset],
     x: str,
     y: str,
+    *,
     n: int = 100,
 ) -> Dataset:
     """
@@ -90,13 +92,10 @@ def aggregate_over_x(
         plt.show()
 
     """
-    from ampworks import Dataset
-    from ampworks._checks import _check_columns, _check_type
-
-    _check_type('datasets', datasets, Sequence)
-    _check_type('x', x, str)
-    _check_type('y', y, str)
-    _check_type('n', n, int)
+    _chk._check_type('datasets', datasets, Sequence)
+    _chk._check_type('x', x, str)
+    _chk._check_type('y', y, str)
+    _chk._check_type('n', n, int)
 
     if len(datasets) == 0:
         raise ValueError("'datasets' must contain at least one dataset.")
@@ -104,8 +103,8 @@ def aggregate_over_x(
         raise ValueError("'n' must be at least 2.")
 
     for i, data in enumerate(datasets):
-        _check_type(f"datasets[{i}]", data, (Dataset, pd.DataFrame))
-        _check_columns(data, [x, y])
+        _chk._check_type(f"datasets[{i}]", data, (Dataset, pd.DataFrame))
+        _chk._check_columns(data, [x, y])
 
     lo = max(data[x].min() for data in datasets)
     hi = min(data[x].max() for data in datasets)
@@ -138,11 +137,12 @@ def aggregate_over_x(
         f"{y}_std": interpolated.std(axis=0, ddof=1) if use_std else zero_std,
         f"{y}_min": interpolated.min(axis=0),
         f"{y}_max": interpolated.max(axis=0),
-    })
+    })  # fmt: off
 
 
 def combinations(
     values: Sequence[np.ndarray],
+    *,
     names: Sequence[str] = None,
 ) -> list[dict]:
     """
@@ -162,13 +162,13 @@ def combinations(
         Dictionaries for each possible combination of values.
 
     """
-    import itertools
+    from itertools import product
 
     if names is None:
         names = [i for i in range(len(values))]
 
     combinations = []
-    for combination in itertools.product(*values):
-        combinations.append({k: v for k, v in zip(names, combination)})
+    for comb in product(*values):
+        combinations.append({k: v for k, v in zip(names, comb)})
 
     return combinations

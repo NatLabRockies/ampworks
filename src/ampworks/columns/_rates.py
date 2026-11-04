@@ -50,8 +50,8 @@ def add_power(
 
 def add_c_rate(
     data: Dataset,
-    *,
     nominal_ah: float,
+    *,
     output_col: str = 'CRate',
     amps_col: str = 'Amps',
 ) -> Dataset:

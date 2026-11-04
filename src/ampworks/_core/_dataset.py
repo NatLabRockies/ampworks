@@ -163,6 +163,7 @@ class Dataset(pd.DataFrame):
     def enforce_monotonic(
         self,
         column: str,
+        *,
         increasing: bool = True,
         strict: bool = False,
         ignore_index: bool = False,

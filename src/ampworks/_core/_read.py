@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
 def read_csv(
     filepath: PathLike,
+    *,
     aliases: HeaderAliases | None = None,
     extra_columns: dict[str, type | None] | None = None,
 ) -> Dataset:
@@ -99,6 +100,7 @@ def read_csv(
 
 def read_table(
     filepath: PathLike,
+    *,
     aliases: HeaderAliases | None = None,
     extra_columns: dict[str, type | None] | None = None,
 ) -> Dataset:
@@ -173,6 +175,7 @@ def read_table(
 
 def read_excel(
     filepath: PathLike,
+    *,
     sheet_name: str | int | Sequence[str | int] | None = None,
     stack_sheets: bool = False,
     aliases: HeaderAliases | None = None,
@@ -347,8 +350,8 @@ def read_excel(
 
             datasets[sheet] = standardize_headers(
                 df.to_pandas(),
-                aliases,
-                extra_columns,
+                aliases=aliases,
+                extra_columns=extra_columns,
             )
 
             if sheet_name is None:
@@ -432,7 +435,11 @@ def _read_delimited(
     if skip_rows is not None:
         options['skip_rows'] = skip_rows
         df = pl.read_csv(filepath, **options).to_pandas()
-        return standardize_headers(df, aliases, extra_columns)
+        return standardize_headers(
+            df,
+            aliases=aliases,
+            extra_columns=extra_columns,
+        )
 
     warn(
         f"No valid aliases found for {REQUIRED_HEADERS} in {filepath}."

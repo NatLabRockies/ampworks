@@ -303,6 +303,7 @@ def header_matches(
 
 def standardize_headers(
     data: pd.DataFrame,
+    *,
     aliases: HeaderAliases | None = None,
     extra_columns: Dict[str, type | None] | None = None,
 ) -> Dataset:
